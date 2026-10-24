@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "site": "xpo-india-ca951",
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "frameworksBackend": {
+      "region": "asia-south1"
+    }
+  }
+}
