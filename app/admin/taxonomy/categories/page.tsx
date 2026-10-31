@@ -1,94 +1,160 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { FolderTree, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { TaxonomyCategory, TaxonomySector } from '@/lib/types/domain';
+import { Plus, GitMerge } from 'lucide-react';
 
-interface CategoryItem {
-  code: string;
-  name: string;
-  slug: string;
-  parentSectorCode: string;
-  subcategoryCount?: number;
-  activeLeads?: number;
-  status: string;
-}
+export default function AdminTaxonomyCategoriesPage() {
+  const [sectors, setSectors] = useState<TaxonomySector[]>([]);
+  const [categories, setCategories] = useState<TaxonomyCategory[]>([]);
+  const [sectorId, setSectorId] = useState('');
+  const [name, setName] = useState('');
+  const [sourceId, setSourceId] = useState('');
+  const [targetId, setTargetId] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
 
-export default function CategoriesPage() {
-  const [categories, setCategories] = useState<CategoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => {
+    const res = await fetch('/api/taxonomy/tree?includeInactive=true');
+    if (res.ok) {
+      const d = await res.json();
+      setSectors(d.sectors || []);
+      setCategories(d.categories || []);
+      if (d.sectors?.length && !sectorId) setSectorId(d.sectors[0].id);
+    }
+  }, [sectorId]);
 
   useEffect(() => {
-    fetch('/api/taxonomy/categories')
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) setCategories(res.data);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    void load();
+  }, [load]);
 
-  if (loading) {
-    return <div className="p-8 text-center text-xs text-[#717171]">Loading categories...</div>;
+  async function createCategory(e: React.FormEvent) {
+    e.preventDefault();
+    const res = await fetch('/api/taxonomy/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sectorId, name: name.trim() }),
+    });
+    if (res.ok) {
+      setName('');
+      setMsg('Category saved.');
+      await load();
+    }
+  }
+
+  async function mergeCategory(e: React.FormEvent) {
+    e.preventDefault();
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    const res = await fetch('/api/taxonomy/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'merge', sourceId, targetId }),
+    });
+    if (res.ok) {
+      setMsg('Category merged cleanly.');
+      setSourceId('');
+      setTargetId('');
+      await load();
+    }
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#222222] tracking-tight">Categories (Tier-2 Verticals)</h1>
-          <p className="text-xs text-[#717171] mt-0.5">Verticals mapped under parent industrial sectors.</p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-extrabold text-[#111827]">
+        Tier 2 — Categories & Duplicate Merge
+      </h1>
+      {msg && (
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+          {msg}
         </div>
-        <Link href="/admin/taxonomy">
-          <Button className="bg-[#E8192C] text-white text-xs font-semibold rounded-xl">
-            Open Taxonomy Tree
-          </Button>
-        </Link>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form
+          onSubmit={createCategory}
+          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-3"
+        >
+          <div className="text-xs font-bold flex items-center gap-1.5 text-[#111827]">
+            <Plus className="w-4 h-4 text-[#111827]" /> Add Category
+          </div>
+          <select
+            required
+            value={sectorId}
+            onChange={(e) => setSectorId(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+          >
+            {sectors.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name}
+              </option>
+            ))}
+          </select>
+          <input
+            type="text"
+            required
+            placeholder="Category Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+          >
+            Save Category
+          </button>
+        </form>
+
+        <form
+          onSubmit={mergeCategory}
+          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-3"
+        >
+          <div className="text-xs font-bold flex items-center gap-1.5">
+            <GitMerge className="w-4 h-4 text-amber-600" /> Merge Duplicate Category
+          </div>
+          <select
+            value={sourceId}
+            onChange={(e) => setSourceId(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+          >
+            <option value="">Duplicate Source Category</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <select
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+          >
+            <option value="">Canonical Target Category</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-bold"
+          >
+            Execute Merge
+          </button>
+        </form>
       </div>
 
-      <Card className="rounded-2xl border border-[#EBEBEB] bg-white overflow-hidden shadow-none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAFAFA] border-b border-[#EBEBEB] text-[#717171] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="p-4">Code</th>
-                <th className="p-4">Category Name</th>
-                <th className="p-4">Parent Sector</th>
-                <th className="p-4">Subcategories</th>
-                <th className="p-4">Active Leads</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Form Schema</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB]">
-              {categories.map((cat) => (
-                <tr key={cat.code} className="hover:bg-[#FDFDFD]">
-                  <td className="p-4 font-mono font-bold text-[#222222]">{cat.code}</td>
-                  <td className="p-4 font-bold text-[#222222] flex items-center gap-2">
-                    <FolderTree className="w-4 h-4 text-amber-600" />
-                    {cat.name}
-                  </td>
-                  <td className="p-4 text-[#555555] font-semibold">{cat.parentSectorCode}</td>
-                  <td className="p-4 text-[#555555]">{cat.subcategoryCount || 3} Subs</td>
-                  <td className="p-4 font-bold text-[#222222]">{cat.activeLeads || 4}</td>
-                  <td className="p-4">
-                    <Badge variant={cat.status === 'active' ? 'success' : 'neutral'} className="text-[10px]">
-                      {cat.status.toUpperCase()}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-right">
-                    <Link href={`/admin/taxonomy/form-builder?code=${cat.slug}`} className="text-[#E8192C] font-semibold hover:underline inline-flex items-center gap-1">
-                      Edit Form <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 divide-y divide-[#F3F4F6] text-xs">
+        {categories.map((c) => (
+          <div key={c.id} className="py-2.5 flex items-center justify-between">
+            <div>
+              <span className="font-bold">{c.name}</span>{' '}
+              <span className="font-mono text-[#6B7280]">{c.code}</span>
+            </div>
+            <span>{c.isActive ? 'Active' : 'Inactive'}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

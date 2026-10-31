@@ -1,86 +1,102 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Filter } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { TaxonomyCategory, TaxonomySubcategory } from '@/lib/types/domain';
+import { Plus } from 'lucide-react';
 
-interface SubcategoryItem {
-  code: string;
-  name: string;
-  parentCategoryCode: string;
-  sectorCode: string;
-  mappedTags?: string[];
-  status: string;
-}
+export default function AdminTaxonomySubcategoriesPage() {
+  const [categories, setCategories] = useState<TaxonomyCategory[]>([]);
+  const [subcategories, setSubcategories] = useState<TaxonomySubcategory[]>([]);
+  const [categoryId, setCategoryId] = useState('');
+  const [name, setName] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
 
-export default function SubcategoriesPage() {
-  const [subcategories, setSubcategories] = useState<SubcategoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const load = useCallback(async () => {
+    const res = await fetch('/api/taxonomy/tree?includeInactive=true');
+    if (res.ok) {
+      const d = await res.json();
+      setCategories(d.categories || []);
+      setSubcategories(d.subcategories || []);
+      if (d.categories?.length && !categoryId) setCategoryId(d.categories[0].id);
+    }
+  }, [categoryId]);
 
   useEffect(() => {
-    fetch('/api/taxonomy/subcategories')
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) setSubcategories(res.data);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+    void load();
+  }, [load]);
 
-  if (loading) {
-    return <div className="p-8 text-center text-xs text-[#717171]">Loading subcategories...</div>;
+  async function handleCreate(e: React.FormEvent) {
+    e.preventDefault();
+    const cat = categories.find((c) => c.id === categoryId);
+    if (!cat) return;
+    const res = await fetch('/api/taxonomy/subcategories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sectorId: cat.sectorId,
+        categoryId: cat.id,
+        name: name.trim(),
+      }),
+    });
+    if (res.ok) {
+      setName('');
+      setMsg('Subcategory saved.');
+      await load();
+    }
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-black text-[#222222] tracking-tight">Subcategories (Tier-3 Specialities)</h1>
-        <p className="text-xs text-[#717171] mt-0.5">High-precision niche specialities used for exact opportunity matching.</p>
-      </div>
-
-      <Card className="rounded-2xl border border-[#EBEBEB] bg-white overflow-hidden shadow-none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAFAFA] border-b border-[#EBEBEB] text-[#717171] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="p-4">Subcategory Code</th>
-                <th className="p-4">Subcategory Name</th>
-                <th className="p-4">Parent Category</th>
-                <th className="p-4">Sector</th>
-                <th className="p-4">Mapped Tags</th>
-                <th className="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB]">
-              {subcategories.map((sub) => (
-                <tr key={sub.code} className="hover:bg-[#FDFDFD]">
-                  <td className="p-4 font-mono font-bold text-[#222222]">{sub.code}</td>
-                  <td className="p-4 font-bold text-[#222222] flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-[#E8192C]" />
-                    {sub.name}
-                  </td>
-                  <td className="p-4 text-[#555555]">{sub.parentCategoryCode}</td>
-                  <td className="p-4 font-semibold text-[#555555]">{sub.sectorCode}</td>
-                  <td className="p-4">
-                    <div className="flex flex-wrap gap-1">
-                      {sub.mappedTags?.slice(0, 3).map((t: string, i: number) => (
-                        <span key={i} className="px-1.5 py-0.5 rounded bg-neutral-100 text-[10px] text-[#555555]">
-                          {t}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <Badge variant={sub.status === 'active' ? 'success' : 'neutral'} className="text-[10px]">
-                      {sub.status.toUpperCase()}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-extrabold text-[#111827]">Tier 3 — Subcategories</h1>
+      {msg && (
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+          {msg}
         </div>
-      </Card>
+      )}
+
+      <form
+        onSubmit={handleCreate}
+        className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col sm:flex-row gap-3"
+      >
+        <select
+          required
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+        >
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <input
+          type="text"
+          required
+          placeholder="Subcategory Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="flex-1 px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+        />
+        <button
+          type="submit"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+        >
+          <Plus className="w-4 h-4" /> Add Subcategory
+        </button>
+      </form>
+
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 divide-y divide-[#F3F4F6] text-xs">
+        {subcategories.map((sc) => (
+          <div key={sc.id} className="py-2.5 flex items-center justify-between">
+            <div>
+              <span className="font-bold">{sc.name}</span>{' '}
+              <span className="font-mono text-[#6B7280]">{sc.code}</span>
+            </div>
+            <span>{sc.isActive ? 'Active' : 'Inactive'}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,0 +1,203 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperadmin() {
+      return isSignedIn() && (
+        request.auth.token.superadmin == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperadmin == true)
+      );
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Core User Identity — readable by self or Superadmin; server-only writes to privileged flags
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isSuperadmin();
+      allow create, update: if false; // Mutated strictly via Firebase Admin SDK server endpoints
+      allow delete: if false;
+    }
+
+    // Atomic E.164 Phone Uniqueness Index — server-only
+    match /phone_index/{phoneE164} {
+      allow read, write: if isSuperadmin();
+    }
+
+    // Shared Business Entities — owner or Superadmin read; server-verified writes
+    match /businesses/{businessId} {
+      allow read: if isSuperadmin() || (isSignedIn() && resource.data.ownerUid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Distinct Role Profiles ({uid}_{role})
+    match /role_profiles/{profileId} {
+      allow read: if isSuperadmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Public/Active 4-Tier Taxonomy — publicly readable when active; Superadmin/server write
+    match /taxonomy_sectors/{sectorId} {
+      allow read: if true;
+      allow write: if isSuperadmin();
+    }
+    match /taxonomy_categories/{categoryId} {
+      allow read: if true;
+      allow write: if isSuperadmin();
+    }
+    match /taxonomy_subcategories/{subcategoryId} {
+      allow read: if true;
+      allow write: if isSuperadmin();
+    }
+    match /taxonomy_tags/{tagId} {
+      allow read: if true;
+      allow write: if isSuperadmin();
+    }
+    match /taxonomy_form_schemas/{schemaId} {
+      allow read: if true;
+      allow write: if isSuperadmin();
+    }
+
+    // CRM, Consent, Suppression & Excel Imports — strictly Superadmin / Server-only
+    match /crm_contacts/{phoneE164} {
+      allow read, write: if isSuperadmin();
+    }
+    match /whatsapp_consent_records/{recordId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /suppression_list/{phoneE164} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /contact_segments/{segmentId} {
+      allow read, write: if isSuperadmin();
+    }
+    match /import_jobs/{jobId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+      match /import_errors/{rowId} {
+        allow read: if isSuperadmin();
+        allow write: if false;
+      }
+      match /errors/{rowId} {
+        allow read: if isSuperadmin();
+        allow write: if false;
+      }
+    }
+
+    // Service Marketplace Requirements (masked public details readable by signed-in users; raw contact never stored here)
+    match /requirements/{reqId} {
+      allow read: if isSuperadmin() || (isSignedIn() && (resource.data.moderationStatus == 'approved' || resource.data.clientUid == request.auth.uid));
+      allow write: if false;
+      match /match_candidates/{partnerUid} {
+        allow read: if isSuperadmin() || isOwner(partnerUid);
+        allow write: if false;
+      }
+    }
+
+    // 5-Minute Business Lead Offers, Atomic Claims, Zero-Trust Unlocks & Entitlement Ledger
+    match /whatsapp_lead_offers/{offerId} {
+      allow read: if isSuperadmin() || (isSignedIn() && resource.data.partnerUid == request.auth.uid);
+      allow write: if false;
+    }
+    // Locked to Superadmin/Admin SDK so Client reads always pass through server-side DTO redaction (/api/claims, /api/requirements/[id])
+    match /lead_claims/{claimId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /client_candidate_unlocks/{unlockId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /entitlement_ledger/{entryId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+
+    // Mutual Consent Connections (unmasked contact details released only when status == 'accepted')
+    match /connections/{connId} {
+      allow read: if isSuperadmin() || (isSignedIn() && (resource.data.initiatorUid == request.auth.uid || resource.data.recipientUid == request.auth.uid));
+      allow write: if false;
+    }
+
+    // Trust, Verification, Reports & Audit Logs
+    match /verification_requests/{reqId} {
+      allow read: if isSuperadmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /trust_events/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
+    match /support_tickets/{ticketId} {
+      allow read: if isSuperadmin() || (isSignedIn() && resource.data.reporterUid == request.auth.uid);
+      allow write: if false;
+    }
+    match /audit_logs/{logId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+
+    // WhatsApp Automation Collections — Superadmin / Server-only
+    match /whatsapp_config/{docId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /whatsapp_workflows/{flowId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /whatsapp_sessions/{sessionId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /whatsapp_messages/{msgId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /webhook_events/{eventId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /whatsapp_templates/{tplId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /whatsapp_campaigns/{campId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /whatsapp_notification_jobs/{jobId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /whatsapp_automation_logs/{logId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+
+    // Subscriptions, Payment Events & Platform Settings
+    match /subscriptions/{subId} {
+      allow read: if isSuperadmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow write: if false;
+    }
+    match /payment_events/{eventId} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+    match /platform_settings/{docId} {
+      allow read: if true;
+      allow write: if false;
+    }
+    match /platform_credentials/{docId} {
+      allow read, write: if false; // Server-only via Firebase Admin SDK
+    }
+  }
+}

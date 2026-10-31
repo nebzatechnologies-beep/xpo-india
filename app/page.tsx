@@ -6,22 +6,40 @@ import { HowItWorks } from '@/components/landing/how-it-works';
 import { StatsSection } from '@/components/landing/stats-section';
 import { PricingSection } from '@/components/landing/pricing-section';
 import { Footer } from '@/components/landing/footer';
+import { getPlatformSettings } from '@/lib/services/platform-settings';
 
-export const metadata = {
-  title: 'XPO India — High-Velocity Domestic Procurement & Lead Exchange',
-  description: 'Connect directly with verified Indian manufacturers, suppliers, and engineering talent across Peenya, Pune, Coimbatore, Peenya, Ahmedabad & Gurgaon.',
-};
+export const dynamic = 'force-dynamic';
 
-export default function HomePage() {
+export default async function HomePage() {
+  let initialSettings;
+  try {
+    const settings = await getPlatformSettings();
+    initialSettings = {
+      partnerFreeClaims: settings.subscriptions.partnerFreeClaims,
+      partnerPaidMonthlyClaims: settings.subscriptions.partnerPaidMonthlyClaims,
+      partnerPlanUnlimited: settings.subscriptions.partnerPlanUnlimited,
+      partnerInrMonthlyPrice: settings.subscriptions.partnerInrMonthlyPrice,
+      partnerUsdMonthlyPrice: settings.subscriptions.partnerUsdMonthlyPrice,
+      clientFreePartnerViews: settings.subscriptions.clientFreePartnerViews,
+      clientPaidMonthlyPartnerViews: settings.subscriptions.clientPaidMonthlyPartnerViews,
+      clientPlanUnlimited: settings.subscriptions.clientPlanUnlimited,
+      clientInrMonthlyPrice: settings.subscriptions.clientInrMonthlyPrice,
+      clientUsdMonthlyPrice: settings.subscriptions.clientUsdMonthlyPrice,
+      gstPercentInr: settings.subscriptions.gstPercentInr ?? 18,
+    };
+  } catch {
+    // Fallback gracefully to client fetch in PricingSection
+  }
+
   return (
     <div className="flex flex-col min-h-screen">
       <Navbar />
       <main className="flex-1">
-        <HeroSection region="domestic" />
+        <HeroSection />
         <SectorStrip />
         <HowItWorks />
         <StatsSection />
-        <PricingSection region="domestic" />
+        <PricingSection initialSettings={initialSettings} />
       </main>
       <Footer />
     </div>

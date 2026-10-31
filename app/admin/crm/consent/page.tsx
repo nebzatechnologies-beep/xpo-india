@@ -1,58 +1,137 @@
 'use client';
 
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ShieldCheck } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { ConsentStatus, WhatsAppConsentRecord } from '@/lib/types/domain';
 
-export default function ConsentAuditPage() {
-  const records = [
-    { company: 'Sharma Heavy Engineering Ltd', contact: 'Rajesh Sharma', phone: '+91 9820011223', status: 'opted_in', source: 'Direct Lead Post', timestamp: '28 Sep 2026, 10:00' },
-    { company: 'Patel Precision Manufacturing', contact: 'Anil Patel', phone: '+91 9910044556', status: 'opted_in', source: 'Platform Registration', timestamp: '28 Sep 2026, 10:30' },
-    { company: 'Global Sourcing Inc', contact: 'David Miller', phone: '+1 415 555 2671', status: 'opted_in', source: 'Direct WhatsApp Inbound', timestamp: '28 Sep 2026, 11:15' },
-    { company: 'Legacy Foundry Works', contact: 'K. Raman', phone: '+91 9840099881', status: 'opted_out', source: 'WhatsApp Reply STOP', timestamp: '27 Sep 2026, 16:20' }
-  ];
+export default function AdminCrmConsentPage() {
+  const [records, setRecords] = useState<WhatsAppConsentRecord[]>([]);
+  const [suppressed, setSuppressed] = useState<Array<{ phoneE164: string; reason?: string }>>([]);
+  const [phoneE164, setPhoneE164] = useState('');
+  const [newStatus, setNewStatus] = useState<ConsentStatus>('opted_in');
+  const [evidenceNote, setEvidenceNote] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const res = await fetch('/api/crm/consent');
+    if (res.ok) {
+      const d = await res.json();
+      setRecords(d.records || []);
+      setSuppressed(d.suppressed || []);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function recordManualConsent(e: React.FormEvent) {
+    e.preventDefault();
+    const res = await fetch('/api/crm/consent', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phoneE164, newStatus, evidenceNote }),
+    });
+    if (res.ok) {
+      setPhoneE164('');
+      setEvidenceNote('');
+      setMsg('Consent ledger & suppression list updated.');
+      await load();
+    }
+  }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-[#222222] tracking-tight">Digital Consent & Opt-In Audit Log</h1>
-        <p className="text-xs text-[#717171] mt-0.5">Compliant audit trail maintaining verified opt-ins and instant opt-out requests for TRAI and GDPR compliance.</p>
+        <h1 className="text-2xl font-extrabold text-[#111827]">
+          WhatsApp Consent Audit & Suppression List
+        </h1>
+        <p className="text-xs text-[#6B7280] mt-1">
+          STOP / UNSUBSCRIBE keywords immediately add numbers to the active suppression list so no
+          outbound marketing or alert templates are sent.
+        </p>
       </div>
 
-      <Card className="rounded-2xl border border-[#EBEBEB] bg-white overflow-hidden shadow-none">
-        <div className="overflow-x-auto text-xs">
-          <table className="w-full text-left">
-            <thead className="bg-[#FAFAFA] border-b border-[#EBEBEB] text-[#717171] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="p-4">Company</th>
-                <th className="p-4">Contact Person</th>
-                <th className="p-4">Phone / WhatsApp</th>
-                <th className="p-4">Acquisition Channel</th>
-                <th className="p-4">Timestamp</th>
-                <th className="p-4 text-right">Consent Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB]">
-              {records.map((r, i) => (
-                <tr key={i} className="hover:bg-[#FDFDFD]">
-                  <td className="p-4 font-bold text-[#222222]">{r.company}</td>
-                  <td className="p-4 text-[#555555]">{r.contact}</td>
-                  <td className="p-4 font-mono text-[#555555]">{r.phone}</td>
-                  <td className="p-4 text-[#717171]">{r.source}</td>
-                  <td className="p-4 text-[#717171]">{r.timestamp}</td>
-                  <td className="p-4 text-right">
-                    <Badge variant={r.status === 'opted_in' ? 'success' : 'neutral'} className="text-[10px]">
-                      <ShieldCheck className="w-3 h-3 mr-1" />
-                      {r.status === 'opted_in' ? 'VERIFIED OPT-IN' : 'OPTED-OUT'}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {msg && (
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+          {msg}
         </div>
-      </Card>
+      )}
+
+      <form
+        onSubmit={recordManualConsent}
+        className="bg-white rounded-2xl border border-[#E5E7EB] p-5 grid grid-cols-1 sm:grid-cols-4 gap-3"
+      >
+        <input
+          type="tel"
+          required
+          placeholder="+919876543210"
+          value={phoneE164}
+          onChange={(e) => setPhoneE164(e.target.value)}
+          className="px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+        />
+        <select
+          value={newStatus}
+          onChange={(e) => setNewStatus(e.target.value as ConsentStatus)}
+          className="px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+        >
+          <option value="opted_in">Opted In</option>
+          <option value="opted_out">Opted Out (Suppress)</option>
+          <option value="consent_pending">Consent Pending</option>
+        </select>
+        <input
+          type="text"
+          required
+          placeholder="Written consent / opt-out evidence note"
+          value={evidenceNote}
+          onChange={(e) => setEvidenceNote(e.target.value)}
+          className="px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+        />
+        <button
+          type="submit"
+          className="px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-bold"
+        >
+          Record Consent Event
+        </button>
+      </form>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5">
+          <h2 className="text-sm font-bold mb-3">
+            Active Suppressed Phone Numbers ({suppressed.length})
+          </h2>
+          <div className="divide-y divide-[#F3F4F6] text-xs">
+            {suppressed.map((s) => (
+              <div key={s.phoneE164} className="py-2 flex justify-between">
+                <span className="font-mono font-bold text-red-700">{s.phoneE164}</span>
+                <span className="text-[#6B7280]">{s.reason || 'STOP / Opt-Out'}</span>
+              </div>
+            ))}
+            {suppressed.length === 0 && (
+              <p className="text-[#6B7280]">Zero suppressed phone numbers.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5">
+          <h2 className="text-sm font-bold mb-3">Recent Consent Audit Trail ({records.length})</h2>
+          <div className="divide-y divide-[#F3F4F6] text-xs">
+            {records.map((r) => (
+              <div key={r.id} className="py-2">
+                <div className="flex justify-between font-bold">
+                  <span className="font-mono">{r.phoneE164}</span>
+                  <span>
+                    {r.previousStatus} → {r.newStatus}
+                  </span>
+                </div>
+                <div className="text-[#6B7280] text-[11px]">
+                  {r.channel} • {r.evidenceNote}
+                </div>
+              </div>
+            ))}
+            {records.length === 0 && <p className="text-[#6B7280]">No consent events logged yet.</p>}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

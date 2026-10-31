@@ -1,309 +1,292 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import {
-  CreditCard,
-  Download,
-  Search,
-  Filter,
-  RefreshCw,
-  Globe2,
-  CheckCircle2,
-  XCircle,
-  Clock,
-  Sparkles,
-  ArrowUpDown,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { CheckCircle2, Download, Loader2, Receipt, RefreshCw, ShieldAlert } from 'lucide-react';
+import type { PaymentEventRecord } from '@/lib/types/domain';
+
+interface PaymentSummary {
+  totalInr: number;
+  totalGstInr: number;
+  totalUsd: number;
+  failedEventsCount: number;
+}
 
 export default function AdminPaymentsPage() {
-  const [payments, setPayments] = useState<any[]>([]);
-  const [stats, setStats] = useState<any>({
-    totalRevenue: 0,
-    razorpayRevenue: 1998,
-    paypalRevenue: 98,
-    totalTransactions: 6,
+  const [events, setEvents] = useState<PaymentEventRecord[]>([]);
+  const [summary, setSummary] = useState<PaymentSummary>({
+    totalInr: 0,
+    totalGstInr: 0,
+    totalUsd: 0,
+    failedEventsCount: 0,
   });
-  const [gatewayFilter, setGatewayFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [gatewayFilter, setGatewayFilter] = useState<'all' | 'razorpay' | 'paypal'>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  const fetchPayments = () => {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (gatewayFilter !== 'all') params.set('gateway', gatewayFilter);
-    if (statusFilter !== 'all') params.set('status', statusFilter);
-    if (search) params.set('search', search);
-
-    fetch(`/api/admin/payments?${params.toString()}`)
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.success) {
-          setPayments(res.payments || []);
-          if (res.stats) setStats(res.stats);
-        }
-      })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
-  };
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/admin/payments');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load payment events');
+      setEvents(data.events || []);
+      if (data.summary) setSummary(data.summary);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load payment ledger');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    fetchPayments();
-  }, [gatewayFilter, statusFilter]);
+    void load();
+  }, [load]);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchPayments();
-  };
+  const filtered = events.filter((e) => {
+    if (gatewayFilter !== 'all' && e.gateway !== gatewayFilter) return false;
+    if (statusFilter !== 'all' && e.status !== statusFilter) return false;
+    return true;
+  });
 
-  const handleExportCSV = () => {
+  function exportCsv() {
     const headers = [
-      'Transaction ID',
-      'Gateway Order ID',
+      'EventID',
+      'InvoiceNumber',
       'Gateway',
-      'User Name',
-      'User Email',
-      'Amount',
+      'EventType',
+      'Role',
+      'UID',
       'Currency',
-      'Type',
-      'AutoPay',
+      'Amount',
+      'TaxAmount',
       'Status',
-      'Date',
+      'VerifiedSignature',
+      'OccurredAt',
     ];
-
-    const rows = payments.map((p) => [
-      p.gatewayPaymentId || p._id,
-      p.gatewayOrderId || 'N/A',
-      p.gateway?.toUpperCase(),
-      p.user?.name || 'User',
-      p.user?.email || 'N/A',
-      p.amount,
-      p.currency,
-      p.type,
-      p.metadata?.isAutoPay ? 'YES' : 'NO',
-      p.status?.toUpperCase(),
-      new Date(p.createdAt).toISOString(),
+    const rows = filtered.map((e) => [
+      e.id,
+      e.invoiceNumber || '',
+      e.gateway,
+      e.eventType,
+      e.role,
+      e.uid,
+      e.currency,
+      String(e.amount),
+      String(e.taxAmount),
+      e.status,
+      String(e.verifiedSignature),
+      e.occurredAt,
     ]);
-
-    const csvContent =
-      'data:text/csv;charset=utf-8,' +
-      [headers.join(','), ...rows.map((e) => e.join(','))].join('\n');
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `xpo_transactions_${Date.now()}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `xpo-payments-ledger-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black text-[#222222] tracking-tight">
-              Transaction Records & Ledger
-            </h1>
-            <Badge variant="outline" className="border-red-200 text-[#E8192C] bg-red-50 text-xs">
-              Superadmin Only
-            </Badge>
-          </div>
-          <p className="text-xs text-[#717171] mt-0.5">
-            Complete financial records for Domestic (Razorpay ₹999) & International (PayPal $49) with AutoPay subscriptions.
+          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
+            <Receipt className="w-6 h-6 text-[#111827]" />
+            Payments & Transactions
+          </h1>
+          <p className="text-xs text-[#6B7280] mt-1">
+            Real-time billing transactions, Razorpay and PayPal subscription payments.
           </p>
         </div>
-
-        <Button
-          variant="outline"
-          size="md"
-          onClick={handleExportCSV}
-          className="rounded-2xl font-semibold flex items-center gap-2 border-[#EBEBEB] text-[#222222] hover:bg-[#F7F7F7] shrink-0"
-        >
-          <Download className="w-4 h-4 text-[#E8192C]" />
-          Export Ledger CSV
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={exportCsv}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-xs"
+          >
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </button>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold hover:bg-black shadow-xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </button>
+        </div>
       </div>
 
-      {/* Financial Summary Metric Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">Domestic Volume (Razorpay)</span>
-            <CreditCard className="w-5 h-5 text-[#E8192C]" />
-          </div>
-          <div className="mt-3 text-2xl font-black text-[#222222]">
-            ₹{stats.razorpayRevenue.toLocaleString()}
-          </div>
-          <div className="text-[11px] text-[#717171] mt-0.5">Indian UPI & e-Mandates</div>
-        </Card>
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+          {error}
+        </div>
+      )}
 
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">Global Volume (PayPal)</span>
-            <Globe2 className="w-5 h-5 text-blue-600" />
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+          <div className="text-[11px] font-bold uppercase text-[#6B7280]">
+            Captured Domestic Revenue (INR)
           </div>
-          <div className="mt-3 text-2xl font-black text-[#222222]">
-            ${stats.paypalRevenue.toLocaleString()}
+          <div className="text-2xl font-extrabold text-[#111827] mt-1">
+            ₹{summary.totalInr.toLocaleString('en-IN')}
           </div>
-          <div className="text-[11px] text-[#717171] mt-0.5">International Subscriptions</div>
-        </Card>
-
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">Total Ledger Records</span>
-            <RefreshCw className="w-5 h-5 text-emerald-600" />
+          <div className="text-[11px] text-emerald-700 font-semibold mt-1">
+            Razorpay AutoPay Mandates
           </div>
-          <div className="mt-3 text-2xl font-black text-[#222222]">
-            {stats.totalTransactions}
+        </div>
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+          <div className="text-[11px] font-bold uppercase text-[#6B7280]">
+            Collected GST Component (INR)
           </div>
-          <div className="text-[11px] text-[#717171] mt-0.5">Combined payment events</div>
-        </Card>
+          <div className="text-2xl font-extrabold text-[#111827] mt-1">
+            ₹{summary.totalGstInr.toLocaleString('en-IN')}
+          </div>
+          <div className="text-[11px] text-[#6B7280] mt-1">Tax-compliant domestic invoices</div>
+        </div>
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+          <div className="text-[11px] font-bold uppercase text-[#6B7280]">
+            Captured Global Revenue (USD)
+          </div>
+          <div className="text-2xl font-extrabold text-[#111827] mt-1">
+            ${summary.totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+          </div>
+          <div className="text-[11px] text-indigo-700 font-semibold mt-1">
+            PayPal Subscriptions AutoPay
+          </div>
+        </div>
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+          <div className="text-[11px] font-bold uppercase text-[#6B7280]">
+            Failed / Halted Webhook Charges
+          </div>
+          <div className="text-2xl font-extrabold text-red-600 mt-1">
+            {summary.failedEventsCount}
+          </div>
+          <div className="text-[11px] text-[#6B7280] mt-1">Auto-notified via WhatsApp</div>
+        </div>
       </div>
 
-      {/* Controls & Search */}
-      <Card className="p-4 rounded-3xl border border-[#EBEBEB] bg-white">
-        <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#717171] absolute left-3.5 top-3.5" />
-            <Input
-              placeholder="Search by Order ID, Transaction ID, user name or email..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10 pr-4 py-2.5 rounded-xl border-[#EBEBEB] text-xs"
-            />
+      {/* Filters + Ledger Table */}
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
+        <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <select
+              value={gatewayFilter}
+              onChange={(e) => setGatewayFilter(e.target.value as 'all' | 'razorpay' | 'paypal')}
+              className="px-3 py-1.5 rounded-xl border border-[#D1D5DB] bg-white font-semibold"
+            >
+              <option value="all">All Gateways</option>
+              <option value="razorpay">Razorpay (INR)</option>
+              <option value="paypal">PayPal (USD)</option>
+            </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-1.5 rounded-xl border border-[#D1D5DB] bg-white font-semibold"
+            >
+              <option value="all">All Statuses</option>
+              <option value="captured">Captured</option>
+              <option value="mandate_authorized">Mandate Authorized</option>
+              <option value="failed">Failed</option>
+              <option value="refunded">Refunded</option>
+            </select>
           </div>
+          <span className="text-[#6B7280] font-semibold">
+            Showing {filtered.length} verified webhook events
+          </span>
+        </div>
 
-          {/* Gateway Filter */}
-          <select
-            value={gatewayFilter}
-            onChange={(e) => setGatewayFilter(e.target.value)}
-            className="px-3 py-2.5 rounded-xl border border-[#EBEBEB] text-xs bg-white focus:outline-none font-semibold text-[#222222]"
-          >
-            <option value="all">All Gateways (Razorpay & PayPal)</option>
-            <option value="razorpay">Razorpay (India ₹999)</option>
-            <option value="paypal">PayPal (Global $49)</option>
-          </select>
-
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-3 py-2.5 rounded-xl border border-[#EBEBEB] text-xs bg-white focus:outline-none font-semibold text-[#222222]"
-          >
-            <option value="all">All Statuses</option>
-            <option value="captured">Captured / Success</option>
-            <option value="pending">Pending</option>
-            <option value="failed">Failed</option>
-          </select>
-
-          <Button type="submit" variant="primary" size="sm" className="rounded-xl text-xs font-semibold px-4">
-            Filter Records
-          </Button>
-        </form>
-      </Card>
-
-      {/* Transactions Table */}
-      <Card className="rounded-3xl border border-[#EBEBEB] bg-white overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="border-b border-[#EBEBEB] bg-[#FAFAFA] text-[11px] font-bold uppercase tracking-wider text-[#717171]">
-                <th className="py-3 px-5">Transaction & Gateway</th>
-                <th className="py-3 px-5">Customer / Organization</th>
-                <th className="py-3 px-5">Type & AutoPay</th>
-                <th className="py-3 px-5">Amount</th>
-                <th className="py-3 px-5">Status</th>
-                <th className="py-3 px-5">Date</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB] text-xs">
-              {payments.map((p) => {
-                const isRzp = p.gateway === 'razorpay';
-                const isAutoPay = Boolean(p.metadata?.isAutoPay || p.type === 'subscription');
-                return (
-                  <tr key={p._id} className="hover:bg-[#F9F9F9] transition-colors">
-                    <td className="py-4 px-5">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                            isRzp
-                              ? 'bg-red-50 text-[#E8192C] border border-red-200'
-                              : 'bg-blue-50 text-blue-700 border border-blue-200'
-                          }`}
-                        >
-                          {p.gateway}
-                        </span>
-                        <span className="font-mono text-[11px] font-semibold text-[#222222]">
-                          {p.gatewayPaymentId || p.gatewayOrderId || p._id}
-                        </span>
-                      </div>
-                      <div className="text-[10px] text-[#717171] mt-0.5 font-mono">
-                        Order: {p.gatewayOrderId || 'N/A'}
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-5">
-                      <div className="font-bold text-[#222222]">{p.user?.name || 'Verified Member'}</div>
-                      <div className="text-[11px] text-[#717171]">{p.user?.email || 'N/A'}</div>
-                    </td>
-
-                    <td className="py-4 px-5">
-                      <div className="flex items-center gap-1.5">
-                        <span className="capitalize font-semibold text-[#222222]">
-                          {p.type?.replace('_', ' ')}
-                        </span>
-                        {isAutoPay && (
-                          <Badge variant="outline" className="text-[9px] border-emerald-200 text-emerald-700 bg-emerald-50 font-bold">
-                            <RefreshCw className="w-2.5 h-2.5 mr-0.5 animate-spin-slow" /> AutoPay
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="text-[10px] text-[#717171]">
-                        {p.plan?.name || (isRzp ? 'Annual Domestic (INR)' : 'Annual Global (USD)')}
-                      </div>
-                    </td>
-
-                    <td className="py-4 px-5 font-black text-[#222222]">
-                      {p.currency === 'USD' ? '$' : '₹'}{p.amount?.toLocaleString()}
-                    </td>
-
-                    <td className="py-4 px-5">
-                      {p.status === 'captured' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                          <CheckCircle2 className="w-3 h-3" /> Captured
-                        </span>
-                      ) : p.status === 'pending' ? (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-yellow-50 text-yellow-700 border border-yellow-200">
-                          <Clock className="w-3 h-3" /> Pending
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
-                          <XCircle className="w-3 h-3" /> Failed
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-4 px-5 text-[#717171] text-[11px]">
-                      {new Date(p.createdAt).toLocaleDateString('en-IN', {
-                        day: 'numeric',
-                        month: 'short',
-                        year: 'numeric',
-                      })}
+        {loading ? (
+          <div className="p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
+            <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading payment events...
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#F9FAFB] text-[#6B7280] uppercase text-[11px]">
+                <tr>
+                  <th className="px-4 py-3">Invoice / Event</th>
+                  <th className="px-4 py-3">Gateway & Event</th>
+                  <th className="px-4 py-3">Customer / Role</th>
+                  <th className="px-4 py-3">Amount</th>
+                  <th className="px-4 py-3">GST / Tax</th>
+                  <th className="px-4 py-3">Status</th>
+                  <th className="px-4 py-3">Signature</th>
+                  <th className="px-4 py-3">Occurred At</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E5E7EB]">
+                {filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-4 py-10 text-center text-[#6B7280]">
+                      No payment webhook events match your current filter.
                     </td>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : (
+                  filtered.map((ev) => (
+                    <tr key={ev.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <div className="font-mono font-bold text-[#111827]">
+                          {ev.invoiceNumber || ev.id}
+                        </div>
+                        <div className="font-mono text-[11px] text-[#6B7280]">
+                          Sub: {ev.subscriptionId}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="uppercase font-bold text-[#111827]">{ev.gateway}</div>
+                        <div className="font-mono text-[11px] text-[#6B7280]">{ev.eventType}</div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="font-mono text-[#111827]">{ev.uid}</div>
+                        <div className="capitalize text-[11px] text-[#6B7280]">{ev.role}</div>
+                      </td>
+                      <td className="px-4 py-3 font-bold text-[#111827]">
+                        {ev.currency === 'INR' ? `₹${ev.amount}` : `$${ev.amount}`}
+                      </td>
+                      <td className="px-4 py-3 text-[#4B5563]">
+                        {ev.currency === 'INR' ? `₹${ev.taxAmount}` : `$${ev.taxAmount}`}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                            ev.status === 'captured'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : ev.status === 'failed'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-blue-100 text-blue-800'
+                          }`}
+                        >
+                          {ev.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        {ev.verifiedSignature ? (
+                          <span className="inline-flex items-center gap-1 text-emerald-700 font-bold">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Verified
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 text-red-600 font-bold">
+                            <ShieldAlert className="w-3.5 h-3.5" /> Unverified
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-[#6B7280]">
+                        {new Date(ev.occurredAt).toLocaleString()}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

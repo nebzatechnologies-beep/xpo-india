@@ -1,41 +1,56 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/lib/data/mock-db';
+import { type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { requireSuperadmin } from '@/lib/auth/server-session';
+import {
+  createOrUpdateTag,
+  getFullTaxonomyTree,
+  mergeTaxonomyEntity,
+} from '@/lib/services/taxonomy';
+import { handleApiError, jsonOk } from '@/lib/utils/api-handler';
+
+const tagSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  sectorId: z.string().optional(),
+  categoryId: z.string().optional(),
+  subcategoryIds: z.array(z.string()).optional(),
+  isActive: z.boolean().optional(),
+});
 
 export async function GET() {
-  const store = getMockStore();
-  return NextResponse.json({ success: true, data: store.tags });
+  try {
+    await requireSuperadmin();
+    const tree = await getFullTaxonomyTree({ includeInactive: true });
+    return jsonOk({ tags: tree.tags });
+  } catch (err) {
+    return handleApiError(err);
+  }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const store = getMockStore();
+    const session = await requireSuperadmin();
+    const raw = await request.json();
 
-    if (body.action === 'merge') {
-      const { sourceTag, targetTag } = body;
-      const target = store.tags.find((t: any) => t.name.toLowerCase() === targetTag.toLowerCase());
-      const source = store.tags.find((t: any) => t.name.toLowerCase() === sourceTag.toLowerCase());
-      if (target && source) {
-        target.usageCount += source.usageCount;
-        store.tags = store.tags.filter((t: any) => t.name.toLowerCase() !== sourceTag.toLowerCase());
-      }
-      return NextResponse.json({ success: true, message: 'Tags merged successfully', data: store.tags });
+    if (raw?.action === 'merge') {
+      const res = await mergeTaxonomyEntity(
+        { level: 'tag', sourceId: String(raw.sourceId), targetId: String(raw.targetId) },
+        { uid: session.uid, name: session.user.displayName }
+      );
+      return jsonOk(res);
     }
 
-    const existingIndex = store.tags.findIndex((t: any) => t.name.toLowerCase() === body.name.toLowerCase());
-    if (existingIndex >= 0) {
-      store.tags[existingIndex] = { ...store.tags[existingIndex], ...body };
-    } else {
-      store.tags.push({
-        name: body.name,
-        subcategoryCode: body.subcategoryCode || 'SUB_CNC',
-        categoryCode: body.categoryCode || 'CAT_MFG_IND',
-        usageCount: body.usageCount || 0,
-        status: body.status || 'active'
-      });
-    }
-    return NextResponse.json({ success: true, data: store.tags });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    const body = tagSchema.parse(raw);
+    const tag = await createOrUpdateTag(body, {
+      uid: session.uid,
+      name: session.user.displayName,
+    });
+    return jsonOk({ tag }, 201);
+  } catch (err) {
+    return handleApiError(err);
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  return POST(request);
 }

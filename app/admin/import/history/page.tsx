@@ -1,62 +1,97 @@
 'use client';
 
-import React from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { UploadCloud } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import type { ImportJob } from '@/lib/types/domain';
+import { Download } from 'lucide-react';
 
-export default function ImportHistoryPage() {
-  const history = [
-    { id: 'IMP_1001', type: 'Taxonomy Master', file: 'xpo_industrial_taxonomy_v4.xlsx', records: 48, status: 'Completed', by: 'Super Admin', date: '28 Sep 2026, 14:00' },
-    { id: 'IMP_1002', type: 'Companies CRM', file: 'pune_industrial_companies.xlsx', records: 120, status: 'Completed', by: 'Super Admin', date: '28 Sep 2026, 12:30' },
-    { id: 'IMP_1003', type: 'Skills & Tags', file: 'aerospace_machining_tags.csv', records: 36, status: 'Completed', by: 'Super Admin', date: '27 Sep 2026, 16:45' },
-    { id: 'IMP_1004', type: 'Form Fields', file: 'mfg_specification_fields.csv', records: 14, status: 'Completed', by: 'Super Admin', date: '26 Sep 2026, 11:20' },
-  ];
+export default function AdminImportHistoryPage() {
+  const [jobs, setJobs] = useState<ImportJob[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function load() {
+      try {
+        const [crmRes, taxRes] = await Promise.all([
+          fetch('/api/crm/import'),
+          fetch('/api/taxonomy/import'),
+        ]);
+        const list: ImportJob[] = [];
+        if (crmRes.ok) {
+          const d = await crmRes.json();
+          list.push(...(d.jobs || []));
+        }
+        if (taxRes.ok) {
+          const d = await taxRes.json();
+          list.push(...(d.jobs || []));
+        }
+        list.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+        setJobs(list);
+      } finally {
+        setLoading(false);
+      }
+    }
+    void load();
+  }, []);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-black text-[#222222] tracking-tight">Import Audit History</h1>
-        <p className="text-xs text-[#717171] mt-0.5">Comprehensive audit trail of all spreadsheet and CSV batch operations.</p>
+        <h1 className="text-2xl font-extrabold text-[#111827]">
+          Excel Import Job History & Error Reports
+        </h1>
+        <p className="text-xs text-[#6B7280] mt-1">
+          Inspect staged, processing, and completed CRM & Taxonomy import jobs with downloadable
+          row-level error CSVs.
+        </p>
       </div>
 
-      <Card className="rounded-2xl border border-[#EBEBEB] bg-white overflow-hidden shadow-none">
-        <div className="overflow-x-auto text-xs">
-          <table className="w-full text-left">
-            <thead className="bg-[#FAFAFA] border-b border-[#EBEBEB] text-[#717171] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="p-4">Batch ID</th>
-                <th className="p-4">Import Type</th>
-                <th className="p-4">Source File</th>
-                <th className="p-4">Records Ingested</th>
-                <th className="p-4">Uploaded By</th>
-                <th className="p-4">Timestamp</th>
-                <th className="p-4">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB]">
-              {history.map((row) => (
-                <tr key={row.id} className="hover:bg-[#FDFDFD]">
-                  <td className="p-4 font-mono font-bold text-[#222222]">{row.id}</td>
-                  <td className="p-4 font-bold text-[#222222] flex items-center gap-2">
-                    <UploadCloud className="w-4 h-4 text-[#E8192C]" />
-                    {row.type}
-                  </td>
-                  <td className="p-4 font-mono text-[#555555]">{row.file}</td>
-                  <td className="p-4 font-bold text-emerald-600">+{row.records}</td>
-                  <td className="p-4 text-[#555555]">{row.by}</td>
-                  <td className="p-4 text-[#717171]">{row.date}</td>
-                  <td className="p-4">
-                    <Badge variant="success" className="text-[10px]">
-                      {row.status}
-                    </Badge>
-                  </td>
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
+        {loading ? (
+          <p className="text-xs text-[#6B7280]">Loading import jobs...</p>
+        ) : jobs.length === 0 ? (
+          <p className="text-xs text-[#6B7280]">No import jobs executed yet.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
+                  <th className="py-2">File</th>
+                  <th className="py-2">Type</th>
+                  <th className="py-2">Rows</th>
+                  <th className="py-2">Created / Updated / Rejected</th>
+                  <th className="py-2">Status</th>
+                  <th className="py-2">Error Report</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+              </thead>
+              <tbody className="divide-y divide-[#F3F4F6]">
+                {jobs.map((j) => (
+                  <tr key={j.id}>
+                    <td className="py-2.5 font-bold">{j.fileName}</td>
+                    <td className="py-2.5 uppercase">{j.type}</td>
+                    <td className="py-2.5">{j.totalRows}</td>
+                    <td className="py-2.5">
+                      +{j.createdCount} / ~{j.updatedCount} / !{j.rejectedCount}
+                    </td>
+                    <td className="py-2.5 capitalize font-semibold">{j.status.replace('_', ' ')}</td>
+                    <td className="py-2.5">
+                      {j.rejectedCount > 0 ? (
+                        <a
+                          href={`/api/imports/${j.id}?download=errors`}
+                          className="inline-flex items-center gap-1 text-red-600 font-bold hover:underline"
+                        >
+                          <Download className="w-3.5 h-3.5" /> CSV
+                        </a>
+                      ) : (
+                        <span className="text-[#9CA3AF]">Clean</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

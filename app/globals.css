@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  --font-jakarta: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --primary: #E8192C;
   --primary-hover: #C0111F;
   --primary-active: #A50E1A;

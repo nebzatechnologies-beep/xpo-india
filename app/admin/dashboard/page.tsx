@@ -1,265 +1,328 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import type { ExecutiveKpiDashboardData } from '@/lib/services/analytics';
 import {
-  CreditCard,
-  TrendingUp,
-  FileText,
-  Users,
-  RefreshCw,
-  Globe2,
   ArrowRight,
-  ShieldCheck,
-  Sparkles,
+  Briefcase,
+  Building2,
+  CreditCard,
+  Download,
+  FileText,
+  Handshake,
+  RefreshCw,
+  Send,
+  TrendingUp,
+  UserCheck,
+  Zap,
 } from 'lucide-react';
 
-export default function AdminDashboardPage() {
-  const [data, setData] = useState<any>(null);
+export default function AdminExecutiveDashboardPage() {
+  const [data, setData] = useState<ExecutiveKpiDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  async function load() {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/admin/dashboard');
+      if (res.ok) {
+        setData(await res.json());
+      }
+    } finally {
+      setLoading(false);
+    }
+  }
+
   useEffect(() => {
-    fetch('/api/admin/dashboard')
-      .then((r) => r.json())
-      .then((res) => {
-        if (res.success) {
-          setData(res);
-        }
-      })
-      .catch((e) => console.error(e))
-      .finally(() => setLoading(false));
+    void load();
   }, []);
 
-  const stats = data?.stats || {
-    totalUsers: 3,
-    creatorCount: 1,
-    absorberCount: 1,
-    totalLeads: 5,
-    liveLeads: 5,
-    autopayCount: 3,
-    razorpayRevenueINR: 1998,
-    paypalRevenueUSD: 98,
-  };
+  const ov = data?.overviewCounts;
+  const kpi = data?.commercialHealthKpis;
+
+  const monitoringPillars = [
+    {
+      title: '1. Uploaded Contacts',
+      icon: Building2,
+      value: `${ov?.crmContactsCount ?? 0}`,
+      detail: `${ov?.clientDatabaseCount ?? 0} Client DB (${ov?.clientOptedInCount ?? 0} opted-in) • ${ov?.partnerDatabaseCount ?? 0} Partner DB (${ov?.partnerOptedInCount ?? 0} opted-in)`,
+    },
+    {
+      title: '2. WhatsApp Invitations',
+      icon: Send,
+      value: `${(ov?.clientInvitationsSent ?? 0) + (ov?.partnerInvitationsSent ?? 0)}`,
+      detail: `${ov?.clientInvitationsSent ?? 0} Client invites • ${ov?.partnerInvitationsSent ?? 0} Partner invites (${ov?.invitationRepliesCount ?? 0} replied)`,
+    },
+    {
+      title: '3. Registrations',
+      icon: UserCheck,
+      value: `${(ov?.clientsCount ?? 0) + (ov?.partnersCount ?? 0)}`,
+      detail: `${ov?.clientsCount ?? 0} activated Clients • ${ov?.partnersCount ?? 0} activated Partners`,
+    },
+    {
+      title: '4. Client Requirements',
+      icon: FileText,
+      value: `${ov?.totalRequirements ?? 0}`,
+      detail: `${ov?.activeRequirements ?? 0} in active distribution`,
+    },
+    {
+      title: '5. Partner Responses',
+      icon: Zap,
+      value: `${ov?.offersClaimedCount ?? 0} / ${ov?.offersDispatchedCount ?? 0}`,
+      detail: `${ov?.offersClaimedCount ?? 0} claimed • ${ov?.offersExpiredCount ?? 0} redirected`,
+    },
+    {
+      title: '6. Unlocks & Connections',
+      icon: Handshake,
+      value: `${ov?.acceptedConnectionsCount ?? 0}`,
+      detail: `${ov?.partnerProfilesUnlockedCount ?? 0} Partner profiles unlocked • ${ov?.acceptedConnectionsCount ?? 0} mutual connections`,
+    },
+    {
+      title: '7. Active Subscriptions',
+      icon: CreditCard,
+      value: `${ov?.activeSubscriptions ?? 0}`,
+      detail: `${ov?.activeClientPlans ?? 0} Client Plans • ${ov?.activePartnerPlans ?? 0} Partner Plans`,
+    },
+    {
+      title: '8. Revenue & Meta Spend',
+      icon: TrendingUp,
+      value: `₹${(ov?.revenueInrTotal ?? 0).toLocaleString('en-IN')}`,
+      detail: `$${ov?.revenueUsdTotal ?? 0} USD • Meta API spend: ₹${ov?.whatsappCostInrTotal ?? 0}`,
+    },
+  ];
+
+  const kpiCards = [
+    {
+      title: 'Match Speed',
+      desc: 'Requirement to 1st Partner alert',
+      value: `${kpi?.avgRequirementToMatchSeconds ?? 0}s`,
+    },
+    {
+      title: 'Round-1 Response Rate',
+      desc: 'Partner response action rate',
+      value: `${kpi?.firstRoundPartnerResponseRatePercent ?? 0}%`,
+    },
+    {
+      title: 'Time to 3 Partners',
+      desc: 'Average shortlist completion',
+      value: `${kpi?.avgTimeToThreeInterestedMinutes ?? 0} min`,
+    },
+    {
+      title: 'Mutual Connection Rate',
+      desc: 'Accepted direct introductions',
+      value: `${kpi?.mutualConnectionAcceptanceRatePercent ?? 0}%`,
+    },
+    {
+      title: 'Partner Plan Conversion',
+      desc: 'Free starter to paid Partner Plan',
+      value: `${kpi?.freeToPaidPartnerConversionPercent ?? 0}%`,
+    },
+    {
+      title: 'Client Plan Conversion',
+      desc: 'Free views to paid Client Plan',
+      value: `${kpi?.freeToPaidClientConversionPercent ?? 0}%`,
+    },
+    {
+      title: 'WhatsApp Delivery',
+      desc: 'Meta Cloud API delivery health',
+      value: `${kpi?.whatsappDeliverySuccessPercent ?? 0}%`,
+    },
+    {
+      title: 'Verified Profiles',
+      desc: 'KYC verified marketplace accounts',
+      value: `${kpi?.verifiedProfilePercent ?? 0}%`,
+    },
+  ];
 
   return (
-    <div className="space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-[#111827]">
+            Superadmin Monitoring Dashboard
+          </h1>
+          <p className="text-xs text-[#6B7280] mt-1">
+            Track Client & Partner Databases, WhatsApp invitations, registrations, requirements,
+            partner responses, connections, subscriptions, and revenue from one place.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-gray-300 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 shadow-xs transition"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
+          <a
+            href="/api/admin/reports?format=csv"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+          >
+            <Download className="w-3.5 h-3.5" /> Export CSV
+          </a>
+        </div>
+      </div>
+
+      {/* Superadmin Step 1: Two Separate Primary Database Sections */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex items-center justify-between gap-4 shadow-xs">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#111827]">
+              <Building2 className="w-4 h-4 text-[#E8192C]" /> Client Database
+            </div>
+            <p className="text-xs text-[#6B7280]">
+              Upload potential Clients&apos; Excel sheets (names, WhatsApp numbers, locations,
+              business info) and send consented WhatsApp invitations.
+            </p>
+            <div className="text-[11px] font-bold text-[#111827] pt-1">
+              {loading
+                ? 'Loading...'
+                : `${ov?.clientDatabaseCount ?? 0} uploaded • ${ov?.clientOptedInCount ?? 0} opted-in • ${ov?.clientsCount ?? 0} registered`}
+            </div>
+          </div>
+          <Link
+            href="/admin/clients"
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-bold"
+          >
+            Open Client DB <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex items-center justify-between gap-4 shadow-xs">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#111827]">
+              <Briefcase className="w-4 h-4 text-[#E8192C]" /> Partner Database
+            </div>
+            <p className="text-xs text-[#6B7280]">
+              Upload potential Partners&apos; Excel sheets (names, WhatsApp numbers, locations,
+              services, categories, subcategories) and dispatch invitations.
+            </p>
+            <div className="text-[11px] font-bold text-[#111827] pt-1">
+              {loading
+                ? 'Loading...'
+                : `${ov?.partnerDatabaseCount ?? 0} uploaded • ${ov?.partnerOptedInCount ?? 0} opted-in • ${ov?.partnersCount ?? 0} registered`}
+            </div>
+          </div>
+          <Link
+            href="/admin/partners"
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white text-xs font-bold"
+          >
+            Open Partner DB <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+      </div>
+
+      {/* Superadmin Step 11: 8-Pillar End-to-End Monitoring Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+        {monitoringPillars.map((pillar) => {
+          const Icon = pillar.icon;
+          return (
+            <div
+              key={pillar.title}
+              className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs"
+            >
+              <div className="flex items-center justify-between text-xs font-bold text-[#111827]">
+                <span>{pillar.title}</span>
+                <Icon className="w-4 h-4 text-[#6B7280]" />
+              </div>
+              <div className="text-2xl font-black text-[#111827] mt-2">
+                {loading ? '—' : pillar.value}
+              </div>
+              <div className="text-[11px] text-[#6B7280] mt-1 leading-snug">{pillar.detail}</div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Operational Efficiency KPIs */}
       <div>
-        <h1 className="text-2xl font-black text-[#222222] tracking-tight">Platform Performance & Metrics</h1>
-        <p className="text-xs text-[#717171] mt-0.5">Live platform transactions, sector opportunity distribution, and gateway revenue.</p>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Domestic INR */}
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">Domestic Revenue</span>
-            <div className="w-10 h-10 rounded-2xl bg-red-50 text-[#E8192C] flex items-center justify-center font-bold">
-              ₹
-            </div>
-          </div>
-          <div className="mt-4 text-3xl font-black text-[#222222]">
-            ₹{stats.razorpayRevenueINR.toLocaleString()}
-          </div>
-          <div className="mt-1 text-xs text-[#717171] flex items-center gap-1">
-            <CreditCard className="w-3.5 h-3.5 text-[#E8192C]" /> Razorpay (India ₹999/yr)
-          </div>
-        </Card>
-
-        {/* Global USD */}
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">International Revenue</span>
-            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
-              $
-            </div>
-          </div>
-          <div className="mt-4 text-3xl font-black text-[#222222]">
-            ${stats.paypalRevenueUSD.toLocaleString()}
-          </div>
-          <div className="mt-1 text-xs text-[#717171] flex items-center gap-1">
-            <Globe2 className="w-3.5 h-3.5 text-blue-600" /> PayPal Global ($49/yr)
-          </div>
-        </Card>
-
-        {/* AutoPay Subscriptions */}
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">Active AutoPay</span>
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <RefreshCw className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 text-3xl font-black text-[#222222]">{stats.autopayCount}</div>
-          <div className="mt-1 text-xs text-[#717171]">Recurring annual renewals</div>
-        </Card>
-
-        {/* Live Leads */}
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">Live Opportunities</span>
-            <div className="w-10 h-10 rounded-2xl bg-orange-50 text-orange-600 flex items-center justify-center">
-              <FileText className="w-5 h-5" />
-            </div>
-          </div>
-          <div className="mt-4 text-3xl font-black text-[#222222]">{stats.liveLeads}</div>
-          <div className="mt-1 text-xs text-[#717171]">{stats.totalUsers} registered members</div>
-        </Card>
-      </div>
-
-      {/* Client & Partner Workspace Breakdown */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6 rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50/50 via-white to-sky-50/30 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-black text-blue-950 flex items-center gap-2">
-              <Users className="w-5 h-5 text-blue-600" /> Client Workspace (Requirement Posters)
-            </h3>
-            <Badge variant="outline" className="border-blue-300 text-blue-800 bg-white text-xs font-bold">
-              Clients Hub
-            </Badge>
-          </div>
-          <p className="text-xs text-[#717171]">
-            Clients register for free, build company profiles, and post commercial requirements for buying goods, services, & contracting.
-          </p>
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="p-3 bg-white rounded-2xl border border-blue-100 shadow-xs">
-              <span className="text-[11px] font-semibold text-[#717171]">Registered Clients</span>
-              <p className="text-xl font-black text-blue-950 mt-0.5">{stats.clientCount || stats.creatorCount || 1}</p>
-            </div>
-            <div className="p-3 bg-white rounded-2xl border border-blue-100 shadow-xs">
-              <span className="text-[11px] font-semibold text-[#717171]">Requirements Posted</span>
-              <p className="text-xl font-black text-blue-950 mt-0.5">{stats.totalLeads}</p>
-            </div>
-          </div>
-          <div className="pt-2">
-            <Link href="/admin/leads">
-              <Button variant="outline" size="sm" className="w-full rounded-2xl text-xs font-bold border-blue-200 text-blue-800 hover:bg-blue-50">
-                Moderate Client Requirements →
-              </Button>
-            </Link>
-          </div>
-        </Card>
-
-        <Card className="p-6 rounded-3xl border border-emerald-200 bg-gradient-to-br from-emerald-50/50 via-white to-teal-50/30 space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-base font-black text-emerald-950 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-emerald-600" /> Partner Workspace (Solution Providers)
-            </h3>
-            <Badge variant="outline" className="border-emerald-300 text-emerald-800 bg-white text-xs font-bold">
-              Partners Hub
-            </Badge>
-          </div>
-          <p className="text-xs text-[#717171]">
-            Partners (manufacturers, suppliers, agencies, contractors) discover requirements, submit capability proposals, & unlock direct contact details.
-          </p>
-          <div className="grid grid-cols-2 gap-3 pt-2">
-            <div className="p-3 bg-white rounded-2xl border border-emerald-100 shadow-xs">
-              <span className="text-[11px] font-semibold text-[#717171]">Registered Partners</span>
-              <p className="text-xl font-black text-emerald-950 mt-0.5">{stats.partnerCount || stats.absorberCount || 2}</p>
-            </div>
-            <div className="p-3 bg-white rounded-2xl border border-emerald-100 shadow-xs">
-              <span className="text-[11px] font-semibold text-[#717171]">Proposals & Interests</span>
-              <p className="text-xl font-black text-emerald-950 mt-0.5">{stats.totalProposals || 8}</p>
-            </div>
-          </div>
-          <div className="pt-2">
-            <Link href="/admin/users">
-              <Button variant="outline" size="sm" className="w-full rounded-2xl text-xs font-bold border-emerald-200 text-emerald-800 hover:bg-emerald-50">
-                Manage Partner Directory →
-              </Button>
-            </Link>
-          </div>
-        </Card>
-      </div>
-
-      {/* Gateway Split Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-[#222222]">Domestic Payment Gateway</h3>
-            <Badge variant="outline" className="text-xs text-[#E8192C] border-red-200 bg-red-50">
-              Razorpay Active
-            </Badge>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs py-2 border-b border-gray-100">
-              <span className="text-[#717171]">Annual Plan Rate</span>
-              <span className="font-bold text-[#222222]">₹999 / year</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-2 border-b border-gray-100">
-              <span className="text-[#717171]">Supported Rails</span>
-              <span className="font-semibold text-[#222222]">UPI AutoPay, Cards, NetBanking</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-2">
-              <span className="text-[#717171]">Domestic Captured Volume</span>
-              <span className="font-black text-emerald-700">₹{stats.razorpayRevenueINR.toLocaleString()}</span>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-bold text-[#222222]">International Payment Gateway</h3>
-            <Badge variant="outline" className="text-xs text-blue-700 border-blue-200 bg-blue-50">
-              PayPal Active
-            </Badge>
-          </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-xs py-2 border-b border-gray-100">
-              <span className="text-[#717171]">Annual Global Plan Rate</span>
-              <span className="font-bold text-[#222222]">$49 / year</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-2 border-b border-gray-100">
-              <span className="text-[#717171]">Supported Rails</span>
-              <span className="font-semibold text-[#222222]">PayPal Subscriptions, International Cards</span>
-            </div>
-            <div className="flex items-center justify-between text-xs py-2">
-              <span className="text-[#717171]">International Captured Volume</span>
-              <span className="font-black text-blue-700">${stats.paypalRevenueUSD.toLocaleString()}</span>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Deployment Demos Console Banner */}
-      <Card className="p-6 rounded-3xl border border-purple-100 bg-gradient-to-r from-purple-50/60 to-indigo-50/40 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
-              👑 Multi-Regional Control
-            </span>
-            <span className="text-xs text-[#717171]">Domestic (India) ⇄ Global (Worldwide)</span>
-          </div>
-          <h3 className="text-base font-bold text-[#222222]">Superadmin Deployment Demos Console</h3>
-          <p className="text-xs text-[#717171] mt-0.5">
-            Test and preview live deployment profiles for India Domestic (INR, Razorpay) and Global Cross-Border Sourcing (USD, PayPal).
+        <div className="mb-3">
+          <h2 className="text-sm font-bold text-[#111827]">Operational & Conversion Health</h2>
+          <p className="text-[11px] text-[#6B7280]">
+            Live telemetry across matching, mutual consent connections, and two-sided
+            subscriptions
           </p>
         </div>
-        <Link href="/admin/demos">
-          <Button size="md" className="rounded-2xl font-bold bg-purple-700 hover:bg-purple-800 text-white flex items-center gap-2 shrink-0 shadow-sm">
-            <Sparkles className="w-4 h-4" />
-            Launch Deployment Demos
-          </Button>
-        </Link>
-      </Card>
 
-      {/* Quick Action to Payments Ledger */}
-      <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h3 className="text-base font-bold text-[#222222]">Superadmin Transaction Ledger</h3>
-          <p className="text-xs text-[#717171] mt-0.5">
-            View every payment capture, AutoPay subscription id, gateway orders, and export full accounting CSVs.
-          </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          {kpiCards.map((c) => (
+            <div
+              key={c.title}
+              className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs"
+            >
+              <div className="text-xs font-bold text-[#111827]">{c.title}</div>
+              <div className="text-[11px] text-[#6B7280] mt-0.5">{c.desc}</div>
+              <div className="text-2xl font-black text-[#111827] mt-2.5">
+                {loading ? '—' : c.value}
+              </div>
+            </div>
+          ))}
         </div>
-        <Link href="/admin/payments">
-          <Button variant="primary" size="md" className="rounded-2xl font-semibold flex items-center gap-2 shrink-0">
-            Open Transaction Records <ArrowRight className="w-4 h-4" />
-          </Button>
-        </Link>
-      </Card>
+      </div>
+
+      {/* Recent Requirements & Subscription Payments */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-[#111827]">Recent Client Requirements</h3>
+            <Link
+              href="/admin/leads"
+              className="text-xs font-semibold text-[#111827] hover:underline"
+            >
+              View All Requirements →
+            </Link>
+          </div>
+          <div className="divide-y divide-[#F3F4F6] text-xs">
+            {(data?.recentRequirements || []).map((r) => (
+              <div key={r.id} className="py-2.5 flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-mono font-bold text-[#6B7280] mr-2">{r.xpoCode}</span>
+                  <span className="font-semibold text-gray-900">{r.title}</span>
+                </div>
+                <span className="capitalize text-gray-500 font-medium shrink-0">
+                  {r.distributionStatus.replace(/_/g, ' ')}
+                </span>
+              </div>
+            ))}
+            {(data?.recentRequirements || []).length === 0 && (
+              <p className="text-[#6B7280] py-4">No Client requirements submitted yet.</p>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-bold text-[#111827]">Recent Subscription Payments</h3>
+            <Link
+              href="/admin/subscriptions"
+              className="text-xs font-semibold text-[#111827] hover:underline"
+            >
+              Manage Plans & Quotas →
+            </Link>
+          </div>
+          <div className="divide-y divide-[#F3F4F6] text-xs">
+            {(data?.recentPayments || []).map((p) => (
+              <div key={p.id} className="py-2.5 flex items-center justify-between gap-2">
+                <div>
+                  <span className="font-mono font-bold text-[#6B7280] mr-2">
+                    {p.invoiceNumber || p.id.slice(0, 10)}
+                  </span>
+                  <span className="font-semibold text-gray-900 uppercase">{p.role} Plan</span>
+                </div>
+                <span className="font-bold text-emerald-700 shrink-0">
+                  {p.currency === 'INR' ? `₹${p.amount}` : `$${p.amount}`}
+                </span>
+              </div>
+            ))}
+            {(data?.recentPayments || []).length === 0 && (
+              <p className="text-[#6B7280] py-4">No subscription payments captured yet.</p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

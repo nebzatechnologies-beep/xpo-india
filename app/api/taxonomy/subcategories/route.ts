@@ -1,37 +1,63 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/lib/data/mock-db';
+import { type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { requireSuperadmin } from '@/lib/auth/server-session';
+import {
+  createOrUpdateSubcategory,
+  getFullTaxonomyTree,
+  mergeTaxonomyEntity,
+} from '@/lib/services/taxonomy';
+import { handleApiError, jsonOk } from '@/lib/utils/api-handler';
 
-export async function GET(req: NextRequest) {
-  const store = getMockStore();
-  const { searchParams } = new URL(req.url);
-  const parentCategoryCode = searchParams.get('parentCategoryCode');
-  let result = store.subcategories;
-  if (parentCategoryCode) {
-    result = result.filter((s: any) => s.parentCategoryCode === parentCategoryCode);
+const subSchema = z.object({
+  id: z.string().optional(),
+  sectorId: z.string().min(1),
+  categoryId: z.string().min(1),
+  code: z.string().optional(),
+  name: z.string().min(2),
+  description: z.string().optional(),
+  tagIds: z.array(z.string()).optional(),
+  sortOrder: z.number().optional(),
+  isActive: z.boolean().optional(),
+});
+
+export async function GET(request: NextRequest) {
+  try {
+    await requireSuperadmin();
+    const categoryId = request.nextUrl.searchParams.get('categoryId');
+    const tree = await getFullTaxonomyTree({ includeInactive: true });
+    const subcategories = categoryId
+      ? tree.subcategories.filter((s) => s.categoryId === categoryId)
+      : tree.subcategories;
+    return jsonOk({ subcategories });
+  } catch (err) {
+    return handleApiError(err);
   }
-  return NextResponse.json({ success: true, data: result });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const store = getMockStore();
-    const existingIndex = store.subcategories.findIndex((s: any) => s.code === body.code);
-    if (existingIndex >= 0) {
-      store.subcategories[existingIndex] = { ...store.subcategories[existingIndex], ...body };
-    } else {
-      store.subcategories.push({
-        code: body.code || 'SUB_' + Date.now(),
-        name: body.name,
-        parentCategoryCode: body.parentCategoryCode || 'CAT_MFG_IND',
-        sectorCode: body.sectorCode || 'MFG',
-        mappedTags: body.mappedTags || [],
-        activeLeads: 0,
-        status: body.status || 'active'
-      });
+    const session = await requireSuperadmin();
+    const raw = await request.json();
+
+    if (raw?.action === 'merge') {
+      const res = await mergeTaxonomyEntity(
+        { level: 'subcategory', sourceId: String(raw.sourceId), targetId: String(raw.targetId) },
+        { uid: session.uid, name: session.user.displayName }
+      );
+      return jsonOk(res);
     }
-    return NextResponse.json({ success: true, data: store.subcategories });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+
+    const body = subSchema.parse(raw);
+    const subcategory = await createOrUpdateSubcategory(body, {
+      uid: session.uid,
+      name: session.user.displayName,
+    });
+    return jsonOk({ subcategory }, 201);
+  } catch (err) {
+    return handleApiError(err);
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  return POST(request);
 }

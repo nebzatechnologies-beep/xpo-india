@@ -1,115 +1,134 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Filter, Users, Send, Plus, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { ContactSegment, CrmDatabaseType } from '@/lib/types/domain';
+import { Plus } from 'lucide-react';
 
-export default function AudienceSegmentsPage() {
-  const [segments, setSegments] = useState([
-    { id: 'seg_1', name: 'Precision Machining Vendors (Maharashtra)', count: 42, filters: 'Sector: Manufacturing, City: Pune/Mumbai, Opt-In: Yes' },
-    { id: 'seg_2', name: 'Global Importers & Sourcing Heads', count: 18, filters: 'Country: USA/Germany/UAE, Status: Registered' },
-    { id: 'seg_3', name: 'Textile Mill Owners (Gujarat)', count: 27, filters: 'Sector: Textiles, State: Gujarat, Consent: Active' },
-    { id: 'seg_4', name: 'Hot Leads - Not Yet Registered', count: 65, filters: 'Lifecycle: Responded/Interested, Registration: False' },
-  ]);
+export default function AdminCrmSegmentsPage() {
+  const [segments, setSegments] = useState<ContactSegment[]>([]);
+  const [name, setName] = useState('');
+  const [databaseType, setDatabaseType] = useState<CrmDatabaseType>('partner');
+  const [city, setCity] = useState('');
+  const [consentStatus, setConsentStatus] = useState<'opted_in' | 'none'>('opted_in');
+  const [msg, setMsg] = useState<string | null>(null);
 
-  const [modalOpen, setModalOpen] = useState(false);
-  const [newSeg, setNewSeg] = useState({ name: '', sector: 'Manufacturing', country: 'India' });
+  const load = useCallback(async () => {
+    const res = await fetch('/api/crm/segments');
+    if (res.ok) {
+      const d = await res.json();
+      setSegments(d.segments || []);
+    }
+  }, []);
 
-  const handleCreate = (e: React.FormEvent) => {
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
-    setSegments([
-      ...segments,
-      {
-        id: `seg_${Date.now()}`,
-        name: newSeg.name,
-        count: Math.floor(Math.random() * 30) + 10,
-        filters: `Sector: ${newSeg.sector}, Country: ${newSeg.country}`
-      }
-    ]);
-    setModalOpen(false);
-  };
+    const res = await fetch('/api/crm/segments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: name.trim(),
+        filters: {
+          databaseType,
+          roles: [databaseType],
+          city: city.trim() || undefined,
+          consentStatus,
+        },
+      }),
+    });
+    if (res.ok) {
+      setName('');
+      setCity('');
+      setMsg('Audience segment saved with live recipient count.');
+      await load();
+    }
+  }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#222222] tracking-tight">Audience Segments</h1>
-          <p className="text-xs text-[#717171] mt-0.5">Dynamic target groups compiled for tailored bulk WhatsApp campaigns and acquisition.</p>
-        </div>
-        <Button onClick={() => setModalOpen(true)} className="bg-[#E8192C] hover:bg-[#D01627] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5">
-          <Plus className="w-3.5 h-3.5" /> Create New Segment
-        </Button>
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-extrabold text-[#111827]">Audience Segments</h1>
+        <p className="text-xs text-[#6B7280] mt-1">
+          Build targeted, consent-verified Client or Partner segments for approved Meta WhatsApp
+          broadcasts.
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {segments.map(seg => (
-          <Card key={seg.id} className="p-5 rounded-2xl border border-[#EBEBEB] bg-white space-y-3 shadow-none">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold text-sm text-[#222222] flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#E8192C]" />
-                {seg.name}
-              </h3>
-              <Badge variant="primary" className="text-xs font-bold">
-                {seg.count} Prospects
-              </Badge>
-            </div>
-
-            <p className="text-xs text-[#717171] bg-neutral-50 p-2.5 rounded-xl border border-[#EBEBEB]">
-              <span className="font-semibold text-[#555555]">Query Criteria: </span>
-              {seg.filters}
-            </p>
-
-            <div className="pt-2 flex items-center justify-between">
-              <Link href={`/admin/whatsapp/campaigns/create?segment=${seg.id}`}>
-                <Button size="sm" variant="outline" className="text-xs border-emerald-200 text-emerald-700 hover:bg-emerald-50 rounded-xl flex items-center gap-1.5">
-                  <Send className="w-3.5 h-3.5 text-emerald-600" /> Launch WhatsApp Campaign
-                </Button>
-              </Link>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 border border-[#EBEBEB] shadow-xl">
-            <h3 className="text-base font-black text-[#222222]">Create Audience Segment</h3>
-            <form onSubmit={handleCreate} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-[#717171] uppercase tracking-wider mb-1">Segment Name</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Pune CNC Suppliers"
-                  value={newSeg.name}
-                  onChange={e => setNewSeg({ ...newSeg, name: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-[#EBEBEB] focus:border-[#E8192C] outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-[#717171] uppercase tracking-wider mb-1">Target Sector</label>
-                <select
-                  value={newSeg.sector}
-                  onChange={e => setNewSeg({ ...newSeg, sector: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-[#EBEBEB] focus:border-[#E8192C] outline-none"
-                >
-                  <option value="Manufacturing">Manufacturing & Industrial</option>
-                  <option value="Chemicals">Raw Materials & Chemicals</option>
-                  <option value="Textiles">Textiles & Apparel</option>
-                  <option value="IT">Information Technology</option>
-                </select>
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
-                <Button type="submit" size="sm" className="bg-[#E8192C] text-white">Save Segment</Button>
-              </div>
-            </form>
-          </div>
+      {msg && (
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+          {msg}
         </div>
       )}
+
+      <form
+        onSubmit={handleCreate}
+        className="bg-white rounded-2xl border border-[#E5E7EB] p-5 grid grid-cols-1 sm:grid-cols-6 gap-3"
+      >
+        <input
+          type="text"
+          required
+          placeholder="Segment Name (e.g., Mumbai Consented Partners)"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="sm:col-span-2 px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+        />
+        <select
+          value={databaseType}
+          onChange={(e) => setDatabaseType(e.target.value as CrmDatabaseType)}
+          className="px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+        >
+          <option value="partner">Partner Database</option>
+          <option value="client">Client Database</option>
+        </select>
+        <select
+          value={consentStatus}
+          onChange={(e) => setConsentStatus(e.target.value as 'opted_in' | 'none')}
+          className="px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+        >
+          <option value="opted_in">Opted-In Only</option>
+          <option value="none">Missing Consent</option>
+        </select>
+        <input
+          type="text"
+          placeholder="City Filter (Optional)"
+          value={city}
+          onChange={(e) => setCity(e.target.value)}
+          className="px-3 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+        />
+        <button
+          type="submit"
+          className="inline-flex items-center justify-center gap-1 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+        >
+          <Plus className="w-3.5 h-3.5" /> Create Segment
+        </button>
+      </form>
+
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 divide-y divide-[#F3F4F6] text-xs">
+        {segments.map((seg) => (
+          <div key={seg.id} className="py-3 flex items-center justify-between">
+            <div>
+              <div className="font-bold text-sm text-[#111827]">{seg.name}</div>
+              <div className="text-[#6B7280] mt-0.5">
+                Database:{' '}
+                <strong className="uppercase">
+                  {seg.filters.databaseType || (seg.filters.roles || []).join(', ') || 'All'}
+                </strong>{' '}
+                • City: {seg.filters.city || 'Any'} • Consent:{' '}
+                {seg.filters.consentStatus || 'Any'}
+              </div>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-800 font-semibold text-[11px]">
+              {seg.estimatedCount} Contacts
+            </span>
+          </div>
+        ))}
+        {segments.length === 0 && (
+          <p className="text-[#6B7280]">No audience segments created yet.</p>
+        )}
+      </div>
     </div>
   );
 }

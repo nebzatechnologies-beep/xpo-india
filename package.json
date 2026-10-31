@@ -1,13 +1,15 @@
 {
   "name": "xpo-india",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "seed": "npx ts-node --project tsconfig.json -e \"require('./lib/db/seed').runSeed()\""
+    "typecheck": "tsc --noEmit",
+    "seed": "tsx --env-file=.env.local scripts/seed-platform.ts",
+    "test": "tsx --env-file=.env.local scripts/test-automation.ts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.20",
@@ -28,17 +30,15 @@
     "@radix-ui/react-toast": "^1.2.23",
     "@radix-ui/react-tooltip": "^1.2.16",
     "@tanstack/react-query": "^5.81.5",
-    "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
     "firebase": "^11.6.1",
     "firebase-admin": "^13.3.0",
+    "libphonenumber-js": "^1.13.15",
     "lucide-react": "^0.511.0",
-    "mongoose": "^8.14.1",
     "next": "16.3.6",
-    "next-auth": "5.0.0-beta.28",
-    "nodemailer": "^7.0.3",
+    "nodemailer": "^6.9.16",
     "razorpay": "^2.9.6",
     "react": "19.2.8",
     "react-dom": "19.2.8",
@@ -50,7 +50,6 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19",
@@ -59,6 +58,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

@@ -1,10 +1,38 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { xpoStore } from '@/lib/data/mock-db';
+import { type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { requireAuth } from '@/lib/auth/server-session';
+import {
+  listUserConnections,
+  requestMutualConnection,
+} from '@/lib/marketplace/connections';
+import { handleApiError, jsonOk } from '@/lib/utils/api-handler';
 
-export async function GET(req: NextRequest) {
+const requestConnSchema = z.object({
+  marketplaceType: z.literal('service').optional(),
+  claimOrApplicationId: z.string().min(1),
+});
+
+export async function GET() {
   try {
-    return NextResponse.json({ success: true, connections: xpoStore.connections });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    const session = await requireAuth();
+    const connections = await listUserConnections(session.uid);
+    return jsonOk({ connections });
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const session = await requireAuth();
+    const body = requestConnSchema.parse(await request.json());
+    const connection = await requestMutualConnection({
+      marketplaceType: 'service',
+      claimOrApplicationId: body.claimOrApplicationId,
+      initiatorUid: session.uid,
+    });
+    return jsonOk({ connection }, 201);
+  } catch (err) {
+    return handleApiError(err);
   }
 }

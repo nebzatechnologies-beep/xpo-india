@@ -1,288 +1,497 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  CreditCard,
-  Globe2,
-  RefreshCw,
-  ShieldCheck,
-  CheckCircle2,
-  Sliders,
-  Sparkles,
-  ArrowRight,
-  Info,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { CreditCard, Loader2, RefreshCw, Save, ShieldCheck } from 'lucide-react';
+import type { PlatformSettingsBundle, UserSubscription } from '@/lib/types/domain';
+
+type SubSettings = PlatformSettingsBundle['subscriptions'];
 
 export default function AdminSubscriptionsPage() {
-  const [tab, setTab] = useState<'all' | 'domestic' | 'global'>('all');
+  const [settings, setSettings] = useState<SubSettings | null>(null);
+  const [subscriptions, setSubscriptions] = useState<UserSubscription[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [roleFilter, setRoleFilter] = useState<'all' | 'client' | 'partner'>('all');
 
-  const plans = [
-    {
-      id: 'plan_creator_inr',
-      name: 'Client (Requirement Poster) Plan — India Domestic',
-      role: 'Client',
-      region: 'domestic',
-      price: '₹999',
-      currency: 'INR',
-      gateway: 'Razorpay AutoPay',
-      cycle: 'annual',
-      activeUsers: 42,
-      features: [
-        'Post unlimited requirement leads/month',
-        'Instant WhatsApp & Email broadcast to Partners',
-        'GST-compliant B2B invoicing',
-        'Direct phone unmasking on Partner handshake',
-        'Cross-border: Can hire overseas engineering talent',
-      ],
-    },
-    {
-      id: 'plan_creator_usd',
-      name: 'Client (Requirement Poster) Plan — Global Sourcing',
-      role: 'Client',
-      region: 'global',
-      price: '$49',
-      currency: 'USD',
-      gateway: 'PayPal Subscriptions',
-      cycle: 'annual',
-      activeUsers: 18,
-      features: [
-        'International overseas procurement',
-        'Post unlimited global requirements',
-        'Priority audience matching with Indian Partners',
-        'Cross-border escrow & customs tracking',
-        'Direct supplier video & WhatsApp handshakes',
-      ],
-    },
-    {
-      id: 'plan_absorber_inr',
-      name: 'Partner (Solution Provider) Pass — India Domestic',
-      role: 'Partner',
-      region: 'domestic',
-      price: '₹999',
-      currency: 'INR',
-      gateway: 'Razorpay AutoPay',
-      cycle: 'annual',
-      activeUsers: 84,
-      features: [
-        'Direct access to domestic Client requirements',
-        'Submit unlimited capability proposals',
-        'GST credit input invoicing',
-        'Verified Indian Partner / MSME Badge',
-        'Cross-border: Can bid on overseas export RFQs',
-      ],
-    },
-    {
-      id: 'plan_absorber_usd',
-      name: 'Partner (Solution Provider) Pass — Global Provider',
-      role: 'Partner',
-      region: 'global',
-      price: '$49',
-      currency: 'USD',
-      gateway: 'PayPal Subscriptions',
-      cycle: 'annual',
-      activeUsers: 29,
-      features: [
-        'Global overseas Client leads access',
-        'Submit unlimited commercial quotations',
-        'International verified Partner badge',
-        'Multi-currency bidding (USD, EUR, GBP)',
-        'Cross-border: Connect with Indian & global Clients',
-      ],
-    },
-  ];
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/admin/subscriptions');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load subscription settings');
+      setSettings(data.subscriptionSettings);
+      setSubscriptions(data.subscriptions || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load subscriptions');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const filteredPlans = plans.filter((p) => {
-    if (tab === 'all') return true;
-    return p.region === tab;
-  });
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!settings) return;
+    try {
+      setSaving(true);
+      setMessage(null);
+      setError(null);
+      const res = await fetch('/api/admin/subscriptions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptions: settings }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to update subscription settings');
+      setSettings(data.subscriptionSettings);
+      setMessage('Client & Partner quota and subscription rules saved to Firestore.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const filteredSubs = subscriptions.filter((s) =>
+    roleFilter === 'all' ? true : s.role === roleFilter
+  );
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[#222222] tracking-tight">
-            Subscription Pricing & Regional Quotas
+          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
+            <CreditCard className="w-6 h-6 text-[#E8192C]" />
+            Plans & Quota Control
           </h1>
-          <p className="text-xs text-[#717171] mt-0.5">
-            Strict regional distinction: Domestic INR pricing via Razorpay vs Global USD pricing via PayPal.
+          <p className="text-xs text-[#6B7280] mt-1">
+            Control initial free allowances (default 5), monthly plan allowances, Unlimited toggles,
+            and pricing for both Clients and Partners.
           </p>
         </div>
-
-        <Link href="/admin/demos">
-          <Button variant="outline" size="sm" className="rounded-xl text-xs font-semibold flex items-center gap-1.5 border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100">
-            <Sparkles className="w-3.5 h-3.5 text-purple-600" />
-            <span>Open Deployment Demos Console ↗</span>
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/settings/gateways"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold hover:bg-black shadow-xs"
+          >
+            Payment Gateways
+          </Link>
+          <button
+            type="button"
+            onClick={() => void load()}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs font-semibold text-[#374151] hover:bg-gray-50 shadow-xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Refresh
+          </button>
+        </div>
       </div>
 
-      {/* Regional Partition Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-5 rounded-2xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-[#717171]">Domestic Volume</span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-red-50 text-[#E8192C]">₹ INR</span>
-          </div>
-          <div className="mt-3 text-2xl font-black text-[#222222]">₹1,25,874</div>
-          <div className="mt-1 text-[11px] text-[#717171]">126 Active Indian subscribers</div>
-        </Card>
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+          {error}
+        </div>
+      )}
+      {message && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+          {message}
+        </div>
+      )}
 
-        <Card className="p-5 rounded-2xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-[#717171]">International Volume</span>
-            <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">$ USD</span>
-          </div>
-          <div className="mt-3 text-2xl font-black text-[#222222]">$2,303</div>
-          <div className="mt-1 text-[11px] text-[#717171]">47 Active Global subscribers</div>
-        </Card>
+      {loading || !settings ? (
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading subscription rules...
+        </div>
+      ) : (
+        <form
+          onSubmit={handleSave}
+          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-6 text-xs"
+        >
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Client Plan Rules */}
+            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-extrabold text-[#111827]">
+                    Client Plan (Partner Profile Views)
+                  </h2>
+                  <p className="text-[11px] text-[#6B7280] mt-0.5">
+                    Posting requirements is always free. Credits apply when unlocking interested
+                    Partners.
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-red-50 text-[#E8192C] font-bold text-[10px] shrink-0">
+                  Client Quota
+                </span>
+              </div>
 
-        <Card className="p-5 rounded-2xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-[#717171]">Domestic Gateway</span>
-            <CreditCard className="w-4 h-4 text-[#E8192C]" />
-          </div>
-          <div className="mt-3 text-sm font-bold text-[#222222]">Razorpay UPI AutoPay</div>
-          <div className="mt-1 text-[11px] text-emerald-600 font-semibold">● 100% Operational (INR)</div>
-        </Card>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    Initial Free Partner Views
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={settings.clientFreePartnerViews}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        clientFreePartnerViews: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    Monthly Plan Partner Views
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    disabled={settings.clientPlanUnlimited}
+                    value={settings.clientPaidMonthlyPartnerViews}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        clientPaidMonthlyPartnerViews: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    India Monthly Price (INR ₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={1}
+                    value={settings.clientInrMonthlyPrice}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        clientInrMonthlyPrice: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    Global Monthly Price (USD $)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={1}
+                    value={settings.clientUsdMonthlyPrice}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        clientUsdMonthlyPrice: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white"
+                  />
+                </div>
+              </div>
 
-        <Card className="p-5 rounded-2xl border border-[#EBEBEB] bg-white">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold uppercase text-[#717171]">Global Gateway</span>
-            <Globe2 className="w-4 h-4 text-blue-600" />
-          </div>
-          <div className="mt-3 text-sm font-bold text-[#222222]">PayPal Subscriptions</div>
-          <div className="mt-1 text-[11px] text-emerald-600 font-semibold">● 100% Operational (USD)</div>
-        </Card>
-      </div>
+              <label className="inline-flex items-center gap-2 cursor-pointer font-semibold text-[#374151] pt-1">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.clientPlanUnlimited)}
+                  onChange={(e) =>
+                    setSettings({ ...settings, clientPlanUnlimited: e.target.checked })
+                  }
+                  className="w-4 h-4 rounded accent-[#111827]"
+                />
+                Grant Unlimited Partner Views while Client Plan is active
+              </label>
+            </div>
 
-      {/* Regional Regulatory Policy Card */}
-      <Card className="p-5 rounded-2xl border border-indigo-100 bg-indigo-50/40">
-        <div className="flex items-start gap-3">
-          <Info className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
-          <div className="space-y-1 text-xs">
-            <span className="font-bold text-[#111827]">
-              Regional Billing Distinction & Cross-Border Connection Logic
-            </span>
-            <p className="text-[#4B5563] leading-relaxed">
-              • <strong>Domestic Entities (India)</strong>: Can only subscribe to Indian plans (₹999/yr in INR via Razorpay) for tax & GST compliance.<br />
-              • <strong>Global Entities (Overseas)</strong>: Can only subscribe to Global plans ($49/yr in USD via PayPal).<br />
-              • <strong>Borderless Liquidity</strong>: Indian employers can always hire and connect with foreign engineering talent; foreign buyers can always hire and connect with Indian manufacturers.
+            {/* Partner Plan Rules */}
+            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-5 space-y-4">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-extrabold text-[#111827]">
+                    Partner Plan (Valid Lead Applications)
+                  </h2>
+                  <p className="text-[11px] text-[#6B7280] mt-0.5">
+                    Zero deduction on ignored or declined 5-min alerts. Deducts only on valid
+                    application.
+                  </p>
+                </div>
+                <span className="px-2.5 py-1 rounded-full bg-gray-900 text-white font-bold text-[10px] shrink-0">
+                  Partner Quota
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    Initial Free Applications
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={settings.partnerFreeClaims}
+                    onChange={(e) =>
+                      setSettings({ ...settings, partnerFreeClaims: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    Monthly Plan Applications
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    disabled={settings.partnerPlanUnlimited}
+                    value={settings.partnerPaidMonthlyClaims}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        partnerPaidMonthlyClaims: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white disabled:opacity-50"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    India Monthly Price (INR ₹)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={1}
+                    value={settings.partnerInrMonthlyPrice}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        partnerInrMonthlyPrice: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-[#374151] mb-1">
+                    Global Monthly Price (USD $)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min={1}
+                    value={settings.partnerUsdMonthlyPrice}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        partnerUsdMonthlyPrice: Number(e.target.value),
+                      })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white"
+                  />
+                </div>
+              </div>
+
+              <label className="inline-flex items-center gap-2 cursor-pointer font-semibold text-[#374151] pt-1">
+                <input
+                  type="checkbox"
+                  checked={Boolean(settings.partnerPlanUnlimited)}
+                  onChange={(e) =>
+                    setSettings({ ...settings, partnerPlanUnlimited: e.target.checked })
+                  }
+                  className="w-4 h-4 rounded accent-[#111827]"
+                />
+                Grant Unlimited Lead Applications while Partner Plan is active
+              </label>
+            </div>
+          </div>
+
+          {/* Shared Commercial Policies */}
+          <div className="grid md:grid-cols-3 gap-4 pt-2 border-t border-[#E5E7EB]">
+            <div>
+              <label className="block font-bold text-[#374151] mb-1">India GST Rate (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                min={0}
+                max={50}
+                value={settings.gstPercentInr}
+                onChange={(e) =>
+                  setSettings({ ...settings, gstPercentInr: Number(e.target.value) })
+                }
+                className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB]"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-[#374151] mb-1">
+                Client Daily Requirement Anti-Spam Cap (0 = Unlimited)
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={settings.clientFreeDailyRequirementLimit}
+                onChange={(e) =>
+                  setSettings({
+                    ...settings,
+                    clientFreeDailyRequirementLimit: Number(e.target.value),
+                  })
+                }
+                className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB]"
+              />
+            </div>
+            <div className="flex items-center pt-5">
+              <label className="inline-flex items-center gap-2.5 cursor-pointer font-bold text-[#374151]">
+                <input
+                  type="checkbox"
+                  checked={settings.unusedPaidAllowanceRollover}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      unusedPaidAllowanceRollover: e.target.checked,
+                    })
+                  }
+                  className="w-4 h-4 rounded accent-[#111827]"
+                />
+                Roll over unused monthly paid allowances
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="block font-bold text-[#374151] mb-1">
+              Cancellation & AutoPay Policy Summary
+            </label>
+            <textarea
+              rows={2}
+              value={settings.cancellationPolicySummary}
+              onChange={(e) =>
+                setSettings({ ...settings, cancellationPolicySummary: e.target.value })
+              }
+              className="w-full px-3.5 py-2 rounded-xl border border-[#D1D5DB]"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              Entitlements activate strictly via verified Razorpay / PayPal webhook signatures.
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white font-bold shadow-xs disabled:opacity-60"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {saving ? 'Saving...' : 'Save Quota & Plan Rules'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Live AutoPay Mandates Table */}
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
+        <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-extrabold text-[#111827]">
+              Active & Historical Subscriptions ({filteredSubs.length})
+            </h2>
+            <p className="text-[11px] text-[#6B7280]">
+              Client & Partner subscriptions across Razorpay (INR) and PayPal (USD).
             </p>
           </div>
+          <div className="flex items-center gap-2 text-xs">
+            {(['all', 'client', 'partner'] as const).map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setRoleFilter(r)}
+                className={`px-3 py-1.5 rounded-lg font-semibold capitalize ${
+                  roleFilter === r
+                    ? 'bg-[#111827] text-white shadow-xs'
+                    : 'bg-gray-100 text-[#4B5563] hover:bg-gray-200'
+                }`}
+              >
+                {r}
+              </button>
+            ))}
+          </div>
         </div>
-      </Card>
-
-      {/* Segmented Filter Tabs */}
-      <div className="flex items-center gap-2 border-b border-[#E5E7EB] pb-3">
-        <button
-          type="button"
-          onClick={() => setTab('all')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
-            tab === 'all'
-              ? 'bg-[#111827] text-white shadow-xs'
-              : 'text-[#6B7280] hover:text-[#111827] bg-white border border-[#E5E7EB]'
-          }`}
-        >
-          All Plans ({plans.length})
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('domestic')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-            tab === 'domestic'
-              ? 'bg-[#E8192C] text-white shadow-xs'
-              : 'text-[#6B7280] hover:text-[#111827] bg-white border border-[#E5E7EB]'
-          }`}
-        >
-          <span>🇮🇳</span>
-          <span>Domestic India (INR ₹)</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setTab('global')}
-          className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
-            tab === 'global'
-              ? 'bg-blue-600 text-white shadow-xs'
-              : 'text-[#6B7280] hover:text-[#111827] bg-white border border-[#E5E7EB]'
-          }`}
-        >
-          <span>🌐</span>
-          <span>Global International (USD $)</span>
-        </button>
-      </div>
-
-      {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {filteredPlans.map((p) => {
-          const isDom = p.region === 'domestic';
-          return (
-            <Card
-              key={p.id}
-              className={`p-6 rounded-3xl border bg-white flex flex-col justify-between shadow-2xs ${
-                isDom ? 'border-red-100 hover:border-red-200' : 'border-blue-100 hover:border-blue-200'
-              }`}
-            >
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge
-                    variant="outline"
-                    className={`text-xs font-bold ${
-                      isDom
-                        ? 'border-red-200 text-[#E8192C] bg-red-50'
-                        : 'border-blue-200 text-blue-700 bg-blue-50'
-                    }`}
-                  >
-                    {isDom ? '🇮🇳 Domestic Plan' : '🌐 Global Plan'} • {p.gateway}
-                  </Badge>
-                  <span className="text-xs text-[#717171] font-semibold">
-                    {p.activeUsers} Active Subscribers
-                  </span>
-                </div>
-
-                <h3 className="text-base font-extrabold text-[#222222]">{p.name}</h3>
-
-                <div className="text-2xl font-black text-[#222222] mt-2">
-                  {p.price}{' '}
-                  <span className="text-xs font-normal text-[#717171]">
-                    / year ({p.currency})
-                  </span>
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-[#F3F4F6] space-y-2">
-                  <span className="text-[11px] font-bold text-[#4B5563] uppercase tracking-wider block">
-                    Tier Entitlements:
-                  </span>
-                  <ul className="space-y-1.5 text-xs text-[#4B5563]">
-                    {p.features.map((f, idx) => (
-                      <li key={idx} className="flex items-start gap-2">
-                        <CheckCircle2
-                          className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${
-                            isDom ? 'text-[#E8192C]' : 'text-blue-600'
-                          }`}
-                        />
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-[#EBEBEB] flex items-center justify-between">
-                <span className="text-xs text-[#717171]">
-                  AutoPay: <strong className="text-emerald-600">Enabled</strong>
-                </span>
-                <Button variant="outline" size="sm" className="rounded-xl text-xs font-semibold">
-                  Edit Pricing & Quotas
-                </Button>
-              </div>
-            </Card>
-          );
-        })}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-[#F9FAFB] text-[#6B7280] uppercase text-[11px]">
+              <tr>
+                <th className="px-4 py-3">Subscription ID</th>
+                <th className="px-4 py-3">User UID</th>
+                <th className="px-4 py-3">Role</th>
+                <th className="px-4 py-3">Gateway</th>
+                <th className="px-4 py-3">Plan Amount</th>
+                <th className="px-4 py-3">Monthly Quota</th>
+                <th className="px-4 py-3">Status</th>
+                <th className="px-4 py-3">Current Period End</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#E5E7EB]">
+              {filteredSubs.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-4 py-10 text-center text-[#6B7280]">
+                    No Client or Partner subscriptions recorded yet.
+                  </td>
+                </tr>
+              ) : (
+                filteredSubs.map((sub) => (
+                  <tr key={sub.id} className="hover:bg-gray-50">
+                    <td className="px-4 py-3 font-mono font-semibold text-[#111827]">
+                      {sub.gatewaySubscriptionId || sub.id}
+                    </td>
+                    <td className="px-4 py-3 font-mono text-[#4B5563]">{sub.uid}</td>
+                    <td className="px-4 py-3 capitalize font-bold text-[#111827]">{sub.role}</td>
+                    <td className="px-4 py-3 uppercase font-semibold text-[#4B5563]">
+                      {sub.gateway}
+                    </td>
+                    <td className="px-4 py-3 font-bold text-[#111827]">
+                      {sub.currency === 'INR' ? `₹${sub.amountMonthly}` : `$${sub.amountMonthly}`}/mo
+                    </td>
+                    <td className="px-4 py-3 text-[#374151]">
+                      {sub.unlimitedAllowance ? 'Unlimited' : `${sub.monthlyAllowance}/mo`}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                          sub.status === 'active'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : sub.status === 'past_due'
+                              ? 'bg-red-100 text-red-800'
+                              : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {sub.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-[#6B7280]">
+                      {sub.currentPeriodEnd
+                        ? new Date(sub.currentPeriodEnd).toLocaleDateString()
+                        : '—'}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

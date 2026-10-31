@@ -10,7 +10,7 @@ interface MetricCardProps {
     value: string;
     isPositive?: boolean;
   };
-  accentColor?: 'red' | 'blue' | 'purple' | 'emerald' | 'amber';
+  accentColor?: 'red' | 'blue' | 'purple' | 'emerald' | 'amber' | 'slate';
 }
 
 export function MetricCard({
@@ -31,8 +31,12 @@ export function MetricCard({
       text: 'text-blue-600',
     },
     purple: {
-      bg: 'bg-purple-50',
-      text: 'text-purple-600',
+      bg: 'bg-[#F3F4F6]',
+      text: 'text-[#111827]',
+    },
+    slate: {
+      bg: 'bg-[#F3F4F6]',
+      text: 'text-[#111827]',
     },
     emerald: {
       bg: 'bg-emerald-50',
@@ -52,7 +56,9 @@ export function MetricCard({
         <span className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">
           {label}
         </span>
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${currentTheme.bg} ${currentTheme.text}`}>
+        <div
+          className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${currentTheme.bg} ${currentTheme.text}`}
+        >
           <Icon className="w-5 h-5" />
         </div>
       </div>
@@ -75,9 +81,7 @@ export function MetricCard({
       </div>
 
       {description && (
-        <p className="mt-1 text-xs text-[#6B7280] leading-relaxed">
-          {description}
-        </p>
+        <p className="mt-1 text-xs text-[#6B7280] leading-relaxed">{description}</p>
       )}
     </Card>
   );

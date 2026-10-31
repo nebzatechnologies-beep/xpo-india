@@ -1,282 +1,196 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import {
-  Users,
-  Search,
-  MessageCircle,
-  Copy,
-  Plus,
-  UploadCloud,
-  CheckCircle2,
-  Eye,
-  Filter,
-} from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ContactDetailModal } from '@/components/crm/contact-detail-modal';
+import { ContactDetailDrawer } from '@/components/crm/contact-detail-modal';
+import type { CrmContact, CrmDatabaseType } from '@/lib/types/domain';
+import { Search, Database, ArrowRight } from 'lucide-react';
 
-interface CrmContact {
-  id: string;
-  name: string;
-  company: string;
-  phone: string;
-  whatsapp: string;
-  email: string;
-  website?: string;
-  country: string;
-  city?: string;
-  industry: string;
-  sectorCode: string;
-  source: string;
-  status: string;
-  consentStatus: string;
-  campaignHistoryCount: number;
-  createdAt: string;
-}
-
-export default function CrmContactsPage() {
+export default function AdminCrmDirectoryPage() {
   const [contacts, setContacts] = useState<CrmContact[]>([]);
-  const [stats, setStats] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('all');
-  const [selectedCountry, setSelectedCountry] = useState('all');
   const [selectedContact, setSelectedContact] = useState<CrmContact | null>(null);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [databaseType, setDatabaseType] = useState<'' | CrmDatabaseType>('');
+  const [search, setSearch] = useState('');
+  const [consentStatus, setConsentStatus] = useState('');
+  const [loading, setLoading] = useState(true);
 
-  const fetchContacts = () => {
-    setLoading(true);
-    const query = new URLSearchParams();
-    if (search) query.set('q', search);
-    if (selectedStatus !== 'all') query.set('status', selectedStatus);
-    if (selectedCountry !== 'all') query.set('country', selectedCountry);
-
-    fetch(`/api/crm/contacts?${query.toString()}`)
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) {
-          setContacts(res.data);
-          setStats(res.stats);
-        }
-      })
-      .finally(() => setLoading(false));
-  };
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      const q = new URLSearchParams();
+      if (databaseType) q.set('databaseType', databaseType);
+      if (search.trim()) q.set('search', search.trim());
+      if (consentStatus) q.set('consentStatus', consentStatus);
+      const res = await fetch(`/api/crm/contacts?${q.toString()}`);
+      if (res.ok) {
+        const d = await res.json();
+        setContacts(d.contacts || []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [databaseType, search, consentStatus]);
 
   useEffect(() => {
-    fetchContacts();
-  }, [selectedStatus, selectedCountry]);
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    fetchContacts();
-  };
-
-  const copyInvite = (contact: CrmContact) => {
-    const text = `Hi ${contact.name}, explore verified buyers and industrial demands on XPO India: https://xpoindia.com?ref=${contact.id}`;
-    navigator.clipboard.writeText(text);
-    setCopiedId(contact.id);
-    setTimeout(() => setCopiedId(null), 2000);
-  };
+    void load();
+  }, [load]);
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      {/* Header */}
+    <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[#222222] tracking-tight">Company Database & CRM</h1>
-          <p className="text-xs text-[#717171] mt-0.5">
-            Full prospect lifecycle from initial acquisition to platform conversion and subscription.
+          <h1 className="text-2xl font-black tracking-tight text-[#111827]">
+            All CRM Contacts
+          </h1>
+          <p className="text-xs text-[#6B7280] mt-1">
+            Unified view across your separate Client Database and Partner Database.
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          <Link href="/admin/import/companies">
-            <Button variant="outline" size="sm" className="text-xs font-semibold rounded-xl border-[#EBEBEB] flex items-center gap-1.5">
-              <UploadCloud className="w-3.5 h-3.5 text-[#E8192C]" /> Import Excel
-            </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            href="/admin/clients"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D1D5DB] bg-white hover:bg-gray-50 text-xs font-bold text-[#111827]"
+          >
+            <Database className="w-3.5 h-3.5 text-[#E8192C]" /> Client Database{' '}
+            <ArrowRight className="w-3 h-3" />
           </Link>
-          <Link href="/admin/crm/segments">
-            <Button size="sm" className="bg-[#E8192C] hover:bg-[#D01627] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5" /> Audience Segments
-            </Button>
+          <Link
+            href="/admin/partners"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-bold"
+          >
+            <Database className="w-3.5 h-3.5 text-[#E8192C]" /> Partner Database{' '}
+            <ArrowRight className="w-3 h-3" />
           </Link>
         </div>
       </div>
 
-      {/* KPI Stats */}
-      {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Card className="p-3.5 rounded-2xl border border-[#EBEBEB] bg-white shadow-none">
-            <div className="text-[10px] font-bold text-[#717171] uppercase tracking-wider">Total Prospects</div>
-            <div className="text-xl font-black text-[#222222] mt-1">{stats.total}</div>
-          </Card>
-          <Card className="p-3.5 rounded-2xl border border-[#EBEBEB] bg-white shadow-none">
-            <div className="text-[10px] font-bold text-[#717171] uppercase tracking-wider">Not Contacted</div>
-            <div className="text-xl font-black text-neutral-600 mt-1">{stats.notContacted}</div>
-          </Card>
-          <Card className="p-3.5 rounded-2xl border border-[#EBEBEB] bg-white shadow-none">
-            <div className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Contacted</div>
-            <div className="text-xl font-black text-amber-600 mt-1">{stats.contacted}</div>
-          </Card>
-          <Card className="p-3.5 rounded-2xl border border-[#EBEBEB] bg-white shadow-none">
-            <div className="text-[10px] font-bold text-blue-700 uppercase tracking-wider">Registered</div>
-            <div className="text-xl font-black text-blue-600 mt-1">{stats.registered}</div>
-          </Card>
-          <Card className="p-3.5 rounded-2xl border border-[#EBEBEB] bg-white shadow-none">
-            <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Subscribed</div>
-            <div className="text-xl font-black text-emerald-600 mt-1">{stats.subscribed}</div>
-          </Card>
-          <Card className="p-3.5 rounded-2xl border border-[#EBEBEB] bg-white shadow-none">
-            <div className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Opt-In Consent</div>
-            <div className="text-xl font-black text-emerald-600 mt-1">{stats.optedInConsent}</div>
-          </Card>
-        </div>
-      )}
-
-      {/* Filter & Search Bar */}
-      <Card className="p-4 rounded-2xl border border-[#EBEBEB] bg-white shadow-none flex flex-col sm:flex-row items-center justify-between gap-3">
-        <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-80">
-          <Search className="w-3.5 h-3.5 text-[#717171] absolute left-3 top-1/2 -translate-y-1/2" />
-          <input
-            type="text"
-            placeholder="Search company, name, phone, email..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full pl-8 pr-3 py-1.5 text-xs rounded-xl border border-[#EBEBEB] focus:border-[#E8192C] outline-none"
-          />
-        </form>
-
-        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="relative">
+            <Search className="w-3.5 h-3.5 text-[#6B7280] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search name, company, phone, city..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+            />
+          </div>
           <select
-            value={selectedStatus}
-            onChange={e => setSelectedStatus(e.target.value)}
-            className="text-xs px-3 py-1.5 rounded-xl border border-[#EBEBEB] bg-white outline-none"
+            value={databaseType}
+            onChange={(e) => setDatabaseType(e.target.value as '' | CrmDatabaseType)}
+            className="px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
           >
-            <option value="all">All Lifecycle Stages</option>
-            <option value="not_contacted">Not Contacted</option>
-            <option value="contacted">Contacted</option>
-            <option value="responded">Responded</option>
-            <option value="interested">Interested</option>
-            <option value="registered">Registered</option>
-            <option value="subscribed">Subscribed</option>
-            <option value="opted_out">Opted Out</option>
+            <option value="">Both Databases (Clients & Partners)</option>
+            <option value="client">Client Database Only</option>
+            <option value="partner">Partner Database Only</option>
           </select>
-
           <select
-            value={selectedCountry}
-            onChange={e => setSelectedCountry(e.target.value)}
-            className="text-xs px-3 py-1.5 rounded-xl border border-[#EBEBEB] bg-white outline-none"
+            value={consentStatus}
+            onChange={(e) => setConsentStatus(e.target.value)}
+            className="px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
           >
-            <option value="all">All Geographies</option>
-            <option value="India">India Domestic</option>
-            <option value="United States">United States</option>
-            <option value="Germany">Germany</option>
-            <option value="UAE">UAE</option>
+            <option value="">All Consent Statuses</option>
+            <option value="opted_in">Opted In</option>
+            <option value="consent_pending">Consent Pending</option>
+            <option value="none">None</option>
+            <option value="opted_out">Opted Out (Suppressed)</option>
           </select>
         </div>
-      </Card>
 
-      {/* Contacts Table */}
-      <Card className="rounded-2xl border border-[#EBEBEB] bg-white overflow-hidden shadow-none">
-        <div className="overflow-x-auto text-xs">
-          <table className="w-full text-left">
-            <thead className="bg-[#FAFAFA] border-b border-[#EBEBEB] text-[#717171] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="p-4">Company & Location</th>
-                <th className="p-4">Contact Person</th>
-                <th className="p-4">WhatsApp / Phone</th>
-                <th className="p-4">Industry Sector</th>
-                <th className="p-4">Lifecycle Status</th>
-                <th className="p-4">Consent</th>
-                <th className="p-4 text-right">Outreach Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB]">
-              {contacts.map((contact) => (
-                <tr key={contact.id} className="hover:bg-[#FDFDFD] transition-colors">
-                  <td className="p-4">
-                    <button
-                      onClick={() => setSelectedContact(contact)}
-                      className="font-bold text-[#222222] hover:text-[#E8192C] text-left block"
-                    >
-                      {contact.company}
-                    </button>
-                    <div className="text-[10px] text-[#717171]">
-                      {contact.city ? `${contact.city}, ` : ''}{contact.country}
-                    </div>
-                  </td>
-                  <td className="p-4">
-                    <div className="font-semibold text-[#333333]">{contact.name}</div>
-                    <div className="text-[10px] text-[#717171] font-mono">{contact.email}</div>
-                  </td>
-                  <td className="p-4 font-mono font-bold text-[#333333]">
-                    {contact.whatsapp}
-                  </td>
-                  <td className="p-4">
-                    <span className="font-semibold text-[#555555]">{contact.industry}</span>
-                  </td>
-                  <td className="p-4">
-                    <Badge
-                      variant={
-                        contact.status === 'subscribed' ? 'success' :
-                        contact.status === 'registered' ? 'primary' :
-                        contact.status === 'opted_out' ? 'neutral' : 'warning'
-                      }
-                      className="text-[10px]"
-                    >
-                      {contact.status.replace('_', ' ').toUpperCase()}
-                    </Badge>
-                  </td>
-                  <td className="p-4">
-                    <Badge variant={contact.consentStatus === 'opted_in' ? 'success' : 'neutral'} className="text-[10px]">
-                      {contact.consentStatus === 'opted_in' ? 'OPT-IN' : 'OPT-OUT'}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-right space-x-1.5 whitespace-nowrap">
-                    <button
-                      onClick={() => copyInvite(contact)}
-                      title="Copy Platform Invite"
-                      className="p-1.5 rounded-lg border border-[#EBEBEB] hover:bg-neutral-50 text-[#555555] inline-flex items-center"
-                    >
-                      {copiedId === contact.id ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                    </button>
+        <div
+          className={`grid grid-cols-1 ${
+            selectedContact ? 'xl:grid-cols-12' : ''
+          } gap-4 items-start`}
+        >
+          <div className={selectedContact ? 'xl:col-span-7' : ''}>
+            {loading ? (
+              <p className="text-xs text-[#6B7280] py-4">Loading CRM contacts...</p>
+            ) : contacts.length === 0 ? (
+              <p className="text-xs text-[#6B7280] py-4">No CRM contacts found.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
+                      <th className="py-2 pr-3">Database</th>
+                      <th className="py-2 pr-3">Contact / Company</th>
+                      <th className="py-2 pr-3">WhatsApp</th>
+                      <th className="py-2 pr-3">Location</th>
+                      <th className="py-2 pr-3">Consent</th>
+                      <th className="py-2">Invitation</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#F3F4F6]">
+                    {contacts.map((c) => (
+                      <tr
+                        key={c.id}
+                        onClick={() => setSelectedContact(c)}
+                        className="cursor-pointer hover:bg-[#F9FAFB]"
+                      >
+                        <td className="py-2.5 pr-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                              c.databaseType === 'partner'
+                                ? 'bg-gray-900 text-white'
+                                : 'bg-red-50 text-[#E8192C]'
+                            }`}
+                          >
+                            {c.databaseType || 'client'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 pr-3">
+                          <div className="font-bold text-[#111827]">{c.contactName}</div>
+                          <div className="text-[11px] text-[#6B7280]">{c.companyName}</div>
+                        </td>
+                        <td className="py-2.5 pr-3 font-mono font-bold">{c.phoneE164}</td>
+                        <td className="py-2.5 pr-3">
+                          {c.city || '—'}, {c.countryIso2}
+                        </td>
+                        <td className="py-2.5 pr-3">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              c.consentStatus === 'opted_in'
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : c.consentStatus === 'opted_out'
+                                  ? 'bg-red-50 text-red-700'
+                                  : 'bg-[#F3F4F6] text-[#4B5563]'
+                            }`}
+                          >
+                            {c.consentStatus || 'none'}
+                          </span>
+                        </td>
+                        <td className="py-2.5 capitalize text-[11px]">
+                          {c.linkedUid
+                            ? 'registered'
+                            : (c.invitationStatus || 'not_invited').replace(/_/g, ' ')}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
 
-                    <a
-                      href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${contact.name}, greeting from XPO India. We have live opportunities in ${contact.industry} matching your capabilities.`)}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      title="Open WhatsApp"
-                      className="p-1.5 rounded-lg border border-emerald-200 text-emerald-600 hover:bg-emerald-50 inline-flex items-center"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                    </a>
-
-                    <button
-                      onClick={() => setSelectedContact(contact)}
-                      title="View Complete Dossier"
-                      className="p-1.5 rounded-lg border border-[#EBEBEB] hover:bg-neutral-50 text-[#555555] inline-flex items-center"
-                    >
-                      <Eye className="w-3.5 h-3.5" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {selectedContact && (
+            <div className="xl:col-span-5">
+              <ContactDetailDrawer
+                key={selectedContact.id}
+                contact={selectedContact}
+                onClose={() => setSelectedContact(null)}
+                onUpdated={(updated) => {
+                  setSelectedContact(updated);
+                  setContacts((prev) =>
+                    prev.map((item) => (item.id === updated.id ? updated : item))
+                  );
+                }}
+              />
+            </div>
+          )}
         </div>
-      </Card>
-
-      {/* Contact Dossier Modal */}
-      {selectedContact && (
-        <ContactDetailModal
-          contact={selectedContact}
-          onClose={() => setSelectedContact(null)}
-          onStatusChange={() => fetchContacts()}
-        />
-      )}
+      </div>
     </div>
   );
 }

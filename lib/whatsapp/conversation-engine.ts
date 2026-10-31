@@ -1,708 +1,1581 @@
-// ============================================================================
-// XPO — Automated Stateful WhatsApp Conversation Engine (Modules 3, 4, 5)
-// ============================================================================
-
-import { getMockStore } from '@/lib/data/mock-db';
-import { normalizePhoneE164 } from './phone';
-import { dispatchWhatsAppMessage, getWhatsAppConfig } from './provider';
+import { requireFirestore, requireAdminAuth } from '@/lib/firebase/admin';
 import {
-  InteractiveOption,
-  OnboardingQuestionStep,
-  WhatsAppConversationSession,
-  WhatsAppJourneyRole,
+  type AgentRequirementDraft,
+  type CrmMissingOnboardingField,
+  resolveMissingCrmOnboardingFields,
+  runCustomerAgentTurn,
+} from '@/lib/agent/customer-agent';
+import { resolveTaxonomyFromNaturalLanguage } from '@/lib/agent/taxonomy-resolver';
+import { resolveInstantCheckoutUrlForUser } from '@/lib/billing/entitlements';
+import { normalizePhoneE164 } from '@/lib/crm/phone';
+import { unlockPartnerForClient } from '@/lib/marketplace/candidate-unlocks';
+import {
+  requestMutualConnection,
+  respondToMutualConnection,
+} from '@/lib/marketplace/connections';
+import { respondToLeadOffer } from '@/lib/marketplace/lead-distribution';
+import { createServiceRequirement } from '@/lib/marketplace/requirements';
+import { inferCrmDatabaseType, recordWhatsAppConsent } from '@/lib/services/crm';
+import { getPlatformSettings } from '@/lib/services/platform-settings';
+import { createSupportOrAbuseTicket } from '@/lib/services/support';
+import { getFullTaxonomyTree } from '@/lib/services/taxonomy';
+import {
+  ensureAuthenticatedUser,
+  getUserByPhone,
+  getUserRoleProfiles,
+  updateUserAndRoleProfile,
+} from '@/lib/services/users';
+import { getMaskedTrustProfile } from '@/lib/services/verification';
+import { QuotaExceededError } from '@/lib/utils/api-handler';
+import { generateDocId } from '@/lib/utils/id-generator';
+import { dispatchOutboundWhatsApp } from './notification-service';
+import { getWhatsAppWorkflows } from './workflows';
+import type {
+  CrmContact,
+  CustomerRole,
+  LeadClaim,
+  PartnerClassification,
+  ServiceRequirement,
+  WhatsAppInteractiveOption,
+  WhatsAppLeadOffer,
   WhatsAppMessageRecord,
-} from './types';
+  WhatsAppSession,
+  WorkflowStepDefinition,
+} from '@/lib/types/domain';
 
-export const JOURNEY_MENU_OPTIONS: InteractiveOption[] = [
-  { id: 'journey_partner', title: 'Find Clients', description: 'Freelancers, manufacturers, suppliers & agencies' },
-  { id: 'journey_client', title: 'Find Service Providers', description: 'Post a B2B requirement or sourcing need' },
-  { id: 'journey_employer', title: 'Hire Employees', description: 'Post job vacancies & hire verified talent' },
-  { id: 'journey_job_seeker', title: 'Find a Job', description: 'Discover job openings matching your skills' },
-];
+export interface InboundWhatsAppEvent {
+  waMessageId: string;
+  fromPhoneRaw: string;
+  profileName?: string;
+  textBody?: string;
+  buttonReplyId?: string;
+  buttonReplyTitle?: string;
+  mediaStoragePath?: string | null;
+  referralSourceId?: string | null;
+  referralHeadline?: string | null;
+  isSimulated?: boolean;
+  simulatedSessionId?: string;
+}
 
-export const ROLE_ONBOARDING_STEPS: Record<WhatsAppJourneyRole, OnboardingQuestionStep[]> = {
-  // Module 5A: Client — Find Service Providers
-  client: [
-    { key: 'contactName', label: 'Contact Name', prompt: '1/9 • Please share your *Full Name*:' },
-    { key: 'businessName', label: 'Business Name', prompt: '2/9 • What is your *Business / Company Name*?' },
-    { key: 'city', label: 'City & Service Location', prompt: '3/9 • Which *City & Service Location* is this requirement for?' },
-    { key: 'industry', label: 'Industry', prompt: '4/9 • What *Industry / Sector* does your business operate in? (e.g., Manufacturing, Technology, Design, Construction)' },
-    { key: 'categorySubcategory', label: 'Category & Subcategory', prompt: '5/9 • Specify the *Requirement Category & Subcategory* (e.g., Metal Fabrication → CNC Machining, or Software → Web Development):' },
-    { key: 'requirementTitle', label: 'Requirement Title', prompt: '6/9 • Give a clear *Title* for your requirement:' },
-    { key: 'description', label: 'Description & Specifications', prompt: '7/9 • Please describe your *Specifications, Quantity, or Scope of Work*:' },
-    { key: 'budget', label: 'Optional Budget', prompt: '8/9 • What is your estimated *Budget*? (or reply *SKIP* if flexible)', optional: true },
-    { key: 'timeline', label: 'Required Timeline', prompt: '9/9 • What is your *Required Timeline / Delivery Urgency*? (e.g., Immediate, Within 15 days, 30 days)' },
-  ],
+const OPT_OUT_KEYWORDS = new Set(['stop', 'unsubscribe', 'optout', 'opt out']);
+const OPT_IN_KEYWORDS = new Set(['start', 'resume', 'unpause', 'subscribe']);
+const MENU_KEYWORDS = new Set(['menu', 'home', 'options']);
+const GREETING_KEYWORDS = new Set(['hi', 'hello', 'hey']);
+const SUPPORT_KEYWORDS = new Set(['support', 'help', 'human', 'coordinator']);
 
-  // Module 5B: Partner — Find Clients
-  partner: [
-    { key: 'contactName', label: 'Name', prompt: '1/10 • Please share your *Full Name*:' },
-    { key: 'businessName', label: 'Business Name', prompt: '2/10 • What is your *Business / Agency / Company Name*? (or reply *INDIVIDUAL* if solo)', optional: true },
-    {
-      key: 'partnerType',
-      label: 'Partner Type',
-      prompt: '3/10 • Select your *Partner Type* (Freelancer, Manufacturer, Supplier, Consultant, or Agency):',
-    },
-    { key: 'city', label: 'City & Service Locations', prompt: '4/10 • Which *City & Service Locations* do you serve?' },
-    { key: 'sector', label: 'Sector', prompt: '5/10 • Which primary *Sector* do you operate in? (e.g., Manufacturing, Technology, Design, Logistics)' },
-    { key: 'categorySubcategory', label: 'Category & Subcategory', prompt: '6/10 • What is your *Category & Subcategory* specialization?' },
-    { key: 'skills', label: 'Skills & Capabilities', prompt: '7/10 • List your core *Skills, Capabilities, or Machinery* (comma-separated):' },
-    { key: 'website', label: 'Website or Portfolio', prompt: '8/10 • Share your *Website or Portfolio link* (or reply *SKIP*):', optional: true },
-    { key: 'opportunityTypes', label: 'Preferred Opportunity Types', prompt: '9/10 • What *Preferred Opportunity Types* are you seeking? (e.g., Turnkey Contracts, Retainers, Bulk Orders)' },
-    { key: 'availability', label: 'Availability', prompt: '10/10 • What is your current *Availability* to take on new Client leads? (e.g., Immediate, Next Week)' },
-  ],
-
-  // Module 5C: Employer — Hire Employees
-  employer: [
-    { key: 'contactName', label: 'Employer Contact Name', prompt: '1/10 • Please share your *Full Name (Hiring Contact)*:' },
-    { key: 'companyName', label: 'Company Name', prompt: '2/10 • What is your *Company Name*?' },
-    { key: 'industry', label: 'Industry', prompt: '3/10 • Which *Industry* is your company in?' },
-    { key: 'location', label: 'Hiring Location', prompt: '4/10 • What is the *Hiring City / Work Location*?' },
-    { key: 'jobTitle', label: 'Job Title', prompt: '5/10 • What is the *Job Title / Role* you are hiring for?' },
-    { key: 'skills', label: 'Required Skills', prompt: '6/10 • List the *Required Skills* for this role:' },
-    { key: 'experience', label: 'Experience Required', prompt: '7/10 • What *Experience Range* is required? (e.g., 2–5 years, Fresher)' },
-    { key: 'salaryRange', label: 'Salary Range', prompt: '8/10 • What is the *Annual / Monthly Salary Range* offered?' },
-    { key: 'vacancies', label: 'Number of Vacancies', prompt: '9/10 • How many *Vacancies / Positions* are open?' },
-    { key: 'employmentType', label: 'Employment Type', prompt: '10/10 • What is the *Employment Type*? (Full-Time, Contract, Remote, or On-Site)' },
-  ],
-
-  // Module 5D: Job Seeker — Find Jobs
-  job_seeker: [
-    { key: 'contactName', label: 'Name', prompt: '1/9 • Please share your *Full Name*:' },
-    { key: 'city', label: 'City', prompt: '2/9 • Which *City* are you currently based in?' },
-    { key: 'qualifications', label: 'Qualifications', prompt: '3/9 • What is your highest *Qualification / Degree*?' },
-    { key: 'skills', label: 'Skills', prompt: '4/9 • List your top *Technical or Professional Skills*:' },
-    { key: 'experience', label: 'Experience', prompt: '5/9 • How many years of *Work Experience* do you have?' },
-    { key: 'preferredRole', label: 'Preferred Job Role', prompt: '6/9 • What is your *Preferred Job Role / Designation*?' },
-    { key: 'expectedSalary', label: 'Expected Salary', prompt: '7/9 • What is your *Expected Salary (CTC)*?' },
-    { key: 'availability', label: 'Availability / Notice Period', prompt: '8/9 • What is your *Availability / Notice Period*? (e.g., Immediate, 15 Days, 30 Days)' },
-    { key: 'cvResume', label: 'CV / Resume', prompt: '9/9 • Paste a link to your *CV / Resume / LinkedIn* (or reply *SKIP* to upload later):', optional: true },
-  ],
+const MISSING_FIELD_PROMPTS: Record<CrmMissingOnboardingField, string> = {
+  name: 'Please reply with your *Full Name*:',
+  businessName: 'What is your *Business / Company Name*?',
+  city: 'Which *City / Location* are you based in? (e.g., Bengaluru, Mumbai, Pune)',
+  businessInfo:
+    'Briefly share your *Business Type / Industry* (e.g., D2C Retail Brand, Auto OEM, Commercial Real Estate):',
+  servicesOffered:
+    'List the *Services, Products, or Categories* you offer separated by commas (e.g., CNC Machining, Sheet Metal, Web Development):',
 };
 
-const ROLE_LABELS: Record<WhatsAppJourneyRole, string> = {
-  partner: 'Find Clients (Partner)',
-  client: 'Find Service Providers (Client)',
-  employer: 'Hire Employees (Employer)',
-  job_seeker: 'Find Jobs (Job Seeker)',
-};
+async function getOrCreateWhatsAppUserUid(
+  phoneE164: string,
+  displayName: string,
+  role: CustomerRole,
+  isSimulated: boolean
+): Promise<string> {
+  const existing = await getUserByPhone(phoneE164);
+  if (existing) return existing.uid;
 
-function getSessionStore(): WhatsAppConversationSession[] {
-  const store = getMockStore() as any;
-  if (!store.whatsappSessions) {
-    store.whatsappSessions = [];
+  let uid = isSimulated ? `sim_usr_${phoneE164.replace(/\D/g, '')}` : '';
+
+  if (!isSimulated) {
+    try {
+      const adminAuth = requireAdminAuth();
+      try {
+        const fbUser = await adminAuth.getUserByPhoneNumber(phoneE164);
+        uid = fbUser.uid;
+      } catch {
+        const createdFb = await adminAuth.createUser({
+          phoneNumber: phoneE164,
+          displayName,
+        });
+        uid = createdFb.uid;
+      }
+    } catch {
+      uid = `wa_usr_${phoneE164.replace(/\D/g, '')}`;
+    }
   }
-  return store.whatsappSessions;
+
+  const ensured = await ensureAuthenticatedUser({
+    uid,
+    phoneRaw: phoneE164,
+    displayName,
+    initialRole: role,
+    isPhoneVerified: true,
+  });
+
+  return ensured.user.uid;
 }
 
-export function detectJourneyFromCampaignOrText(
-  text: string,
-  campaignSource?: string
-): WhatsAppJourneyRole | null {
-  const combined = `${campaignSource || ''} ${text || ''}`.toLowerCase().trim();
-
-  if (
-    text.trim() === '1' ||
-    combined.includes('journey_partner') ||
-    combined.includes('find client') ||
-    combined.includes('find_clients') ||
-    combined.includes('get leads')
-  ) {
-    return 'partner';
-  }
-  if (
-    text.trim() === '2' ||
-    combined.includes('journey_client') ||
-    combined.includes('find service provider') ||
-    combined.includes('find_providers') ||
-    combined.includes('post requirement')
-  ) {
-    return 'client';
-  }
-  if (
-    text.trim() === '3' ||
-    combined.includes('journey_employer') ||
-    combined.includes('hire employee') ||
-    combined.includes('hire_employees') ||
-    combined.includes('post job')
-  ) {
-    return 'employer';
-  }
-  if (
-    text.trim() === '4' ||
-    combined.includes('journey_job_seeker') ||
-    combined.includes('find a job') ||
-    combined.includes('find job') ||
-    combined.includes('find_jobs')
-  ) {
-    return 'job_seeker';
-  }
-  return null;
-}
-
-export function getOrCreateWhatsAppSession(
-  rawPhone: string,
-  campaignSource = 'direct'
-): WhatsAppConversationSession {
-  const norm = normalizePhoneE164(rawPhone);
-  const phone = norm.valid ? norm.e164 : rawPhone.trim();
-  const sessions = getSessionStore();
-  const store = getMockStore();
-
-  let session = sessions.find((s) => s.phone === phone);
-  if (!session) {
-    // Match existing CRM contact by normalized E.164 phone (Note: never treated as proof of identity!)
-    const matchedCrm = store.crmContacts.find((c: any) => {
-      const cNorm = normalizePhoneE164(c.whatsapp || c.phone, c.country);
-      return cNorm.valid && cNorm.e164 === phone;
-    });
-
-    session = {
-      id: 'wasess_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      phone,
-      contactName: matchedCrm?.name || 'WhatsApp User',
-      company: matchedCrm?.company || 'Unregistered Prospect',
-      crmContactId: matchedCrm?.id || null,
-      linkedUserId: null,
-      isVerifiedAccount: false, // Explicit verification required per Module 4
-      role: null,
-      campaignSource,
-      currentState: 'IDLE',
-      currentStepIndex: 0,
-      completedQuestions: [],
-      savedResponses: {},
-      incompleteRegistration: true,
-      pendingDraft: null,
-      activeLeadOffers: [],
-      notificationPreferences: {
-        paused: false,
-        optedOut: matchedCrm?.consentStatus === 'opted_out',
-        marketingOptIn: matchedCrm?.consentStatus === 'opted_in',
-        transactionalOptIn: true,
-      },
-      subscriptionEntitlement: 'free',
-      processedWebhookIds: [],
-      lastActivityAt: new Date().toISOString(),
-    };
-    sessions.unshift(session);
-  } else if (campaignSource && campaignSource !== 'direct' && session.campaignSource === 'direct') {
-    session.campaignSource = campaignSource;
-  }
-
-  return session;
-}
-
-function syncToInboxThread(
-  session: WhatsAppConversationSession,
-  sender: 'inbound' | 'outbound',
-  text: string,
-  status: WhatsAppMessageRecord['status'],
-  interactiveOptions?: InteractiveOption[],
-  metaMessageId?: string
-): WhatsAppMessageRecord {
-  const store = getMockStore();
-  let conv = store.whatsappConversations.find(
-    (c: any) => normalizePhoneE164(c.whatsapp).e164 === session.phone || c.whatsapp === session.phone
+async function activateCrmOnboardingAccount(params: {
+  session: WhatsAppSession;
+  phoneE164: string;
+  role: CustomerRole;
+  collected: {
+    name: string;
+    businessName: string;
+    city: string;
+    businessInfo?: string;
+    servicesOffered?: string[];
+    categoryId?: string;
+    subcategoryId?: string;
+  };
+  isSimulated: boolean;
+}): Promise<string> {
+  const uid = await getOrCreateWhatsAppUserUid(
+    params.phoneE164,
+    params.collected.name || 'XPO Member',
+    params.role,
+    params.isSimulated
   );
 
-  if (!conv) {
-    conv = {
-      id: 'conv_' + Date.now() + '_' + Math.random().toString(36).slice(2, 5),
-      contactName: session.savedResponses.contactName || session.contactName || session.phone,
-      company:
-        session.savedResponses.businessName ||
-        session.savedResponses.companyName ||
-        session.company ||
-        'WhatsApp Prospect',
-      whatsapp: session.phone,
-      industry:
-        session.savedResponses.industry ||
-        session.savedResponses.sector ||
-        (session.role ? ROLE_LABELS[session.role] : 'WhatsApp Inbound'),
-      unreadCount: sender === 'inbound' ? 1 : 0,
-      lastMessage: text,
-      lastMessageTime: 'Just now',
-      messages: [],
-    };
-    store.whatsappConversations.unshift(conv);
+  const city = params.collected.city || 'India';
+  const businessName = params.collected.businessName || params.collected.name || 'XPO Business';
+
+  if (params.role === 'client') {
+    await updateUserAndRoleProfile({
+      uid,
+      role: 'client',
+      userUpdates: { displayName: params.collected.name || businessName, primaryCity: city },
+      profileUpdates: {
+        contactName: params.collected.name || businessName,
+        businessName,
+        businessInfo: params.collected.businessInfo || '',
+        city,
+        location: city,
+      },
+      businessUpdates: {
+        companyName: businessName,
+        city,
+        businessInfo: params.collected.businessInfo || '',
+      },
+    });
   } else {
-    if (session.savedResponses.contactName) conv.contactName = session.savedResponses.contactName;
-    if (session.savedResponses.businessName || session.savedResponses.companyName) {
-      conv.company = session.savedResponses.businessName || session.savedResponses.companyName;
-    }
-    conv.lastMessage = text;
-    conv.lastMessageTime = 'Just now';
+    const rawServices = params.collected.servicesOffered || [];
+    const taxMatch = await resolveTaxonomyFromNaturalLanguage(
+      `${rawServices.join(', ')} ${params.collected.businessInfo || ''}`
+    );
+    const chosenCatId = params.collected.categoryId || taxMatch.category.id;
+    const chosenSubId = params.collected.subcategoryId || taxMatch.subcategory?.id;
+
+    await updateUserAndRoleProfile({
+      uid,
+      role: 'partner',
+      userUpdates: { displayName: params.collected.name || businessName, primaryCity: city },
+      profileUpdates: {
+        name: params.collected.name || businessName,
+        businessName,
+        partnerClassification: 'Agency' satisfies PartnerClassification,
+        city,
+        operatingRegions: [city],
+        sectorIds: [taxMatch.sector.id],
+        categoryIds: chosenCatId ? [chosenCatId] : [],
+        subcategoryIds: chosenSubId ? [chosenSubId] : [],
+        skillTagIds: taxMatch.skillTagIds,
+        skillNames: rawServices.length > 0 ? rawServices : taxMatch.matchedSkillNames,
+        servicesOffered: rawServices.length > 0 ? rawServices : [taxMatch.category.name],
+        capabilities: rawServices.join(', ') || taxMatch.category.name,
+        availability: 'available',
+        notificationsPaused: false,
+      },
+      businessUpdates: {
+        companyName: businessName,
+        city,
+      },
+    });
   }
 
-  const cfg = getWhatsAppConfig();
-  const msgRecord: WhatsAppMessageRecord = {
-    id: 'msg_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-    conversationId: conv.id,
-    sender,
-    text,
-    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    createdAt: new Date().toISOString(),
-    status,
-    providerMode: cfg.mode,
-    interactiveOptions,
-    metaMessageId,
+  const profs = await getUserRoleProfiles(uid);
+  const settings = await getPlatformSettings();
+
+  if (params.role === 'client') {
+    const freeViews =
+      profs.client?.freePartnerViewsRemaining ?? settings.subscriptions.clientFreePartnerViews;
+    await dispatchOutboundWhatsApp({
+      sessionId: params.session.id,
+      phoneE164: params.phoneE164,
+      isSimulated: params.isSimulated,
+      messageType: 'interactive_buttons',
+      headerText: 'Client Profile Activated',
+      body:
+        `Welcome to XPO, *${params.collected.name || businessName}* (*${businessName}*, ${city})!\n\n` +
+        `• Posting requirements is *100% Free*\n` +
+        `• Starter Free Partner Views: *${freeViews}*\n\n` +
+        `Simply describe the product, service, or Partner you need right here in one message, or tap below:`,
+      interactiveOptions: [
+        { id: 'menu_client:new_req', title: 'Guided Form' },
+        { id: 'menu_client:status', title: 'My Requirements' },
+      ],
+    });
+  } else {
+    const freeClaims =
+      profs.partner?.freeClaimsRemaining ?? settings.subscriptions.partnerFreeClaims;
+    await dispatchOutboundWhatsApp({
+      sessionId: params.session.id,
+      phoneE164: params.phoneE164,
+      isSimulated: params.isSimulated,
+      messageType: 'interactive_buttons',
+      headerText: 'Partner Profile Activated',
+      body:
+        `Welcome to the XPO Partner Network, *${businessName}* (${city})!\n\n` +
+        `• Services: *${(profs.partner?.servicesOffered || []).join(', ') || 'Configured'}*\n` +
+        `• Starter Free Lead Applications: *${freeClaims}*\n\n` +
+        `XPO will now send matching Client requirements here with a *5-minute priority response window*.`,
+      interactiveOptions: [
+        { id: 'menu_partner:quota', title: 'My Credits' },
+        { id: 'menu_partner:edit', title: 'Edit Services' },
+      ],
+    });
+  }
+
+  return uid;
+}
+
+async function sendRoleSelectionMenu(
+  session: WhatsAppSession,
+  welcomeHeader?: string
+): Promise<void> {
+  const workflows = await getWhatsAppWorkflows();
+  const settings = await getPlatformSettings();
+  const options: WhatsAppInteractiveOption[] = [];
+
+  if (settings.roles.clientEnabled) {
+    options.push({
+      id: 'select_role:client',
+      title: 'Register as Client',
+      description: 'Post requirements free & connect with verified Partners',
+    });
+  }
+  if (settings.roles.partnerEnabled) {
+    options.push({
+      id: 'select_role:partner',
+      title: 'Register as Partner',
+      description: 'Receive matching Client leads with 5-minute response alerts',
+    });
+  }
+
+  await dispatchOutboundWhatsApp({
+    sessionId: session.id,
+    phoneE164: session.phoneE164,
+    isSimulated: session.isSimulated,
+    messageType: 'interactive_list',
+    headerText: welcomeHeader || 'Welcome to XPO',
+    body: workflows.welcome.welcomeMessage,
+    listButtonLabel: 'Choose Your Role',
+    interactiveOptions: options,
+  });
+}
+
+async function sendReturningUserMenu(
+  session: WhatsAppSession,
+  uid: string
+): Promise<void> {
+  const [profiles, settings] = await Promise.all([
+    getUserRoleProfiles(uid),
+    getPlatformSettings(),
+  ]);
+  const db = requireFirestore();
+  const userSnap = await db.collection('users').doc(uid).get();
+  const rawRole = userSnap.data()?.role || userSnap.data()?.activeRole;
+  const activeRole: CustomerRole = rawRole === 'partner' ? 'partner' : 'client';
+
+  const cp = profiles.client;
+  const pp = profiles.partner;
+
+  const clientCreditsLabel =
+    cp?.paidViewsUnlimited && cp?.activeSubscriptionId
+      ? 'Unlimited Plan Active'
+      : `Free views: ${cp?.freePartnerViewsRemaining ?? settings.subscriptions.clientFreePartnerViews} | Plan: ${cp?.paidPartnerViewsRemaining ?? 0}`;
+
+  const partnerCreditsLabel =
+    pp?.paidClaimsUnlimited && pp?.activeSubscriptionId
+      ? 'Unlimited Plan Active'
+      : `Free claims: ${pp?.freeClaimsRemaining ?? settings.subscriptions.partnerFreeClaims} | Plan: ${pp?.paidClaimsRemaining ?? 0}`;
+
+  const roleMenuMap: Record<CustomerRole, WhatsAppInteractiveOption[]> = {
+    client: [
+      {
+        id: 'menu_client:new_req',
+        title: 'Post Requirement',
+        description: '100% Free — Guided prompts (or just type what you need)',
+      },
+      {
+        id: 'menu_client:partners',
+        title: 'Interested Partners',
+        description: `Review & unlock responded Partners (${clientCreditsLabel})`,
+      },
+      {
+        id: 'menu_client:status',
+        title: 'Requirement Status',
+        description: 'Check live 5-minute matching status',
+      },
+      {
+        id: 'menu_common:support',
+        title: 'Talk to Support',
+        description: 'Connect with an XPO coordinator',
+      },
+    ],
+    partner: [
+      {
+        id: 'menu_partner:quota',
+        title: 'Credits & Plan',
+        description: partnerCreditsLabel,
+      },
+      {
+        id: 'menu_partner:edit',
+        title: 'Update Services',
+        description: 'Update services, categories, expertise & locations',
+      },
+      {
+        id: 'menu_partner:pause',
+        title: 'Pause Lead Alerts',
+        description: 'Temporarily pause 5-minute WhatsApp offers',
+      },
+      {
+        id: 'menu_common:support',
+        title: 'Talk to Support',
+        description: 'Connect with an XPO coordinator',
+      },
+    ],
   };
 
-  conv.messages.push(msgRecord as any);
-  return msgRecord;
+  await dispatchOutboundWhatsApp({
+    sessionId: session.id,
+    phoneE164: session.phoneE164,
+    isSimulated: session.isSimulated,
+    messageType: 'interactive_list',
+    headerText: `XPO ${activeRole === 'client' ? 'Client' : 'Partner'} Workspace`,
+    body:
+      activeRole === 'client'
+        ? `Welcome back! Describe any requirement in plain English to match Partners automatically, or pick an action below:`
+        : `Welcome back! Update your services in plain English anytime, or pick an action below:`,
+    listButtonLabel: 'Workspace Menu',
+    interactiveOptions: roleMenuMap[activeRole],
+  });
 }
 
-function buildSummaryText(role: WhatsAppJourneyRole, responses: Record<string, string>): string {
-  const steps = ROLE_ONBOARDING_STEPS[role];
-  const lines = steps.map((s) => `• *${s.label}:* ${responses[s.key] || 'Not specified'}`);
-  return (
-    `*XPO ${ROLE_LABELS[role]} — Summary*\n\n` +
-    lines.join('\n') +
-    `\n\nReply *CONFIRM* to submit, or *EDIT* to restart/update your details.`
-  );
+async function promptWorkflowStep(
+  session: WhatsAppSession,
+  step: WorkflowStepDefinition
+): Promise<void> {
+  if (step.inputType === 'taxonomy_category') {
+    const tree = await getFullTaxonomyTree({ includeInactive: false });
+    const catOptions: WhatsAppInteractiveOption[] = tree.categories.slice(0, 10).map((cat) => {
+      const sec = tree.sectors.find((s) => s.id === cat.sectorId);
+      return {
+        id: `tax_cat:${cat.id}`,
+        title: cat.name.slice(0, 24),
+        description: sec?.name.slice(0, 70),
+      };
+    });
+
+    await dispatchOutboundWhatsApp({
+      sessionId: session.id,
+      phoneE164: session.phoneE164,
+      isSimulated: session.isSimulated,
+      messageType: 'interactive_list',
+      body: step.promptText,
+      listButtonLabel: 'Select Category',
+      interactiveOptions: catOptions,
+    });
+    return;
+  }
+
+  if (step.inputType === 'buttons' && step.options?.length) {
+    await dispatchOutboundWhatsApp({
+      sessionId: session.id,
+      phoneE164: session.phoneE164,
+      isSimulated: session.isSimulated,
+      messageType: 'interactive_buttons',
+      body: step.promptText,
+      interactiveOptions: step.options,
+    });
+    return;
+  }
+
+  if (step.inputType === 'list' && step.options?.length) {
+    await dispatchOutboundWhatsApp({
+      sessionId: session.id,
+      phoneE164: session.phoneE164,
+      isSimulated: session.isSimulated,
+      messageType: 'interactive_list',
+      body: step.promptText,
+      listButtonLabel: 'Select Option',
+      interactiveOptions: step.options,
+    });
+    return;
+  }
+
+  await dispatchOutboundWhatsApp({
+    sessionId: session.id,
+    phoneE164: session.phoneE164,
+    isSimulated: session.isSimulated,
+    messageType: 'text',
+    body: step.promptText,
+  });
 }
 
-function finalizeOnboardingSubmission(session: WhatsAppConversationSession): string {
-  const store = getMockStore();
-  const r = session.savedResponses;
-  session.incompleteRegistration = false;
-  session.currentState = 'COMPLETED';
+async function sendSubscriptionUpgradePrompt(
+  session: WhatsAppSession,
+  role: CustomerRole,
+  uid?: string | null
+): Promise<void> {
+  const settings = await getPlatformSettings();
+  const isIndia = session.phoneE164.startsWith('+91');
 
-  // Ensure CRM record exists or is enriched
-  let crm = store.crmContacts.find(
-    (c: any) => normalizePhoneE164(c.whatsapp || c.phone).e164 === session.phone
-  );
-  if (!crm) {
-    crm = {
-      id: 'crm_' + Date.now(),
-      name: r.contactName || session.contactName,
-      company: r.businessName || r.companyName || 'Individual',
-      phone: session.phone,
-      whatsapp: session.phone,
-      email: '',
-      website: r.website || '',
-      country: session.phone.startsWith('+91') ? 'India' : 'International',
-      city: r.city || r.location || '',
-      industry: r.industry || r.sector || 'General',
-      sectorCode: 'MFG',
-      source: `whatsapp_${session.campaignSource}`,
-      status: 'registered_user',
-      consentStatus: 'opted_in',
-      campaignHistoryCount: 1,
-      createdAt: new Date().toISOString(),
-    };
-    store.crmContacts.unshift(crm as any);
-    session.crmContactId = crm.id;
+  let checkoutUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/dashboard/subscription`;
+  let priceLabel =
+    role === 'partner'
+      ? isIndia
+        ? `₹${settings.subscriptions.partnerInrMonthlyPrice}/month`
+        : `$${settings.subscriptions.partnerUsdMonthlyPrice}/month`
+      : isIndia
+        ? `₹${settings.subscriptions.clientInrMonthlyPrice}/month`
+        : `$${settings.subscriptions.clientUsdMonthlyPrice}/month`;
+
+  let allowanceLabel =
+    role === 'partner'
+      ? settings.subscriptions.partnerPlanUnlimited
+        ? 'unlimited lead applications/month'
+        : `${settings.subscriptions.partnerPaidMonthlyClaims} valid lead applications/month`
+      : settings.subscriptions.clientPlanUnlimited
+        ? 'unlimited Partner profile views/month'
+        : `${settings.subscriptions.clientPaidMonthlyPartnerViews} Partner profile views/month`;
+
+  if (uid) {
+    const resolved = await resolveInstantCheckoutUrlForUser({ uid, role });
+    checkoutUrl = resolved.checkoutUrl;
+    priceLabel = resolved.priceLabel;
+    allowanceLabel = resolved.allowanceLabel;
   }
 
-  if (session.role === 'client') {
-    const newLeadId = 'lead_wa_' + Date.now();
-    store.leads.unshift({
-      id: newLeadId,
-      leadCode: 'XPO-WA-' + Math.floor(1000 + Math.random() * 9000),
-      title: r.requirementTitle || 'WhatsApp B2B Requirement',
-      description: r.description || '',
-      leadType: 'Buy',
-      sectorCode: 'MFG',
-      sectorName: r.industry || 'General',
-      categoryName: r.categorySubcategory || 'General Services',
-      subcategoryName: r.categorySubcategory || 'Sourcing',
-      creatorId: session.linkedUserId || session.id,
-      creatorName: r.contactName || 'WhatsApp Client',
-      creatorCompany: r.businessName || 'Client Business',
-      location: {
-        city: r.city || 'Mumbai',
-        state: 'India',
-        country: 'India',
-      },
-      budget: {
-        min: 50000,
-        max: 250000,
-        currency: 'INR',
-        display: r.budget && r.budget.toUpperCase() !== 'SKIP' ? r.budget : 'Flexible / On Quote',
-      },
-      urgency: r.timeline || 'Within 15 Days',
-      status: 'approved',
-      verificationStatus: session.isVerifiedAccount ? 'verified' : 'pending_verification',
-      maxResponses: 5,
-      currentResponses: 0,
-      matchWindowExpiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      tags: [r.industry || 'B2B', r.city || 'India', 'WhatsApp'],
-    } as any);
-    session.pendingDraft = { leadId: newLeadId };
-    return (
-      `✅ *Requirement Submitted to XPO!* (Ref: ${newLeadId})\n\n` +
-      `Your requirement *"${r.requirementTitle}"* is now entering our *5-Minute Intelligent Partner Matching Window*. ` +
-      `You will receive credibility previews of up to 5 matched Partners shortly.\n\n` +
-      `Type *MY LEADS* anytime to check responses or *MENU* for more options.`
-    );
-  }
+  const planTitle = role === 'partner' ? 'XPO Partner Plan' : 'XPO Client Plan';
 
-  if (session.role === 'employer') {
-    const jobLeadId = 'job_wa_' + Date.now();
-    store.leads.unshift({
-      id: jobLeadId,
-      leadCode: 'XPO-JOB-' + Math.floor(1000 + Math.random() * 9000),
-      title: `Hiring: ${r.jobTitle || 'Role'} (${r.vacancies || '1'} Vacancies)`,
-      description: `Skills: ${r.skills || 'N/A'} | Exp: ${r.experience || 'N/A'} | Type: ${r.employmentType || 'Full-Time'}`,
-      leadType: 'Job',
-      sectorCode: 'HR',
-      sectorName: r.industry || 'Recruitment',
-      categoryName: r.jobTitle || 'Hiring',
-      subcategoryName: r.employmentType || 'Full-Time',
-      creatorId: session.linkedUserId || session.id,
-      creatorName: r.contactName || 'Employer',
-      creatorCompany: r.companyName || 'Hiring Company',
-      location: {
-        city: r.location || 'India',
-        state: 'India',
-        country: 'India',
-      },
-      budget: {
-        min: 300000,
-        max: 1200000,
-        currency: 'INR',
-        display: r.salaryRange || 'Competitive CTC',
-      },
-      urgency: 'Immediate Hiring',
-      status: 'approved',
-      verificationStatus: session.isVerifiedAccount ? 'verified' : 'pending_verification',
-      maxResponses: 5,
-      currentResponses: 0,
-      matchWindowExpiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      createdAt: new Date().toISOString(),
-      tags: (r.skills || 'Hiring').split(',').map((s) => s.trim()),
-    } as any);
-    session.pendingDraft = { jobId: jobLeadId };
-    return (
-      `✅ *Vacancy Posted on XPO!* (Ref: ${jobLeadId})\n\n` +
-      `Role: *${r.jobTitle}* at *${r.companyName}* (${r.location}).\n` +
-      `Our matching engine is notifying verified Candidates matching *${r.skills}*.\n\n` +
-      `Type *MY JOBS* anytime to view candidate applications or *SUBSCRIPTION* to unlock unlimited hiring connects.`
-    );
-  }
-
-  if (session.role === 'partner') {
-    return (
-      `✅ *XPO Partner Profile Activated!*\n\n` +
-      `Welcome aboard, *${r.contactName}* (${r.businessName || r.partnerType}).\n` +
-      `You are now registered for *5-Minute Priority Lead Alerts* in *${r.sector} → ${r.categorySubcategory}* (${r.city}).\n\n` +
-      `Type *MY LEADS* to see open Client requirements or *SUBSCRIPTION* to activate your Partner Plan (₹999/mo or $19.99/mo).`
-    );
-  }
-
-  return (
-    `✅ *XPO Job Seeker Profile Activated!*\n\n` +
-    `Thank you, *${r.contactName}*. We have indexed your profile for *${r.preferredRole}* roles in *${r.city}* (Skills: ${r.skills}).\n\n` +
-    `Type *MY JOBS* to view matching Employer vacancies or *PROFILE* to update your details anytime.`
-  );
-}
-
-export interface ProcessInboundWhatsAppInput {
-  fromPhone: string;
-  text: string;
-  messageId?: string;
-  campaignSource?: string;
-  attachmentType?: string;
-}
-
-export interface ProcessInboundWhatsAppOutput {
-  session: WhatsAppConversationSession;
-  inboundMessage: WhatsAppMessageRecord;
-  outboundMessage: WhatsAppMessageRecord | null;
-  duplicateIgnored?: boolean;
+  await dispatchOutboundWhatsApp({
+    sessionId: session.id,
+    phoneE164: session.phoneE164,
+    isSimulated: session.isSimulated,
+    messageType: 'text',
+    body:
+      `⚡ *Free Starter Quota Completed*\n\n` +
+      `Activate the *${planTitle}* (*${priceLabel}*) to unlock *${allowanceLabel}*.\n\n` +
+      `Pay securely via ${isIndia ? 'Razorpay UPI / Card' : 'PayPal'}:\n${checkoutUrl}\n\n` +
+      `_(Your allowance activates automatically as soon as payment verification completes.)_`,
+  });
 }
 
 export async function processInboundWhatsAppMessage(
-  input: ProcessInboundWhatsAppInput
-): Promise<ProcessInboundWhatsAppOutput> {
-  const session = getOrCreateWhatsAppSession(input.fromPhone, input.campaignSource);
-  session.lastActivityAt = new Date().toISOString();
-
-  // Idempotency check (Module 2): never process duplicate webhook message IDs twice
-  if (input.messageId && session.processedWebhookIds.includes(input.messageId)) {
-    const lastIn = syncToInboxThread(session, 'inbound', input.text, 'delivered');
-    return {
-      session,
-      inboundMessage: lastIn,
-      outboundMessage: null,
-      duplicateIgnored: true,
-    };
-  }
-  if (input.messageId) {
-    session.processedWebhookIds.push(input.messageId);
-  }
-
-  const rawText = (input.text || '').trim();
-  const upper = rawText.toUpperCase();
-  const inboundRecord = syncToInboxThread(session, 'inbound', rawText || `[${input.attachmentType || 'Media'}]`, 'delivered');
-
-  let replyText = '';
-  let replyOptions: InteractiveOption[] | undefined;
-
-  // Handle unsupported attachments gracefully (Module 4)
-  if (input.attachmentType && !['document', 'image', 'text'].includes(input.attachmentType)) {
-    replyText =
-      `⚠️ Sorry, *${input.attachmentType}* attachments are not supported in automated onboarding.\n` +
-      `Please reply with text (or send a PDF/image link when asked for your portfolio/CV), or type *HELP* for human support.`;
-  }
-  // Handle global commands (Module 4: MENU, PROFILE, MY LEADS, MY JOBS, SUBSCRIPTION, HELP, PAUSE, START, STOP)
-  else if (upper === 'STOP' || upper === 'UNSUBSCRIBE') {
-    session.currentState = 'OPTED_OUT';
-    session.notificationPreferences.optedOut = true;
-    session.notificationPreferences.marketingOptIn = false;
-    const store = getMockStore();
-    const crm = store.crmContacts.find(
-      (c: any) => normalizePhoneE164(c.whatsapp || c.phone).e164 === session.phone
-    );
-    if (crm) crm.consentStatus = 'opted_out';
-    replyText =
-      `🛑 You have been *opted out* of XPO WhatsApp notifications. You will no longer receive automated alerts or campaigns.\n\n` +
-      `Reply *START* anytime if you wish to re-enable XPO services.`;
-  } else if (upper === 'PAUSE') {
-    session.currentState = 'PAUSED';
-    session.notificationPreferences.paused = true;
-    replyText =
-      `⏸️ Your XPO WhatsApp lead and job alerts are now *paused*.\n\n` +
-      `Your saved progress is preserved. Reply *START* or *MENU* whenever you are ready to resume.`;
-  } else if (upper === 'START') {
-    session.notificationPreferences.optedOut = false;
-    session.notificationPreferences.paused = false;
-    session.notificationPreferences.marketingOptIn = true;
-    const store = getMockStore();
-    const crm = store.crmContacts.find(
-      (c: any) => normalizePhoneE164(c.whatsapp || c.phone).e164 === session.phone
-    );
-    if (crm) crm.consentStatus = 'opted_in';
-
-    if (session.role && session.incompleteRegistration) {
-      const steps = ROLE_ONBOARDING_STEPS[session.role];
-      const step = steps[session.currentStepIndex] || steps[0];
-      session.currentState = 'ONBOARDING_STEP';
-      replyText =
-        `▶️ *Welcome back to XPO!* Resuming your *${ROLE_LABELS[session.role]}* onboarding where you left off:\n\n` +
-        step.prompt;
-    } else {
-      session.currentState = 'AWAITING_JOURNEY_CHOICE';
-      replyText =
-        `*Welcome to XPO! What would you like to do?*\n\n` +
-        `1. *Find Clients* (Partners, Suppliers, Agencies)\n` +
-        `2. *Find Service Providers* (Post a Client Requirement)\n` +
-        `3. *Hire Employees* (Employers Posting Vacancies)\n` +
-        `4. *Find a Job* (Candidates Seeking Employment)\n\n` +
-        `Reply with *1, 2, 3, or 4* (or tap an option below):`;
-      replyOptions = JOURNEY_MENU_OPTIONS;
-    }
-  } else if (upper === 'MENU' || upper === 'HI' || upper === 'HELLO') {
-    // If user already has an incomplete registration and says HI/HELLO, offer to resume or start fresh
-    if ((upper === 'HI' || upper === 'HELLO') && session.role && session.incompleteRegistration && session.currentStepIndex > 0) {
-      const steps = ROLE_ONBOARDING_STEPS[session.role];
-      const step = steps[session.currentStepIndex] || steps[0];
-      session.currentState = 'ONBOARDING_STEP';
-      replyText =
-        `👋 *Welcome back to XPO!* You have an unfinished *${ROLE_LABELS[session.role]}* setup.\n\n` +
-        `Resuming from your current step (or reply *MENU* to switch journeys):\n\n` +
-        step.prompt;
-    } else {
-      const detected = detectJourneyFromCampaignOrText('', session.campaignSource);
-      if (upper !== 'MENU' && detected && !session.role) {
-        session.role = detected;
-        session.currentState = 'ONBOARDING_STEP';
-        session.currentStepIndex = 0;
-        const firstStep = ROLE_ONBOARDING_STEPS[detected][0];
-        replyText =
-          `👋 *Welcome to XPO!* Starting your *${ROLE_LABELS[detected]}* journey.\n\n` +
-          firstStep.prompt;
-      } else {
-        session.currentState = 'AWAITING_JOURNEY_CHOICE';
-        replyText =
-          `*Welcome to XPO! What would you like to do?*\n\n` +
-          `1. *Find Clients*\n` +
-          `2. *Find Service Providers*\n` +
-          `3. *Hire Employees*\n` +
-          `4. *Find a Job*\n\n` +
-          `Reply with *1–4* or select an option below:`;
-        replyOptions = JOURNEY_MENU_OPTIONS;
-      }
-    }
-  } else if (upper === 'PROFILE') {
-    const entries = Object.entries(session.savedResponses);
-    const summaryLines =
-      entries.length > 0
-        ? entries.map(([k, v]) => `• *${k}:* ${v}`).join('\n')
-        : 'No profile fields saved yet.';
-    const verifyBadge = session.isVerifiedAccount
-      ? '✅ Verified XPO Account'
-      : '🔒 Unverified Phone Session (Complete OTP on xpoindia.com to link existing account)';
-    replyText =
-      `👤 *Your XPO WhatsApp Profile*\n` +
-      `• *Phone:* ${session.phone}\n` +
-      `• *Role:* ${session.role ? ROLE_LABELS[session.role] : 'Not selected'}\n` +
-      `• *Identity Status:* ${verifyBadge}\n\n` +
-      `*Saved Details:*\n${summaryLines}\n\n` +
-      `Reply *EDIT* to update your profile or *MENU* to change journeys.`;
-  } else if (upper === 'MY LEADS') {
-    const store = getMockStore();
-    const b2bLeads = store.leads.filter((l: any) => l.leadType !== 'Job').slice(0, 3);
-    const listText = b2bLeads
-      .map(
-        (l: any, i: number) =>
-          `${i + 1}. *${l.title}* (${l.location?.city || 'India'}) — Budget: ${l.budget?.display || 'On Quote'} [${l.currentResponses || 0}/5 responses]`
-      )
-      .join('\n');
-    replyText =
-      `📊 *XPO Active B2B Leads & Opportunities*\n\n` +
-      (listText || 'No active leads found.') +
-      `\n\nReply *MENU* to post a new requirement or visit https://xpoindia.com to respond within the 5-minute window.`;
-  } else if (upper === 'MY JOBS') {
-    const store = getMockStore();
-    const jobLeads = store.leads.filter((l: any) => l.leadType === 'Job').slice(0, 3);
-    const listText =
-      jobLeads.length > 0
-        ? jobLeads
-            .map(
-              (l: any, i: number) =>
-                `${i + 1}. *${l.title}* at ${l.creatorCompany} (${l.location?.city || 'India'}) — ${l.budget?.display || 'Competitive'}`
-            )
-            .join('\n')
-        : `1. *Senior CNC Programming Engineer* at Bharat Forge (Pune) — ₹8–12 LPA\n2. *Full-Stack React/Firebase Developer* at XPO Partner Tech (Bengaluru) — ₹12–18 LPA`;
-    replyText =
-      `💼 *XPO Active Job Openings & Vacancies*\n\n` +
-      listText +
-      `\n\nReply *MENU* to post a vacancy or update your candidate profile.`;
-  } else if (upper === 'SUBSCRIPTION') {
-    replyText =
-      `💳 *XPO Subscription & Entitlement*\n\n` +
-      `• *Current Tier:* ${session.subscriptionEntitlement.toUpperCase()}\n` +
-      `• *India Plan:* ₹999 / month (via Razorpay)\n` +
-      `• *Global Plan:* $19.99 / month (via PayPal)\n` +
-      `• *Benefits:* Unlimited 5-minute lead responses, full Client contact unlocking, and verified Partner badge.\n\n` +
-      `Activate online at: https://xpoindia.com/pricing`;
-  } else if (upper === 'HELP' || upper === 'SUPPORT' || upper === 'AGENT') {
-    session.currentState = 'HUMAN_SUPPORT';
-    replyText =
-      `🛎️ *XPO Human Support Desk*\n\n` +
-      `We have flagged your conversation for an XPO Relationship Manager.\n\n` +
-      `*Available Instant Commands:*\n` +
-      `• *MENU* — Switch journey (Find Clients / Providers / Hire / Jobs)\n` +
-      `• *PROFILE* — View or edit your saved profile\n` +
-      `• *MY LEADS* — View active B2B leads\n` +
-      `• *MY JOBS* — View active job vacancies\n` +
-      `• *SUBSCRIPTION* — Check plan & upgrade\n` +
-      `• *PAUSE* / *START* / *STOP* — Manage notifications`;
-  } else if (session.currentState === 'OPTED_OUT') {
-    replyText = `You are currently opted out of XPO WhatsApp messages. Reply *START* to opt back in.`;
-  } else if (upper === 'EDIT' && session.role) {
-    session.currentState = 'ONBOARDING_STEP';
-    session.currentStepIndex = 0;
-    session.incompleteRegistration = true;
-    const firstStep = ROLE_ONBOARDING_STEPS[session.role][0];
-    replyText =
-      `✏️ Let's update your *${ROLE_LABELS[session.role]}* details.\n\n` +
-      firstStep.prompt;
-  } else {
-    // Stateful Journey & Onboarding Flow
-    if (session.currentState === 'IDLE' || session.currentState === 'AWAITING_JOURNEY_CHOICE') {
-      const chosenRole = detectJourneyFromCampaignOrText(rawText, session.campaignSource);
-      if (chosenRole) {
-        session.role = chosenRole;
-        session.currentState = 'ONBOARDING_STEP';
-        session.currentStepIndex = 0;
-        session.incompleteRegistration = true;
-        const firstStep = ROLE_ONBOARDING_STEPS[chosenRole][0];
-        replyText =
-          `🚀 Great choice! Starting *${ROLE_LABELS[chosenRole]}* on XPO.\n\n` +
-          firstStep.prompt;
-      } else {
-        session.currentState = 'AWAITING_JOURNEY_CHOICE';
-        replyText =
-          `*Welcome to XPO! What would you like to do?*\n\n` +
-          `1. *Find Clients*\n` +
-          `2. *Find Service Providers*\n` +
-          `3. *Hire Employees*\n` +
-          `4. *Find a Job*\n\n` +
-          `Please reply with *1, 2, 3, or 4* (or type *HELP* for assistance).`;
-        replyOptions = JOURNEY_MENU_OPTIONS;
-      }
-    } else if (session.currentState === 'ONBOARDING_STEP' && session.role) {
-      const steps = ROLE_ONBOARDING_STEPS[session.role];
-      const currentStep = steps[session.currentStepIndex];
-
-      if (!currentStep) {
-        session.currentState = 'AWAITING_CONFIRMATION';
-        replyText = buildSummaryText(session.role, session.savedResponses);
-      } else if (rawText.length < 2 && !currentStep.optional) {
-        replyText = `⚠️ Please provide a valid response for *${currentStep.label}*.\n\n${currentStep.prompt}`;
-      } else {
-        // Save answer progressively (Module 4)
-        session.savedResponses[currentStep.key] =
-          currentStep.optional && upper === 'SKIP' ? 'Skipped' : rawText;
-        if (!session.completedQuestions.includes(currentStep.key)) {
-          session.completedQuestions.push(currentStep.key);
-        }
-
-        if (currentStep.key === 'contactName') {
-          session.contactName = rawText;
-        }
-        if (currentStep.key === 'businessName' || currentStep.key === 'companyName') {
-          session.company = rawText;
-        }
-
-        const nextIndex = session.currentStepIndex + 1;
-        if (nextIndex < steps.length) {
-          session.currentStepIndex = nextIndex;
-          const nextStep = steps[nextIndex];
-          replyText = nextStep.prompt;
-        } else {
-          session.currentState = 'AWAITING_CONFIRMATION';
-          replyText = buildSummaryText(session.role, session.savedResponses);
-          replyOptions = [
-            { id: 'confirm_yes', title: 'CONFIRM' },
-            { id: 'confirm_edit', title: 'EDIT' },
-          ];
-        }
-      }
-    } else if (session.currentState === 'AWAITING_CONFIRMATION' && session.role) {
-      if (upper === 'CONFIRM' || upper === 'YES' || upper === 'CONFIRM_YES') {
-        replyText = finalizeOnboardingSubmission(session);
-      } else if (upper === 'EDIT' || upper === 'CONFIRM_EDIT') {
-        session.currentState = 'ONBOARDING_STEP';
-        session.currentStepIndex = 0;
-        const firstStep = ROLE_ONBOARDING_STEPS[session.role][0];
-        replyText = `✏️ Restarting your *${ROLE_LABELS[session.role]}* responses so you can edit them:\n\n${firstStep.prompt}`;
-      } else {
-        replyText =
-          `Please reply *CONFIRM* to submit your details to XPO, or *EDIT* to make changes.\n\n` +
-          buildSummaryText(session.role, session.savedResponses);
-      }
-    } else {
-      // Completed or Human Support state
-      replyText =
-        `Thank you for messaging *XPO*! Your profile is active.\n\n` +
-        `Reply *MENU* to start a new journey, *MY LEADS* / *MY JOBS* to view opportunities, *PROFILE* to view your details, or *HELP* for support.`;
-    }
-  }
-
-  // Dispatch outbound message via configurable adapter (simulated vs live Meta Cloud API)
-  const dispatchRes = await dispatchWhatsAppMessage({
-    toPhoneE164: session.phone,
-    text: replyText,
-    interactiveOptions: replyOptions,
-  });
-
-  const outboundRecord = syncToInboxThread(
-    session,
-    'outbound',
-    replyText,
-    dispatchRes.status,
-    replyOptions,
-    dispatchRes.metaMessageId
+  event: InboundWhatsAppEvent
+): Promise<{ session: WhatsAppSession; inboundRecord: WhatsAppMessageRecord }> {
+  const db = requireFirestore();
+  const isSimulated = Boolean(event.isSimulated);
+  const norm = normalizePhoneE164(
+    event.fromPhoneRaw.startsWith('+') ? event.fromPhoneRaw : `+${event.fromPhoneRaw}`
   );
+  const phoneE164 = norm.isValid && norm.phoneE164 ? norm.phoneE164 : event.fromPhoneRaw;
+  const sessionId =
+    event.simulatedSessionId || (isSimulated ? `sim_${phoneE164}` : phoneE164);
 
-  return {
-    session,
-    inboundMessage: inboundRecord,
-    outboundMessage: outboundRecord,
+  const nowIso = new Date().toISOString();
+  const sessionRef = db.collection('whatsapp_sessions').doc(sessionId);
+  const sessionSnap = await sessionRef.get();
+
+  let existingUser = await getUserByPhone(phoneE164);
+  const crmSnap = await db.collection('crm_contacts').doc(phoneE164).get();
+  const crmContact = crmSnap.exists ? (crmSnap.data() as CrmContact) : null;
+
+  let session: WhatsAppSession;
+  if (!sessionSnap.exists) {
+    session = {
+      id: sessionId,
+      phoneE164,
+      uid: existingUser?.uid || null,
+      crmContactId: crmSnap.exists ? phoneE164 : null,
+      state: existingUser ? 'ACTIVE' : 'NEW_CONTACT',
+      selectedRole: existingUser?.role || null,
+      workflowStepKey: null,
+      draftData: {},
+      campaignSource: event.referralSourceId || null,
+      referralHeadline: event.referralHeadline || null,
+      isAccountOwnershipVerified: true,
+      humanTakeover: false,
+      unreadAdminCount: 0,
+      lastInboundAt: nowIso,
+      isSimulated,
+      createdAt: nowIso,
+      updatedAt: nowIso,
+    };
+    await sessionRef.set(session);
+  } else {
+    session = {
+      ...(sessionSnap.data() as WhatsAppSession),
+      uid: (sessionSnap.data() as WhatsAppSession).uid || existingUser?.uid || null,
+      selectedRole:
+        existingUser?.role || (sessionSnap.data() as WhatsAppSession).selectedRole || null,
+      lastInboundAt: nowIso,
+      updatedAt: nowIso,
+    };
+    await sessionRef.set(
+      {
+        uid: session.uid,
+        selectedRole: session.selectedRole,
+        lastInboundAt: nowIso,
+        updatedAt: nowIso,
+      },
+      { merge: true }
+    );
+  }
+
+  // Update CRM engagement & invitation response tracking
+  if (crmSnap.exists && !isSimulated) {
+    const crmPatch: Record<string, unknown> = { lastEngagedAt: nowIso, updatedAt: nowIso };
+    if (!crmContact?.linkedUid && crmContact?.invitationStatus === 'invited') {
+      crmPatch.invitationStatus = 'responded';
+    }
+    await crmSnap.ref.set(crmPatch, { merge: true });
+  }
+
+  const rawText = (event.textBody || event.buttonReplyTitle || '').trim();
+  const lowerText = rawText.toLowerCase();
+  const actionId = event.buttonReplyId || '';
+
+  // Persist inbound message log
+  const msgDocId = generateDocId(isSimulated ? 'wamsg_sim' : 'wamsg');
+  const inboundRecord: WhatsAppMessageRecord = {
+    id: msgDocId,
+    waMessageId: event.waMessageId,
+    sessionId,
+    phoneE164,
+    direction: 'inbound',
+    messageType: event.mediaStoragePath ? 'document' : 'text',
+    body: rawText || (event.mediaStoragePath ? '[Uploaded Document]' : ''),
+    mediaStoragePath: event.mediaStoragePath || null,
+    deliveryStatus: 'received',
+    isSimulated,
+    createdAt: nowIso,
+    updatedAt: nowIso,
   };
+  await db.collection('whatsapp_messages').doc(msgDocId).set(inboundRecord);
+
+  // 1. Global Opt-Out (`STOP` / `UNSUBSCRIBE`) — Highest Priority Compliance Rule
+  if (OPT_OUT_KEYWORDS.has(lowerText)) {
+    if (!isSimulated) {
+      await recordWhatsAppConsent({
+        phoneE164,
+        uid: session.uid,
+        newStatus: 'opted_out',
+        channel: 'stop_keyword',
+        evidenceNote: `Inbound WhatsApp keyword: "${rawText}"`,
+      });
+    }
+    await sessionRef.set(
+      { state: 'PAUSED', humanTakeover: false, updatedAt: nowIso },
+      { merge: true }
+    );
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      bypassSuppressionCheck: true,
+      messageType: 'text',
+      body: 'You have been unsubscribed from proactive XPO WhatsApp alerts. Reply *START* anytime to re-enable notifications.',
+    });
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 2. Global Opt-In / Resume (`START` / `RESUME`)
+  if (OPT_IN_KEYWORDS.has(lowerText)) {
+    if (!isSimulated) {
+      await recordWhatsAppConsent({
+        phoneE164,
+        uid: session.uid,
+        newStatus: 'opted_in',
+        channel: 'whatsapp_inbound',
+        evidenceNote: `Inbound WhatsApp opt-in keyword: "${rawText}"`,
+      });
+    }
+    if (session.uid) {
+      await db
+        .collection('role_profiles')
+        .doc(`${session.uid}_partner`)
+        .set({ notificationsPaused: false, updatedAt: nowIso }, { merge: true });
+    }
+    await sessionRef.set(
+      { state: session.uid ? 'ACTIVE' : 'NEW_CONTACT', updatedAt: nowIso },
+      { merge: true }
+    );
+    if (session.uid) {
+      await sendReturningUserMenu(session, session.uid);
+    } else {
+      await sendRoleSelectionMenu(session);
+    }
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 3. Human Support Escalation (`SUPPORT` / `HELP` or `menu_common:support`)
+  if (SUPPORT_KEYWORDS.has(lowerText) || actionId === 'menu_common:support') {
+    await createSupportOrAbuseTicket({
+      reporterUid: session.uid,
+      reporterPhoneE164: phoneE164,
+      type: 'whatsapp_support',
+      subject: `WhatsApp Support Escalation (${phoneE164})`,
+      description: `Customer requested live coordinator assistance. Last message: "${rawText}"`,
+    });
+    await sessionRef.set(
+      {
+        state: 'SUPPORT_REVIEW',
+        humanTakeover: true,
+        unreadAdminCount: (session.unreadAdminCount || 0) + 1,
+        updatedAt: nowIso,
+      },
+      { merge: true }
+    );
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      messageType: 'text',
+      body: 'An XPO Operations Coordinator has been notified and will reply in this thread shortly. Reply *MENU* anytime to return to automated self-service.',
+    });
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // Respect Human Takeover unless user explicitly types `MENU`
+  if (session.humanTakeover && !MENU_KEYWORDS.has(lowerText)) {
+    await sessionRef.set(
+      { unreadAdminCount: (session.unreadAdminCount || 0) + 1, updatedAt: nowIso },
+      { merge: true }
+    );
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 4. Record implicit WhatsApp inbound consent on first interaction
+  if (session.state === 'NEW_CONTACT' && !isSimulated) {
+    await recordWhatsAppConsent({
+      phoneE164,
+      uid: session.uid,
+      newStatus: 'opted_in',
+      channel: 'whatsapp_inbound',
+      evidenceNote: 'Customer initiated WhatsApp conversation with XPO',
+    });
+  }
+
+  // 5. Explicit `MENU` Keyword
+  if (MENU_KEYWORDS.has(lowerText)) {
+    await sessionRef.set(
+      { humanTakeover: false, workflowStepKey: null, updatedAt: nowIso },
+      { merge: true }
+    );
+    if (session.uid) {
+      await sessionRef.set({ state: 'ACTIVE' }, { merge: true });
+      await sendReturningUserMenu(session, session.uid);
+    } else {
+      await sessionRef.set({ state: 'CONSENT_PENDING' }, { merge: true });
+      await sendRoleSelectionMenu(session);
+    }
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // =========================================================================
+  // 6. Interactive Action Handlers (5-Min Offers, Partner Unlock, Connections)
+  // =========================================================================
+
+  // 6a. Partner responds to 5-Minute Business Opportunity Offer
+  if (
+    actionId.startsWith('offer_claim:') ||
+    actionId.startsWith('offer_decline:') ||
+    actionId.startsWith('offer_details:')
+  ) {
+    const [prefix, offerId] = actionId.split(':');
+    const offerSnap = await db.collection('whatsapp_lead_offers').doc(offerId!).get();
+    if (!offerSnap.exists) {
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: 'That opportunity alert could not be found.',
+      });
+      return { session, inboundRecord };
+    }
+    const offer = offerSnap.data() as WhatsAppLeadOffer;
+
+    if (prefix === 'offer_details') {
+      const reqSnap = await db.collection('requirements').doc(offer.reqId).get();
+      const req = reqSnap.data() as ServiceRequirement | undefined;
+      if (req) {
+        const secsLeft = Math.max(
+          0,
+          Math.floor((new Date(offer.expiresAt).getTime() - Date.now()) / 1000)
+        );
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'interactive_buttons',
+          headerText: `Details — ${req.xpoCode}`,
+          body:
+            `*${req.title}*\n` +
+            `• *Category:* ${req.categoryName}\n` +
+            `• *Specifications:* ${req.specifications.slice(0, 450)}\n` +
+            `• *Location:* ${req.workLocation}\n` +
+            `• *Timeline:* ${req.timeline}\n` +
+            `• *Budget:* ${req.estimatedBudget || 'To be discussed'}\n` +
+            `• *Time Left:* ${Math.floor(secsLeft / 60)}m ${secsLeft % 60}s`,
+          interactiveOptions: [
+            { id: `offer_claim:${offer.id}`, title: "I'm Interested" },
+            { id: `offer_decline:${offer.id}`, title: 'Not Interested' },
+          ],
+        });
+      }
+      return { session, inboundRecord };
+    }
+
+    try {
+      const result = await respondToLeadOffer({
+        offerId: offer.id,
+        partnerUid: offer.partnerUid,
+        action: prefix === 'offer_claim' ? 'claim' : 'decline',
+      });
+
+      if (result.status === 'declined') {
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'text',
+          body: `Noted! We have redirected *${offer.xpoCode}* to the next eligible Partner. *Zero* credits were deducted.`,
+        });
+      } else {
+        await sessionRef.set(
+          { state: 'OFFER_ACCEPTED', activeOfferId: null, updatedAt: nowIso },
+          { merge: true }
+        );
+        const creditFooter = result.unlimitedClaims
+          ? 'Plan Status: *Unlimited Partner Plan Active*'
+          : `Remaining Applications — Free: *${result.remainingFreeClaims ?? 0}* | Plan: *${result.remainingPaidClaims ?? 0}*`;
+
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'text',
+          body:
+            `🎯 *Interest Submitted!* (${offer.xpoCode})\n\n` +
+            `Your profile has been shortlisted for the Client. Once the Client unlocks your profile and requests a connection, you will receive a mutual consent prompt right here.\n\n` +
+            creditFooter,
+        });
+      }
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        await sessionRef.set({ state: 'PAYMENT_REQUIRED', updatedAt: nowIso }, { merge: true });
+        await sendSubscriptionUpgradePrompt(session, 'partner', offer.partnerUid);
+      } else {
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'text',
+          body: err instanceof Error ? err.message : 'Unable to process offer response.',
+        });
+      }
+    }
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 6b. Client Unlocks Interested Partner Profile (`unlock_claim:{claimId}`)
+  if (actionId.startsWith('unlock_claim:')) {
+    const claimId = actionId.split(':')[1]!;
+    if (!session.uid) {
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: 'Please verify your Client account first to view Partner profiles.',
+      });
+      return { session, inboundRecord };
+    }
+
+    try {
+      const unlockRes = await unlockPartnerForClient({
+        clientUid: session.uid,
+        claimId,
+        sourceChannel: 'whatsapp',
+      });
+
+      const creditsNote = unlockRes.unlimitedViews
+        ? 'Unlimited Client Plan Active'
+        : `Free Views Left: ${unlockRes.remainingFreeViews} | Plan Views Left: ${unlockRes.remainingPaidViews}`;
+
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'interactive_buttons',
+        headerText: `Unlocked — ${unlockRes.claim.partnerBusinessName}`,
+        body:
+          `🔓 *Partner Profile Unlocked* (${unlockRes.claim.xpoCode})\n\n` +
+          `• *Partner:* ${unlockRes.claim.partnerBusinessName}\n` +
+          `• *Location:* ${unlockRes.claim.partnerCity}\n` +
+          `• *Verification:* ${unlockRes.claim.partnerVerificationStatus === 'verified' ? 'KYC Verified' : 'Phone Verified'}\n` +
+          `${unlockRes.claim.capabilityNote ? `• *Capabilities:* ${unlockRes.claim.capabilityNote}\n` : ''}` +
+          `${unlockRes.claim.partnerPortfolioUrl ? `• *Portfolio:* ${unlockRes.claim.partnerPortfolioUrl}\n` : ''}\n` +
+          `_${unlockRes.alreadyUnlocked ? 'Previously unlocked (0 credits used)' : '1 Partner view credit applied'} • ${creditsNote}_`,
+        interactiveOptions: [
+          { id: `conn_req_service:${unlockRes.claim.id}`, title: 'Request Connection' },
+          ...(unlockRes.claim.partnerUid
+            ? [{ id: `view_trust:${unlockRes.claim.partnerUid}`, title: 'Trust Summary' }]
+            : []),
+        ],
+      });
+    } catch (err) {
+      if (err instanceof QuotaExceededError) {
+        await sessionRef.set({ state: 'PAYMENT_REQUIRED', updatedAt: nowIso }, { merge: true });
+        await sendSubscriptionUpgradePrompt(session, 'client', session.uid);
+      } else {
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'text',
+          body: err instanceof Error ? err.message : 'Unable to unlock Partner profile.',
+        });
+      }
+    }
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 6c. View Masked Trust Summary on WhatsApp (`view_trust:{uid}`)
+  if (actionId.startsWith('view_trust:')) {
+    const targetUid = actionId.split(':')[1]!;
+    const trust = await getMaskedTrustProfile(targetUid);
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      messageType: 'text',
+      body:
+        `🛡 *XPO Verified Trust Summary*\n` +
+        `• *Name / Business:* ${trust.partnerSummary?.businessName || trust.displayName}\n` +
+        `• *Verification:* ${trust.verificationStatus === 'verified' ? '✅ KYC Verified' : '📱 Phone Verified'}\n` +
+        `• *City:* ${trust.city}, ${trust.country}\n` +
+        `• *Services & Skills:* ${(trust.partnerSummary?.servicesOffered || trust.partnerSummary?.skillNames || []).join(', ') || 'Verified Partner'}\n` +
+        `• *Completed Mutual Connections:* ${trust.stats.mutualConnectionsCount}\n` +
+        `_(Direct contact details remain private until mutual connection acceptance.)_`,
+    });
+    return { session, inboundRecord };
+  }
+
+  // 6d. Mutual Connection Requests & Consent Responses
+  if (actionId.startsWith('conn_req_service:')) {
+    const claimId = actionId.split(':')[1]!;
+    if (!session.uid) return { session, inboundRecord };
+
+    try {
+      const conn = await requestMutualConnection({
+        marketplaceType: 'service',
+        claimOrApplicationId: claimId,
+        initiatorUid: session.uid,
+      });
+      await sessionRef.set(
+        { state: 'CONNECTION_PENDING', activeConnectionId: conn.id, updatedAt: nowIso },
+        { merge: true }
+      );
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: `Mutual connection request sent for *${conn.sourceCode}*! Direct phone and email details will be shared automatically once the Partner accepts.`,
+      });
+    } catch (err) {
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: err instanceof Error ? err.message : 'Could not send connection request.',
+      });
+    }
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  if (actionId.startsWith('conn_accept:') || actionId.startsWith('conn_decline:')) {
+    const isAccept = actionId.startsWith('conn_accept:');
+    const connId = actionId.split(':')[1]!;
+    if (!session.uid) return { session, inboundRecord };
+
+    await respondToMutualConnection({
+      connectionId: connId,
+      recipientUid: session.uid,
+      decision: isAccept ? 'accepted' : 'declined',
+    });
+    if (!isAccept) {
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: 'Connection request declined. Your direct contact details remain private.',
+      });
+    }
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 6e. Agentic Requirement Draft Confirmation on WhatsApp (`agent_confirm_req` / `agent_cancel_req`)
+  if (actionId === 'agent_confirm_req' && session.uid) {
+    const draft = (session.draftData?.agentDraftRequirement || null) as
+      | Partial<AgentRequirementDraft>
+      | null;
+    if (draft) {
+      const agentRes = await runCustomerAgentTurn({
+        uid: session.uid,
+        channel: 'whatsapp',
+        action: { type: 'confirm_requirement', payload: draft as Record<string, unknown> },
+        isSimulated,
+      });
+      await sessionRef.set(
+        { state: 'MATCHING', draftData: {}, workflowStepKey: null, updatedAt: nowIso },
+        { merge: true }
+      );
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: agentRes.reply,
+      });
+      return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+    }
+  }
+
+  if (actionId === 'agent_cancel_req') {
+    await sessionRef.set({ draftData: {}, workflowStepKey: null, updatedAt: nowIso }, { merge: true });
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      messageType: 'text',
+      body: 'Draft cleared. Describe a new requirement anytime or type *MENU*.',
+    });
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 6f. Returning User Menu Selections
+  if (actionId === 'menu_partner:quota' && session.uid) {
+    const profs = await getUserRoleProfiles(session.uid);
+    const p = profs.partner;
+    const isUnl = Boolean(p?.paidClaimsUnlimited && p?.activeSubscriptionId);
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      messageType: 'text',
+      body:
+        `📊 *Your Partner Credits*\n` +
+        `• Free Starter Applications Left: *${p?.freeClaimsRemaining ?? 0}*\n` +
+        `• Monthly Plan Applications: *${isUnl ? 'Unlimited Active' : p?.paidClaimsRemaining ?? 0}*\n` +
+        `• Total Claimed Opportunities: *${p?.totalValidClaims ?? 0}*\n` +
+        `• Alert Status: *${p?.notificationsPaused ? 'Paused' : 'Active'}*`,
+    });
+    if (!isUnl && (p?.freeClaimsRemaining ?? 0) === 0 && (p?.paidClaimsRemaining ?? 0) === 0) {
+      await sendSubscriptionUpgradePrompt(session, 'partner', session.uid);
+    }
+    return { session, inboundRecord };
+  }
+
+  if (actionId === 'menu_partner:pause' && session.uid) {
+    await db
+      .collection('role_profiles')
+      .doc(`${session.uid}_partner`)
+      .set({ notificationsPaused: true, updatedAt: nowIso }, { merge: true });
+    await sessionRef.set({ state: 'PAUSED', updatedAt: nowIso }, { merge: true });
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      messageType: 'text',
+      body: 'Lead alerts paused. Reply *START* anytime to resume receiving 5-minute business opportunities.',
+    });
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  if (actionId === 'menu_client:partners' && session.uid) {
+    const claimsSnap = await db
+      .collection('lead_claims')
+      .where('clientUid', '==', session.uid)
+      .limit(5)
+      .get();
+    if (claimsSnap.empty) {
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: 'No Partners have responded yet. As soon as a matched Partner expresses interest within the 5-minute window, you will receive an alert here.',
+      });
+    } else {
+      for (const d of claimsSnap.docs) {
+        const clm = d.data() as LeadClaim;
+        if (clm.unlockedByClient) {
+          await dispatchOutboundWhatsApp({
+            sessionId,
+            phoneE164,
+            isSimulated,
+            messageType: 'interactive_buttons',
+            body: `🔓 *${clm.partnerBusinessName}* (${clm.partnerCity}) — ${clm.xpoCode}\nStatus: *${clm.status.replace(/_/g, ' ')}*`,
+            interactiveOptions: [
+              { id: `conn_req_service:${clm.id}`, title: 'Request Connection' },
+            ],
+          });
+        } else {
+          await dispatchOutboundWhatsApp({
+            sessionId,
+            phoneE164,
+            isSimulated,
+            messageType: 'interactive_buttons',
+            body: `🔒 *Verified Partner Interested* (${clm.partnerCity}) — ${clm.xpoCode}\nUnlock profile to reveal business name, capabilities & connect.`,
+            interactiveOptions: [
+              { id: `unlock_claim:${clm.id}`, title: 'Unlock Profile' },
+            ],
+          });
+        }
+      }
+    }
+    return { session, inboundRecord };
+  }
+
+  if (actionId === 'menu_client:status' && session.uid) {
+    const reqsSnap = await db
+      .collection('requirements')
+      .where('clientUid', '==', session.uid)
+      .limit(5)
+      .get();
+    if (reqsSnap.empty) {
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: 'You have not posted any requirements yet. Simply describe what you need in a message to get started (100% free)!',
+      });
+    } else {
+      const lines = reqsSnap.docs.map((d) => {
+        const r = d.data() as ServiceRequirement;
+        return `• *${r.xpoCode}* — ${r.title}: ${r.interestedCount}/${r.targetInterestedCount} Partners responded (${r.distributionStatus.replace(/_/g, ' ')})`;
+      });
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: `📋 *Your Recent Requirements*\n\n${lines.join('\n')}`,
+      });
+    }
+    return { session, inboundRecord };
+  }
+
+  // =========================================================================
+  // 7. Superadmin Step 5: CRM-Aware Automatic Registration Progression
+  // =========================================================================
+
+  // 7a. Handle active CRM missing-field collection step (`crm_missing:*`)
+  if (session.workflowStepKey?.startsWith('crm_missing:') && session.selectedRole) {
+    const currentField = session.workflowStepKey.replace(
+      'crm_missing:',
+      ''
+    ) as CrmMissingOnboardingField;
+
+    if (!rawText) {
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: MISSING_FIELD_PROMPTS[currentField],
+      });
+      return { session, inboundRecord };
+    }
+
+    const crmDraft = ((session.draftData?.crmOnboarding as Record<string, unknown>) || {});
+    const remaining = Array.isArray(crmDraft.missingFields)
+      ? (crmDraft.missingFields as CrmMissingOnboardingField[]).filter((f) => f !== currentField)
+      : [];
+
+    const collected = {
+      ...((crmDraft.collected as Record<string, unknown>) || {}),
+      [currentField]:
+        currentField === 'servicesOffered'
+          ? rawText
+              .split(',')
+              .map((s) => s.trim())
+              .filter(Boolean)
+          : rawText,
+    };
+
+    if (remaining.length > 0) {
+      const nextField = remaining[0]!;
+      await sessionRef.set(
+        {
+          workflowStepKey: `crm_missing:${nextField}`,
+          draftData: {
+            crmOnboarding: {
+              collected,
+              missingFields: remaining,
+            },
+          },
+          updatedAt: nowIso,
+        },
+        { merge: true }
+      );
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: MISSING_FIELD_PROMPTS[nextField],
+      });
+      return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+    }
+
+    // All missing details collected -> Activate Profile!
+    const activatedUid = await activateCrmOnboardingAccount({
+      session,
+      phoneE164,
+      role: session.selectedRole,
+      collected: {
+        name: String(collected.name || event.profileName || 'XPO Member'),
+        businessName: String(collected.businessName || collected.name || 'XPO Business'),
+        city: String(collected.city || 'India'),
+        businessInfo: String(collected.businessInfo || ''),
+        servicesOffered: Array.isArray(collected.servicesOffered)
+          ? (collected.servicesOffered as string[])
+          : [],
+        categoryId: String(collected.categoryId || ''),
+        subcategoryId: String(collected.subcategoryId || ''),
+      },
+      isSimulated,
+    });
+
+    await sessionRef.set(
+      {
+        uid: activatedUid,
+        state: 'ACTIVE',
+        workflowStepKey: null,
+        draftData: {},
+        updatedAt: nowIso,
+      },
+      { merge: true }
+    );
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 7b. Trigger CRM-Aware Registration when a new user selects role OR replies to an invitation!
+  const explicitRegisterRole: CustomerRole | null =
+    actionId === 'select_role:client' || /\bregister as client\b/i.test(rawText)
+      ? 'client'
+      : actionId === 'select_role:partner' || /\bregister as partner\b/i.test(rawText)
+        ? 'partner'
+        : !existingUser && crmContact
+          ? inferCrmDatabaseType(crmContact)
+          : null;
+
+  if (!existingUser && explicitRegisterRole) {
+    const { prefilled, missingFields } = resolveMissingCrmOnboardingFields({
+      role: explicitRegisterRole,
+      crmContact,
+      existingUser: null,
+    });
+
+    const initialCollected = {
+      ...prefilled,
+      name: prefilled.name || (event.profileName && !event.profileName.startsWith('+') ? event.profileName : ''),
+    };
+    const finalMissing = initialCollected.name
+      ? missingFields.filter((f) => f !== 'name')
+      : missingFields;
+
+    if (finalMissing.length === 0) {
+      const activatedUid = await activateCrmOnboardingAccount({
+        session,
+        phoneE164,
+        role: explicitRegisterRole,
+        collected: initialCollected,
+        isSimulated,
+      });
+      await sessionRef.set(
+        {
+          uid: activatedUid,
+          selectedRole: explicitRegisterRole,
+          state: 'ACTIVE',
+          workflowStepKey: null,
+          draftData: {},
+          updatedAt: nowIso,
+        },
+        { merge: true }
+      );
+      return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+    }
+
+    const firstMissing = finalMissing[0]!;
+    await sessionRef.set(
+      {
+        state: 'ONBOARDING',
+        selectedRole: explicitRegisterRole,
+        workflowStepKey: `crm_missing:${firstMissing}`,
+        draftData: {
+          crmOnboarding: {
+            collected: initialCollected,
+            missingFields: finalMissing,
+          },
+        },
+        updatedAt: nowIso,
+      },
+      { merge: true }
+    );
+
+    const knownSummaryParts: string[] = [];
+    if (initialCollected.businessName) knownSummaryParts.push(`Business: *${initialCollected.businessName}*`);
+    if (initialCollected.city) knownSummaryParts.push(`Location: *${initialCollected.city}*`);
+    if (initialCollected.servicesOffered.length > 0) {
+      knownSummaryParts.push(`Services: *${initialCollected.servicesOffered.join(', ')}*`);
+    }
+
+    const greetingPrefix =
+      knownSummaryParts.length > 0
+        ? `Welcome to XPO${initialCollected.name ? `, *${initialCollected.name}*` : ''}! We pre-filled your ${explicitRegisterRole === 'client' ? 'Client' : 'Partner'} invitation details (${knownSummaryParts.join(' • ')}).\n\nJust ${finalMissing.length} quick detail(s) to activate your profile:\n`
+        : `Welcome to XPO! Let’s activate your *${explicitRegisterRole === 'client' ? 'Client' : 'Partner'}* profile in ${finalMissing.length} quick step(s):\n\n`;
+
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      messageType: 'text',
+      body: `${greetingPrefix}${MISSING_FIELD_PROMPTS[firstMissing]}`,
+    });
+
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // =========================================================================
+  // 8. Guided Conversation Builder Workflow (Explicit Menu Trigger)
+  // =========================================================================
+  const workflows = await getWhatsAppWorkflows();
+  const guidedFlowRoleMap: Record<string, CustomerRole> = {
+    'menu_client:new_req': 'client',
+    'menu_partner:edit': 'partner',
+  };
+
+  if (guidedFlowRoleMap[actionId]) {
+    const chosenRole = guidedFlowRoleMap[actionId]!;
+    const wf = workflows[chosenRole]!;
+    const firstStep = wf.steps[0]!;
+    const nextState = chosenRole === 'client' ? 'REQUIREMENT_DRAFT' : 'ONBOARDING';
+
+    session = {
+      ...session,
+      state: nextState,
+      selectedRole: chosenRole,
+      workflowStepKey: firstStep.key,
+      draftData: {},
+      updatedAt: nowIso,
+    };
+    await sessionRef.set(
+      {
+        state: nextState,
+        selectedRole: chosenRole,
+        workflowStepKey: firstStep.key,
+        draftData: {},
+        updatedAt: nowIso,
+      },
+      { merge: true }
+    );
+
+    await dispatchOutboundWhatsApp({
+      sessionId,
+      phoneE164,
+      isSimulated,
+      messageType: 'text',
+      body: wf.welcomeMessage,
+    });
+    await promptWorkflowStep(session, firstStep);
+    return { session, inboundRecord };
+  }
+
+  // Active Step-by-Step Guided Workflow Progression
+  if (session.selectedRole && session.workflowStepKey) {
+    const wf = workflows[session.selectedRole];
+    const stepIndex = wf ? wf.steps.findIndex((s) => s.key === session.workflowStepKey) : -1;
+
+    if (wf && stepIndex >= 0) {
+      const currentStep = wf.steps[stepIndex]!;
+      let capturedValue: unknown = rawText;
+
+      if (currentStep.inputType === 'taxonomy_category') {
+        if (!actionId.startsWith('tax_cat:')) {
+          await promptWorkflowStep(session, currentStep);
+          return { session, inboundRecord };
+        }
+        capturedValue = actionId.replace('tax_cat:', '');
+      } else if (currentStep.inputType === 'document_optional') {
+        capturedValue = event.mediaStoragePath || null;
+      } else if (actionId.startsWith('pt_')) {
+        capturedValue = actionId.replace('pt_', '');
+      } else if (currentStep.required && !rawText) {
+        await promptWorkflowStep(session, currentStep);
+        return { session, inboundRecord };
+      }
+
+      const nextDraft = {
+        ...(session.draftData || {}),
+        [currentStep.fieldToSave]: capturedValue,
+      };
+
+      const nextStep = wf.steps[stepIndex + 1];
+      if (nextStep) {
+        session = {
+          ...session,
+          draftData: nextDraft,
+          workflowStepKey: nextStep.key,
+          updatedAt: nowIso,
+        };
+        await sessionRef.set(
+          {
+            draftData: nextDraft,
+            workflowStepKey: nextStep.key,
+            updatedAt: nowIso,
+          },
+          { merge: true }
+        );
+        await promptWorkflowStep(session, nextStep);
+        return { session, inboundRecord };
+      }
+
+      // Final Step Reached -> Commit Entity in Firestore!
+      const role = session.selectedRole;
+      const uid =
+        session.uid ||
+        (await getOrCreateWhatsAppUserUid(
+          phoneE164,
+          String(
+            nextDraft.clientIdentity ||
+              nextDraft.businessName ||
+              event.profileName ||
+              'XPO Member'
+          )
+            .split('-')[0]!
+            .trim(),
+          role,
+          isSimulated
+        ));
+
+      if (role === 'client') {
+        const identityParts = String(nextDraft.clientIdentity || '').split('-');
+        const contactName = identityParts[0]?.trim() || event.profileName || 'Client';
+        const businessName = identityParts[1]?.trim() || contactName;
+        const workLocation = String(nextDraft.workLocation || 'India');
+
+        await updateUserAndRoleProfile({
+          uid,
+          role: 'client',
+          userUpdates: { displayName: contactName, primaryCity: workLocation },
+          profileUpdates: {
+            contactName,
+            businessName,
+            city: workLocation,
+            location: workLocation,
+          },
+          businessUpdates: { companyName: businessName, city: workLocation },
+        });
+
+        const created = await createServiceRequirement({
+          clientUid: uid,
+          title: String(nextDraft.title || 'Business Service Requirement'),
+          categoryId: String(nextDraft.categoryId || ''),
+          specifications: String(nextDraft.specifications || ''),
+          workLocation,
+          timeline: String(nextDraft.timeline || 'Within 30 Days'),
+          estimatedBudget: String(nextDraft.estimatedBudget || 'TBD'),
+          sourceChannel: 'whatsapp',
+          isSimulated,
+        });
+
+        const finalState =
+          created.requirement.moderationStatus === 'approved' ? 'MATCHING' : 'REQUIREMENT_REVIEW';
+
+        await sessionRef.set(
+          {
+            uid,
+            state: finalState,
+            workflowStepKey: null,
+            draftData: {},
+            updatedAt: nowIso,
+          },
+          { merge: true }
+        );
+
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'text',
+          body:
+            created.requirement.moderationStatus === 'approved'
+              ? `✅ *Requirement Published Free!* (${created.requirement.xpoCode})\n\nWe matched *${created.matchedCount}* qualified Partners and dispatched *${created.dispatchedOffersCount}* priority 5-minute alerts. You will be notified here as Partners respond!\n\nType *MENU* anytime.`
+              : `📝 *Requirement Submitted for Review* (${created.requirement.xpoCode})\n\nOur moderation team is reviewing your requirement and will start 5-minute Partner distribution upon approval.`,
+        });
+      } else {
+        const rawBiz = String(nextDraft.businessName || event.profileName || 'Service Partner');
+        const parts = rawBiz.split('-');
+        const personName = parts[0]?.trim() || rawBiz;
+        const bizName = parts[1]?.trim() || rawBiz;
+        const skills = String(nextDraft.skillsRaw || '')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const regions = String(nextDraft.regionsRaw || 'India')
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean);
+        const catId = String(nextDraft.categoryId || '');
+        const tree = await getFullTaxonomyTree({ includeInactive: true });
+        const cat = tree.categories.find((c) => c.id === catId);
+
+        await updateUserAndRoleProfile({
+          uid,
+          role: 'partner',
+          userUpdates: { displayName: personName, primaryCity: regions[0] || 'India' },
+          profileUpdates: {
+            name: personName,
+            businessName: bizName,
+            partnerClassification:
+              (nextDraft.partnerClassification as PartnerClassification) || 'Freelancer',
+            city: regions[0] || 'India',
+            operatingRegions: regions,
+            sectorIds: cat ? [cat.sectorId] : [],
+            categoryIds: catId ? [catId] : [],
+            skillNames: skills,
+            servicesOffered: skills,
+            capabilities: skills.join(', '),
+            availability: 'available',
+            notificationsPaused: false,
+          },
+          businessUpdates: { companyName: bizName, city: regions[0] || 'India' },
+        });
+
+        await sessionRef.set(
+          { uid, state: 'ACTIVE', workflowStepKey: null, draftData: {}, updatedAt: nowIso },
+          { merge: true }
+        );
+
+        const profs = await getUserRoleProfiles(uid);
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'text',
+          body:
+            `🎉 *Partner Profile Updated!*\n\n` +
+            `• *Category:* ${cat?.name || 'Configured'}\n` +
+            `• *Services:* ${skills.join(', ')}\n` +
+            `• *Locations:* ${regions.join(', ')}\n` +
+            `• *Free Starter Applications:* ${profs.partner?.freeClaimsRemaining ?? 5}\n\n` +
+            `You will receive matched 5-minute business opportunity alerts directly on WhatsApp. Type *MENU* anytime.`,
+        });
+      }
+
+      return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+    }
+  }
+
+  // =========================================================================
+  // 9. Hybrid Agentic Conversational Mode for Registered Clients & Partners
+  // =========================================================================
+  existingUser = session.uid ? existingUser || (await getUserByPhone(phoneE164)) : null;
+
+  if (existingUser) {
+    if (GREETING_KEYWORDS.has(lowerText)) {
+      await sendReturningUserMenu(session, existingUser.uid);
+      return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+    }
+
+    if (rawText) {
+      const existingDraftReq = (session.draftData?.agentDraftRequirement || null) as
+        | Partial<AgentRequirementDraft>
+        | null;
+
+      const agentRes = await runCustomerAgentTurn({
+        uid: existingUser.uid,
+        channel: 'whatsapp',
+        message: rawText,
+        draftRequirement: existingDraftReq,
+        isSimulated,
+      });
+
+      const draftCard = agentRes.cards.find((c) => c.type === 'requirement_draft');
+      if (draftCard && draftCard.type === 'requirement_draft') {
+        await sessionRef.set(
+          {
+            state: 'REQUIREMENT_DRAFT',
+            draftData: { agentDraftRequirement: draftCard.draft },
+            updatedAt: nowIso,
+          },
+          { merge: true }
+        );
+
+        await dispatchOutboundWhatsApp({
+          sessionId,
+          phoneE164,
+          isSimulated,
+          messageType: 'interactive_buttons',
+          headerText: 'Confirm XPO Requirement',
+          body:
+            `✨ *Requirement Structured by XPO Agent*\n\n` +
+            `• *Title:* ${draftCard.draft.title}\n` +
+            `• *Category:* ${draftCard.draft.categoryName}${draftCard.draft.subcategoryName ? ` › ${draftCard.draft.subcategoryName}` : ''}\n` +
+            `• *Location:* ${draftCard.draft.workLocation}\n` +
+            `• *Timeline:* ${draftCard.draft.timeline}\n` +
+            `• *Budget:* ${draftCard.draft.estimatedBudget || 'To be discussed'}\n\n` +
+            `Posting is *100% Free*. Confirm to notify matched Partners on WhatsApp?`,
+          interactiveOptions: [
+            { id: 'agent_confirm_req', title: 'Confirm & Post Free' },
+            { id: 'agent_cancel_req', title: 'Cancel' },
+          ],
+        });
+        return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+      }
+
+      if (agentRes.cards.some((c) => c.type === 'requirement_posted')) {
+        await sessionRef.set(
+          { state: 'MATCHING', draftData: {}, updatedAt: nowIso },
+          { merge: true }
+        );
+      }
+
+      await dispatchOutboundWhatsApp({
+        sessionId,
+        phoneE164,
+        isSimulated,
+        messageType: 'text',
+        body: agentRes.reply,
+      });
+      return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+    }
+
+    await sendReturningUserMenu(session, existingUser.uid);
+    return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
+  }
+
+  // 10. Unregistered New Contact (not in CRM) -> Present Client vs Partner Role Menu
+  await sessionRef.set({ state: 'CONSENT_PENDING', updatedAt: nowIso }, { merge: true });
+  await sendRoleSelectionMenu(session);
+
+  return { session: (await sessionRef.get()).data() as WhatsAppSession, inboundRecord };
 }

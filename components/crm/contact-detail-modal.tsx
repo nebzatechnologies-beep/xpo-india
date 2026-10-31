@@ -1,293 +1,398 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import type { CrmContact, CrmContactState } from '@/lib/types/domain';
 import {
-  Building2,
-  Phone,
-  Mail,
-  Globe,
-  MessageCircle,
-  Copy,
-  Calendar,
   CheckCircle2,
   Clock,
+  Copy,
+  Globe,
+  Mail,
+  MessageCircle,
+  Phone,
   ShieldCheck,
-  Send,
   UserCheck,
-  ExternalLink,
-  Tag
+  X,
 } from 'lucide-react';
 
-interface ContactDetailModalProps {
-  contact: any;
+interface ContactDetailDrawerProps {
+  contact: CrmContact;
   onClose: () => void;
-  onStatusChange?: (newStatus: string) => void;
+  onUpdated?: (updated: CrmContact) => void;
 }
 
-export function ContactDetailModal({ contact, onClose, onStatusChange }: ContactDetailModalProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'company' | 'preferences' | 'consent' | 'campaigns' | 'conversations' | 'account'>('overview');
-  const [copied, setCopied] = useState(false);
-  const [currentStatus, setCurrentStatus] = useState(contact.status);
+const CRM_STATES: CrmContactState[] = [
+  'imported_prospect',
+  'registered_customer',
+  'verification_pending',
+  'verified_customer',
+  'eligible_matching_recipient',
+  'opted_out_contact',
+  'suspended_contact',
+];
 
-  const tabs = [
-    { id: 'overview', label: 'Overview & Actions' },
-    { id: 'company', label: 'Company Info' },
-    { id: 'preferences', label: 'Preferences' },
-    { id: 'consent', label: 'Consent Audit' },
-    { id: 'campaigns', label: 'Campaign History' },
-    { id: 'conversations', label: 'WhatsApp Thread' },
-    { id: 'account', label: 'Linked Account' },
-  ];
+/**
+ * Inline Contact Dossier Panel (Zero blocking modal overlay).
+ */
+export function ContactDetailDrawer({
+  contact,
+  onClose,
+  onUpdated,
+}: ContactDetailDrawerProps) {
+  const [activeTab, setActiveTab] = useState<'overview' | 'details' | 'consent' | 'account'>(
+    'overview'
+  );
+  const [copied, setCopied] = useState(false);
+  const [crmState, setCrmState] = useState<CrmContactState>(
+    contact.crmState || 'imported_prospect'
+  );
+  const [consentStatus, setConsentStatus] = useState(contact.consentStatus || 'none');
+  const [saving, setSaving] = useState(false);
+
+  React.useEffect(() => {
+    setCrmState(contact.crmState || 'imported_prospect');
+    setConsentStatus(contact.consentStatus || 'none');
+  }, [contact.crmState, contact.consentStatus]);
 
   const handleCopyInvite = () => {
-    const text = `Hi ${contact.name}, explore verified buyers and industrial demands on XPO India. Visit https://xpoindia.com?ref=${contact.id}`;
-    navigator.clipboard.writeText(text);
+    const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://xpo.in';
+    const roleLabel = contact.databaseType === 'partner' ? 'Partner' : 'Client';
+    const text = `Hi ${contact.contactName}, join XPO as a verified ${roleLabel} to connect directly on WhatsApp: ${appUrl}/register`;
+    void navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleStatusUpdate = async (st: string) => {
-    setCurrentStatus(st);
-    if (onStatusChange) onStatusChange(st);
-    await fetch('/api/crm/contacts', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'updateStatus', id: contact.id, status: st })
-    });
+  const handleStateChange = async (nextState: CrmContactState) => {
+    try {
+      setSaving(true);
+      const res = await fetch('/api/crm/contacts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneE164: contact.phoneE164,
+          patch: { crmState: nextState },
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.contact) {
+        setCrmState(nextState);
+        onUpdated?.(data.contact);
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleConsentChange = async (newStatus: 'opted_in' | 'opted_out') => {
+    try {
+      setSaving(true);
+      const res = await fetch('/api/crm/consent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phoneE164: contact.phoneE164,
+          newStatus,
+          evidenceNote: `Superadmin manual update in ${contact.databaseType || 'CRM'} Contact Dossier`,
+        }),
+      });
+      if (res.ok) {
+        setConsentStatus(newStatus);
+        const nextState = newStatus === 'opted_out' ? 'opted_out_contact' : crmState;
+        if (newStatus === 'opted_out') setCrmState('opted_out_contact');
+        onUpdated?.({
+          ...contact,
+          consentStatus: newStatus,
+          crmState: nextState,
+        });
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl max-w-3xl w-full p-6 space-y-4 border border-[#EBEBEB] shadow-2xl max-h-[90vh] flex flex-col justify-between">
-        {/* Header */}
-        <div className="flex items-start justify-between pb-4 border-b border-[#EBEBEB]">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-red-50 text-[#E8192C] flex items-center justify-center font-bold text-lg">
-              {contact.company.charAt(0)}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-lg font-black text-[#222222]">{contact.company}</h2>
-                <Badge variant={currentStatus === 'subscribed' ? 'success' : currentStatus === 'opted_out' ? 'neutral' : 'warning'} className="text-[10px]">
-                  {currentStatus.replace('_', ' ').toUpperCase()}
-                </Badge>
-              </div>
-              <p className="text-xs text-[#717171]">{contact.name} • {contact.city || contact.country} • {contact.industry}</p>
-            </div>
+    <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-4 shadow-xs">
+      <div className="flex items-start justify-between pb-3 border-b border-[#E5E7EB] gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-xl bg-red-50 text-[#E8192C] flex items-center justify-center font-bold text-sm shrink-0">
+            {(contact.companyName || contact.contactName || 'X').charAt(0).toUpperCase()}
           </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-sm font-black text-[#111827] truncate">
+                {contact.companyName || contact.contactName}
+              </h3>
+              <Badge
+                variant={
+                  crmState === 'verified_customer'
+                    ? 'success'
+                    : crmState === 'opted_out_contact' || crmState === 'suspended_contact'
+                      ? 'neutral'
+                      : 'warning'
+                }
+                className="text-[10px]"
+              >
+                {(crmState || 'imported_prospect').replace(/_/g, ' ').toUpperCase()}
+              </Badge>
+            </div>
+            <p className="text-xs text-[#6B7280] truncate">
+              {contact.contactName} • {contact.city || 'Location N/A'}, {contact.country}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="text-[#6B7280] hover:text-[#111827] p-1 rounded-lg hover:bg-gray-100"
+          aria-label="Close contact panel"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
 
-          <button onClick={onClose} className="text-[#717171] hover:text-[#222222] font-bold text-base p-1">
-            ✕
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-[#E5E7EB] text-xs">
+        {[
+          { id: 'overview', label: 'Overview' },
+          {
+            id: 'details',
+            label: contact.databaseType === 'partner' ? 'Services & Categories' : 'Business Info',
+          },
+          { id: 'consent', label: 'WhatsApp Consent' },
+          { id: 'account', label: 'Account Status' },
+        ].map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
+            className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors ${
+              activeTab === tab.id
+                ? 'bg-[#111827] text-white'
+                : 'text-[#6B7280] hover:text-[#111827] hover:bg-gray-100'
+            }`}
+          >
+            {tab.label}
           </button>
-        </div>
+        ))}
+      </div>
 
-        {/* Tab Navigation */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-[#EBEBEB] text-xs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors ${
-                activeTab === tab.id
-                  ? 'bg-red-50 text-[#E8192C]'
-                  : 'text-[#717171] hover:text-[#222222] hover:bg-neutral-50'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Tab Body */}
-        <div className="flex-1 overflow-y-auto pr-1 text-xs py-2">
-          {/* TAB 1: OVERVIEW */}
-          {activeTab === 'overview' && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl bg-neutral-50 border border-[#EBEBEB] space-y-1">
-                  <div className="text-[10px] text-[#717171] uppercase font-bold">Contact Person</div>
-                  <div className="font-bold text-[#222222]">{contact.name}</div>
-                  <div className="text-[11px] text-[#555555] flex items-center gap-1">
-                    <Phone className="w-3 h-3 text-[#717171]" /> {contact.phone}
-                  </div>
-                  <div className="text-[11px] text-[#555555] flex items-center gap-1">
-                    <Mail className="w-3 h-3 text-[#717171]" /> {contact.email}
-                  </div>
+      <div className="text-xs space-y-4">
+        {activeTab === 'overview' && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-1.5">
+                <div className="text-[10px] text-[#6B7280] uppercase font-bold">
+                  WhatsApp & Contact
                 </div>
-
-                <div className="p-3 rounded-xl bg-neutral-50 border border-[#EBEBEB] space-y-1">
-                  <div className="text-[10px] text-[#717171] uppercase font-bold">Acquisition Channel</div>
-                  <div className="font-bold text-[#222222] capitalize">{contact.source.replace('_', ' ')}</div>
-                  <div className="text-[11px] text-[#555555] flex items-center gap-1">
-                    <Clock className="w-3 h-3 text-[#717171]" /> Created: {new Date(contact.createdAt).toLocaleDateString()}
-                  </div>
-                  <div className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Consent: {contact.consentStatus.toUpperCase()}
-                  </div>
+                <div className="font-bold text-[#111827]">{contact.contactName}</div>
+                <div className="text-[11px] text-[#374151] flex items-center gap-1.5 font-mono">
+                  <Phone className="w-3.5 h-3.5 text-[#6B7280]" /> {contact.phoneE164} (
+                  {contact.countryIso2})
                 </div>
+                {contact.email && (
+                  <div className="text-[11px] text-[#374151] flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-[#6B7280]" /> {contact.email}
+                  </div>
+                )}
+                {contact.website && (
+                  <div className="text-[11px] text-[#E8192C] flex items-center gap-1.5">
+                    <Globe className="w-3.5 h-3.5" /> {contact.website}
+                  </div>
+                )}
               </div>
 
-              {/* Quick Actions */}
-              <div className="p-4 rounded-2xl bg-red-50/30 border border-red-100 space-y-3">
-                <div className="font-bold text-xs text-[#222222]">Direct Outreach Actions</div>
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    onClick={handleCopyInvite}
-                    className="bg-[#E8192C] hover:bg-[#D01627] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5"
-                  >
-                    {copied ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copied ? 'Copied Invitation!' : 'Copy Platform Invitation'}
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-1.5">
+                <div className="text-[10px] text-[#6B7280] uppercase font-bold">
+                  Invitation & Consent
+                </div>
+                <div className="font-bold text-[#111827]">{contact.source}</div>
+                <div className="text-[11px] text-[#374151] flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-[#6B7280]" /> Invitation:{' '}
+                  <strong className="capitalize">
+                    {(contact.invitationStatus || 'not_invited').replace(/_/g, ' ')}
+                  </strong>
+                </div>
+                <div className="text-[11px] text-emerald-700 font-semibold flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Consent:{' '}
+                  {(consentStatus || 'none').replace(/_/g, ' ').toUpperCase()}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex flex-wrap gap-2 items-center justify-between">
+              <div className="font-bold text-[#111827]">Direct Outreach</div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" onClick={handleCopyInvite} className="text-xs rounded-xl">
+                  {copied ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                  ) : (
+                    <Copy className="w-3.5 h-3.5 mr-1" />
+                  )}
+                  {copied ? 'Copied!' : 'Copy Invite Link'}
+                </Button>
+                <a
+                  href={`https://wa.me/${(contact.whatsappE164 || contact.phoneE164 || '').replace(/\D/g, '')}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <Button size="sm" variant="outline" className="text-xs rounded-xl">
+                    <MessageCircle className="w-3.5 h-3.5 mr-1 text-emerald-600" /> Open WhatsApp
                   </Button>
-
-                  <a
-                    href={`https://wa.me/${contact.whatsapp.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(`Hi ${contact.name}, greeting from XPO India. We have verified buyers looking for your capabilities in ${contact.industry}. Would you like to review them?`)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs font-semibold rounded-xl flex items-center gap-1.5"
-                    >
-                      <MessageCircle className="w-3.5 h-3.5 text-emerald-600" /> Open WhatsApp
-                    </Button>
-                  </a>
-                </div>
+                </a>
               </div>
+            </div>
 
-              {/* Status Updater */}
-              <div className="space-y-1.5">
-                <div className="font-bold text-[11px] text-[#717171] uppercase">Update Lifecycle Stage</div>
+            <div className="space-y-1.5">
+              <div className="font-bold text-[11px] text-[#6B7280] uppercase">Lifecycle Stage</div>
+              <div className="flex flex-wrap gap-1.5">
+                {CRM_STATES.map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    disabled={saving}
+                    onClick={() => void handleStateChange(st)}
+                    className={`px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border transition-all ${
+                      crmState === st
+                        ? 'border-[#111827] bg-[#111827] text-white'
+                        : 'border-[#E5E7EB] hover:bg-gray-50 text-[#4B5563]'
+                    }`}
+                  >
+                    {st.replace(/_/g, ' ')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeTab === 'details' && (
+          <div className="space-y-3">
+            {contact.businessInfo && (
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+                <div className="text-[10px] text-[#6B7280] uppercase font-bold">
+                  Business Information
+                </div>
+                <p className="text-xs text-[#111827] mt-1">{contact.businessInfo}</p>
+              </div>
+            )}
+
+            {contact.servicesOffered && contact.servicesOffered.length > 0 && (
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+                <div className="text-[10px] text-[#6B7280] uppercase font-bold mb-1.5">
+                  Services Offered
+                </div>
                 <div className="flex flex-wrap gap-1.5">
-                  {['not_contacted', 'contacted', 'responded', 'interested', 'registered', 'subscribed', 'opted_out'].map(st => (
-                    <button
-                      key={st}
-                      onClick={() => handleStatusUpdate(st)}
-                      className={`px-2.5 py-1 rounded-xl text-xs font-semibold border transition-all ${
-                        currentStatus === st
-                          ? 'border-[#E8192C] bg-red-50 text-[#E8192C]'
-                          : 'border-[#EBEBEB] hover:bg-neutral-50 text-[#555555]'
-                      }`}
-                    >
-                      {st.replace('_', ' ').toUpperCase()}
-                    </button>
+                  {contact.servicesOffered.map((srv) => (
+                    <Badge key={srv} variant="outline">
+                      {srv}
+                    </Badge>
                   ))}
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* TAB 2: COMPANY INFO */}
-          {activeTab === 'company' && (
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-xl border border-[#EBEBEB]">
-                  <div className="text-[10px] text-[#717171] uppercase font-bold">Registered Legal Name</div>
-                  <div className="font-bold text-[#222222] mt-1">{contact.company}</div>
-                </div>
-                <div className="p-3 rounded-xl border border-[#EBEBEB]">
-                  <div className="text-[10px] text-[#717171] uppercase font-bold">Industry Sector</div>
-                  <div className="font-bold text-[#222222] mt-1">{contact.industry}</div>
-                </div>
-                <div className="p-3 rounded-xl border border-[#EBEBEB]">
-                  <div className="text-[10px] text-[#717171] uppercase font-bold">Country & Region</div>
-                  <div className="font-bold text-[#222222] mt-1">{contact.city ? `${contact.city}, ${contact.country}` : contact.country}</div>
-                </div>
-                <div className="p-3 rounded-xl border border-[#EBEBEB]">
-                  <div className="text-[10px] text-[#717171] uppercase font-bold">Official Website</div>
-                  <div className="font-bold text-[#E8192C] mt-1 flex items-center gap-1">
-                    <Globe className="w-3 h-3" /> {contact.website || 'https://' + contact.company.toLowerCase().replace(/[^a-z0-9]/g, '') + '.com'}
-                  </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="p-3 rounded-xl border border-[#E5E7EB]">
+                <div className="text-[10px] text-[#6B7280] uppercase font-bold">Sector</div>
+                <div className="font-bold text-[#111827] mt-1">{contact.sectorName || '—'}</div>
+              </div>
+              <div className="p-3 rounded-xl border border-[#E5E7EB]">
+                <div className="text-[10px] text-[#6B7280] uppercase font-bold">Category</div>
+                <div className="font-bold text-[#111827] mt-1">{contact.categoryName || '—'}</div>
+              </div>
+              <div className="p-3 rounded-xl border border-[#E5E7EB]">
+                <div className="text-[10px] text-[#6B7280] uppercase font-bold">Subcategory</div>
+                <div className="font-bold text-[#111827] mt-1">
+                  {contact.subcategoryName || '—'}
                 </div>
               </div>
             </div>
-          )}
 
-          {/* TAB 3: PREFERENCES */}
-          {activeTab === 'preferences' && (
-            <div className="space-y-3">
-              <div className="p-4 rounded-2xl border border-[#EBEBEB] space-y-2">
-                <div className="font-bold text-[#222222]">Communication Channels</div>
-                <div className="space-y-1 text-[#555555]">
-                  <div className="flex justify-between"><span>WhatsApp Direct Broadcast:</span> <span className="font-bold text-emerald-600">Enabled</span></div>
-                  <div className="flex justify-between"><span>Email Notifications:</span> <span className="font-bold text-emerald-600">Enabled</span></div>
-                  <div className="flex justify-between"><span>Direct Phone Calls:</span> <span className="font-bold text-neutral-600">Standard Business Hours</span></div>
-                </div>
+            <div className="p-3 rounded-xl border border-[#E5E7EB]">
+              <div className="text-[10px] text-[#6B7280] uppercase font-bold mb-1.5">
+                Database Role & Expertise Tags
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <Badge variant="primary">
+                  {(contact.databaseType || contact.roles?.[0] || 'client').toUpperCase()}
+                </Badge>
+                {(contact.skills || []).map((sk) => (
+                  <Badge key={sk} variant="outline">
+                    {sk}
+                  </Badge>
+                ))}
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* TAB 4: CONSENT AUDIT */}
-          {activeTab === 'consent' && (
-            <div className="space-y-3">
-              <div className="p-4 rounded-2xl bg-neutral-50 border border-[#EBEBEB] space-y-2">
-                <div className="font-bold text-[#222222] flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Digital Consent Record
-                </div>
-                <div className="text-[11px] text-[#555555]">
-                  Opt-In timestamp recorded on {new Date(contact.createdAt).toLocaleDateString()} via {contact.source} channel.
-                </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleStatusUpdate('opted_out')}
-                  className="text-xs text-rose-600 border-rose-200 hover:bg-rose-50 rounded-xl"
-                >
-                  Manually Opt-Out Contact
-                </Button>
-              </div>
+        {activeTab === 'consent' && (
+          <div className="p-4 rounded-2xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-3">
+            <div className="font-bold text-[#111827] flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" /> WhatsApp Consent Status:{' '}
+              <span className="uppercase text-[#E8192C]">
+                {(consentStatus || 'none').replace(/_/g, ' ')}
+              </span>
             </div>
-          )}
-
-          {/* TAB 5: CAMPAIGNS */}
-          {activeTab === 'campaigns' && (
-            <div className="space-y-2">
-              <div className="font-bold text-[#222222] mb-1">Campaigns Received ({contact.campaignHistoryCount || 1})</div>
-              <div className="p-3 rounded-xl border border-[#EBEBEB] flex items-center justify-between">
-                <div>
-                  <div className="font-bold text-[#222222]">Direct Invitation Broadcast (Q3 2026)</div>
-                  <div className="text-[10px] text-[#717171]">Template: xpo_direct_platform_invitation</div>
-                </div>
-                <Badge variant="success" className="text-[10px]">Delivered</Badge>
-              </div>
+            <p className="text-[11px] text-[#4B5563]">
+              XPO bulk WhatsApp invitations strictly contact only <code>opted_in</code> recipients.
+              Opted-out contacts are added to <code>suppression_list</code> immediately.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant={consentStatus === 'opted_in' ? 'primary' : 'outline'}
+                disabled={saving || consentStatus === 'opted_in'}
+                onClick={() => void handleConsentChange('opted_in')}
+                className={consentStatus === 'opted_in' ? 'bg-emerald-600 hover:bg-emerald-600 cursor-default text-white' : ''}
+              >
+                {consentStatus === 'opted_in' ? '✓ Currently Opted In' : 'Mark Verified Opt-In'}
+              </Button>
+              <Button
+                size="sm"
+                variant={consentStatus === 'opted_out' ? 'danger' : 'outline'}
+                disabled={saving || consentStatus === 'opted_out'}
+                onClick={() => void handleConsentChange('opted_out')}
+                className={
+                  consentStatus === 'opted_out'
+                    ? 'cursor-default'
+                    : 'text-red-600 border-red-200 hover:bg-red-50'
+                }
+              >
+                {consentStatus === 'opted_out' ? '✕ Currently Suppressed' : 'Opt-Out / Suppress'}
+              </Button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* TAB 6: CONVERSATIONS */}
-          {activeTab === 'conversations' && (
-            <div className="space-y-3 p-4 bg-[#EFEAE2] rounded-2xl border border-[#DDD5C7]">
-              <div className="p-3 bg-white rounded-xl shadow-xs max-w-xs space-y-1">
-                <div className="text-[10px] text-[#717171]">Outbound • WhatsApp Cloud API</div>
-                <div className="text-xs text-[#222222]">Hi {contact.name}, greeting from XPO India. We have verified requirements in {contact.industry}.</div>
-              </div>
+        {activeTab === 'account' && (
+          <div className="p-4 rounded-2xl border border-[#E5E7EB] space-y-2">
+            <div className="font-bold text-[#111827] flex items-center gap-1.5">
+              <UserCheck className="w-4 h-4 text-[#E8192C]" /> Linked XPO Account
             </div>
-          )}
-
-          {/* TAB 7: ACCOUNT */}
-          {activeTab === 'account' && (
-            <div className="space-y-3">
-              <div className="p-4 rounded-2xl border border-[#EBEBEB] space-y-2">
-                <div className="font-bold text-[#222222] flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-[#E8192C]" /> Platform User Binding
-                </div>
-                <p className="text-xs text-[#717171]">
-                  {contact.linkedUserId ? `Linked User ID: ${contact.linkedUserId}` : 'Not yet converted into a registered user account.'}
-                </p>
-              </div>
+            <p className="text-xs text-[#6B7280]">
+              {contact.linkedUid
+                ? `Registered & linked via E.164 phone_index to UID: ${contact.linkedUid}`
+                : 'Not yet registered. When this contact replies on WhatsApp or registers on Web, XPO automatically recognizes their uploaded profile, collects only missing details, and activates their account.'}
+            </p>
+            <div className="pt-2">
+              <Link
+                href={`/admin/users?search=${encodeURIComponent(contact.phoneE164)}`}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
+              >
+                {contact.linkedUid
+                  ? 'Manage User, Roles & Quota Allowances in User Directory →'
+                  : 'Search Phone in User Directory →'}
+              </Link>
             </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="pt-3 border-t border-[#EBEBEB] flex justify-end">
-          <Button size="sm" onClick={onClose} className="bg-neutral-900 text-white text-xs font-semibold rounded-xl">
-            Close Dossier
-          </Button>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
+export const ContactDetailModal = ContactDetailDrawer;

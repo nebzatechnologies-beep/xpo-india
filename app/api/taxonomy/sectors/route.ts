@@ -1,30 +1,64 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/lib/data/mock-db';
+import { type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { requireSuperadmin } from '@/lib/auth/server-session';
+import {
+  createOrUpdateSector,
+  getFullTaxonomyTree,
+  mergeTaxonomyEntity,
+} from '@/lib/services/taxonomy';
+import { handleApiError, jsonOk } from '@/lib/utils/api-handler';
+
+const sectorSchema = z.object({
+  id: z.string().optional(),
+  code: z.string().optional(),
+  name: z.string().min(2),
+  description: z.string().optional(),
+  icon: z.string().optional(),
+  sortOrder: z.number().optional(),
+  isActive: z.boolean().optional(),
+});
+
+const mergeSchema = z.object({
+  action: z.literal('merge'),
+  sourceId: z.string().min(1),
+  targetId: z.string().min(1),
+});
 
 export async function GET() {
-  const store = getMockStore();
-  return NextResponse.json({ success: true, data: store.sectors });
+  try {
+    await requireSuperadmin();
+    const tree = await getFullTaxonomyTree({ includeInactive: true });
+    return jsonOk({ sectors: tree.sectors });
+  } catch (err) {
+    return handleApiError(err);
+  }
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const store = getMockStore();
-    const existingIndex = store.sectors.findIndex((s: any) => s.code === body.code);
-    if (existingIndex >= 0) {
-      store.sectors[existingIndex] = { ...store.sectors[existingIndex], ...body };
-    } else {
-      store.sectors.push({
-        code: body.code || 'SEC_' + Date.now(),
-        name: body.name,
-        description: body.description || '',
-        categoriesCount: 0,
-        activeLeads: 0,
-        status: body.status || 'active'
-      });
+    const session = await requireSuperadmin();
+    const raw = await request.json();
+
+    if (raw?.action === 'merge') {
+      const parsed = mergeSchema.parse(raw);
+      const res = await mergeTaxonomyEntity(
+        { level: 'sector', sourceId: parsed.sourceId, targetId: parsed.targetId },
+        { uid: session.uid, name: session.user.displayName }
+      );
+      return jsonOk(res);
     }
-    return NextResponse.json({ success: true, data: store.sectors });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+
+    const body = sectorSchema.parse(raw);
+    const sector = await createOrUpdateSector(body, {
+      uid: session.uid,
+      name: session.user.displayName,
+    });
+    return jsonOk({ sector }, 201);
+  } catch (err) {
+    return handleApiError(err);
   }
+}
+
+export async function PATCH(request: NextRequest) {
+  return POST(request);
 }

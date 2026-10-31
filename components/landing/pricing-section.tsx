@@ -1,140 +1,237 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, ShieldCheck, Zap, Globe2 } from 'lucide-react';
+import { Check, CreditCard, Globe2, Zap } from 'lucide-react';
 
-interface PricingSectionProps {
-  region?: 'domestic' | 'global';
+export interface PricingSettings {
+  partnerFreeClaims: number;
+  partnerPaidMonthlyClaims: number;
+  partnerPlanUnlimited?: boolean;
+  partnerInrMonthlyPrice: number;
+  partnerUsdMonthlyPrice: number;
+  clientFreePartnerViews: number;
+  clientPaidMonthlyPartnerViews: number;
+  clientPlanUnlimited?: boolean;
+  clientInrMonthlyPrice: number;
+  clientUsdMonthlyPrice: number;
+  gstPercentInr: number;
 }
 
-export function PricingSection({ region = 'domestic' }: PricingSectionProps) {
-  const isGlobal = region === 'global';
-  const [roleTab, setRoleTab] = useState<'creator' | 'absorber'>('absorber');
+const DEFAULT_SETTINGS: PricingSettings = {
+  partnerFreeClaims: 5,
+  partnerPaidMonthlyClaims: 30,
+  partnerPlanUnlimited: false,
+  partnerInrMonthlyPrice: 299,
+  partnerUsdMonthlyPrice: 9.99,
+  clientFreePartnerViews: 5,
+  clientPaidMonthlyPartnerViews: 30,
+  clientPlanUnlimited: false,
+  clientInrMonthlyPrice: 299,
+  clientUsdMonthlyPrice: 9.99,
+  gstPercentInr: 18,
+};
 
-  const priceAmount = isGlobal ? '$49' : '₹999';
-  const freePrice = isGlobal ? '$0' : '₹0';
-  const currencyLabel = isGlobal ? 'USD' : 'INR';
-  const gatewayLabel = isGlobal ? 'PayPal / International Stripe' : 'Razorpay UPI AutoPay / NetBanking';
+export function PricingSection({
+  initialSettings,
+}: {
+  initialSettings?: Partial<PricingSettings>;
+}) {
+  const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
+  const [settings, setSettings] = useState<PricingSettings>({
+    ...DEFAULT_SETTINGS,
+    ...initialSettings,
+  });
+
+  useEffect(() => {
+    let isMounted = true;
+    async function fetchLivePricing() {
+      try {
+        const res = await fetch('/api/platform/pricing');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.subscriptions && isMounted) {
+            setSettings({
+              partnerFreeClaims: Number(data.subscriptions.partnerFreeClaims ?? 5),
+              partnerPaidMonthlyClaims: Number(data.subscriptions.partnerPaidMonthlyClaims ?? 30),
+              partnerPlanUnlimited: Boolean(data.subscriptions.partnerPlanUnlimited),
+              partnerInrMonthlyPrice: Number(data.subscriptions.partnerInrMonthlyPrice ?? 299),
+              partnerUsdMonthlyPrice: Number(data.subscriptions.partnerUsdMonthlyPrice ?? 9.99),
+              clientFreePartnerViews: Number(data.subscriptions.clientFreePartnerViews ?? 5),
+              clientPaidMonthlyPartnerViews: Number(
+                data.subscriptions.clientPaidMonthlyPartnerViews ?? 30
+              ),
+              clientPlanUnlimited: Boolean(data.subscriptions.clientPlanUnlimited),
+              clientInrMonthlyPrice: Number(data.subscriptions.clientInrMonthlyPrice ?? 299),
+              clientUsdMonthlyPrice: Number(data.subscriptions.clientUsdMonthlyPrice ?? 9.99),
+              gstPercentInr: Number(data.subscriptions.gstPercentInr ?? 18),
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to load live pricing settings:', err);
+      }
+    }
+    void fetchLivePricing();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const clientPriceDisplay =
+    currency === 'INR'
+      ? `₹${settings.clientInrMonthlyPrice}`
+      : `$${settings.clientUsdMonthlyPrice}`;
+
+  const partnerPriceDisplay =
+    currency === 'INR'
+      ? `₹${settings.partnerInrMonthlyPrice}`
+      : `$${settings.partnerUsdMonthlyPrice}`;
+
+  const gatewayText =
+    currency === 'INR'
+      ? `Razorpay UPI / Card AutoPay (+${settings.gstPercentInr}% GST)`
+      : 'PayPal Subscriptions AutoPay';
+
+  const clientAllowanceLabel = settings.clientPlanUnlimited
+    ? 'Unlimited Partner Views / mo'
+    : `${settings.clientPaidMonthlyPartnerViews} Partner Views / mo`;
+
+  const partnerAllowanceLabel = settings.partnerPlanUnlimited
+    ? 'Unlimited Lead Applications / mo'
+    : `${settings.partnerPaidMonthlyClaims} Lead Applications / mo`;
 
   return (
-    <section className="py-20 sm:py-28 bg-white" id="pricing">
+    <section className="py-20 sm:py-24 bg-white" id="pricing">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-12 space-y-3">
           <Badge variant="primary" className="font-semibold">
-            {isGlobal ? 'Global Transparent Subscriptions' : 'Domestic Transparent Subscriptions'}
+            Starter Free Quotas • Zero Deal Commission
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#222222] tracking-tight">
-            Monetized on Connections. Zero Commission on Deals.
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111827] tracking-tight">
+            Start Free on Both Sides. Subscribe Only as You Grow.
           </h2>
-          <p className="text-[#717171] text-sm sm:text-base leading-relaxed">
-            {isGlobal
-              ? 'International buyers and suppliers subscribe to our flat annual USD global plan with zero middleman deductions.'
-              : 'Indian employers and suppliers subscribe to our flat annual INR domestic plan with GST invoicing and UPI AutoPay.'}
+          <p className="text-[#6B7280] text-sm sm:text-base leading-relaxed">
+            Clients always post requirements free and receive {settings.clientFreePartnerViews} free
+            Partner profile views. Partners receive {settings.partnerFreeClaims} free valid lead
+            applications before needing a monthly plan.
           </p>
 
-          {/* Regional Rule Badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F9FAFB] border border-[#E5E7EB] text-xs font-medium text-[#4B5563]">
-            <Globe2 className="w-3.5 h-3.5 text-[#E8192C]" />
-            <span>
-              {isGlobal
-                ? 'Global Plan: Billed in USD ($49/yr). Connect with Indian manufacturing talent & worldwide buyers.'
-                : 'Domestic Plan: Billed in INR (₹999/yr). Connect with Indian suppliers & overseas engineering talent.'}
-            </span>
-          </div>
-
-          <div className="mt-8 inline-flex items-center p-1 rounded-full bg-[#F3F4F6] border border-[#E5E7EB]">
+          <div className="mt-6 inline-flex items-center p-1 rounded-full bg-[#F3F4F6] border border-[#E5E7EB]">
             <button
-              onClick={() => setRoleTab('absorber')}
-              className={`px-6 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                roleTab === 'absorber' ? 'bg-white text-[#222222] shadow-sm' : 'text-[#717171] hover:text-[#222222]'
+              type="button"
+              onClick={() => setCurrency('INR')}
+              className={`px-5 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
+                currency === 'INR' ? 'bg-white text-[#111827] shadow-sm' : 'text-[#6B7280]'
               }`}
             >
-              For Lead Absorbers (Providers)
+              <CreditCard className="w-3.5 h-3.5 text-[#E8192C]" /> India Billing (INR)
             </button>
             <button
-              onClick={() => setRoleTab('creator')}
-              className={`px-6 py-2 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                roleTab === 'creator' ? 'bg-white text-[#222222] shadow-sm' : 'text-[#717171] hover:text-[#222222]'
+              type="button"
+              onClick={() => setCurrency('USD')}
+              className={`px-5 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
+                currency === 'USD' ? 'bg-white text-[#111827] shadow-sm' : 'text-[#6B7280]'
               }`}
             >
-              For Lead Creators (Buyers)
+              <Globe2 className="w-3.5 h-3.5 text-blue-600" /> International Billing (USD)
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Free Tier */}
-          <div className="border border-[#EBEBEB] rounded-[18px] p-8 flex flex-col justify-between bg-[#FAFAFA]">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          {/* Client Plan */}
+          <div className="border border-[#E5E7EB] rounded-3xl p-8 flex flex-col justify-between bg-[#F8F9FA] relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#111827] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
+              Post Requirements Free + {settings.clientFreePartnerViews} Free Partner Views
+            </div>
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#717171]">Starter</span>
-                <span className="text-xs font-semibold text-[#059669] bg-[#ECFDF5] px-2.5 py-1 rounded-full">Free</span>
+              <div className="flex items-center justify-between mb-3 mt-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+                  For Clients
+                </span>
+                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                  {clientAllowanceLabel}
+                </span>
               </div>
-              <h3 className="text-2xl font-bold text-[#222222]">
-                {roleTab === 'absorber' ? 'Explorer Access' : 'Initial Lead Post'}
-              </h3>
-              <div className="my-6">
-                <span className="text-4xl font-black text-[#222222]">{freePrice}</span>
+              <h3 className="text-xl font-bold text-[#111827]">Client Monthly Plan</h3>
+              <div className="my-5">
+                <span className="text-4xl font-black text-[#111827]">{clientPriceDisplay}</span>
+                <span className="text-xs text-[#6B7280]"> / month after free starter views</span>
+                <div className="text-[11px] text-[#6B7280] mt-1">{gatewayText}</div>
               </div>
-              <ul className="space-y-3 text-sm text-[#717171]">
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-[#059669]" /> Browse lead headlines & categories</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-[#059669]" /> View approximate budget ranges</li>
-                <li className="flex items-center gap-2"><Check className="w-4 h-4 text-[#059669]" /> Cross-border discovery enabled</li>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-[#374151]">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Post business & service
+                  requirements 100% free
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" />{' '}
+                  {settings.clientFreePartnerViews} free Partner profile unlocks included on signup
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> {clientAllowanceLabel} on
+                  active Client Plan (unlock once, view forever)
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600 shrink-0" /> Mutual-consent contact
+                  privacy & direct price negotiation
+                </li>
               </ul>
             </div>
-            <div className="mt-8 pt-6 border-t border-[#EBEBEB]">
-              <Link href={roleTab === 'absorber' ? '/absorber/opportunities' : '/creator/dashboard?openPost=true'}>
-                <Button variant="outline" className="w-full">
-                  {roleTab === 'absorber' ? 'Explore Opportunities' : 'Post Free Requirement'}
+            <div className="mt-8 pt-5 border-t border-[#E5E7EB]">
+              <Link href="/register?role=client">
+                <Button className="w-full rounded-xl bg-[#111827] hover:bg-black text-white font-bold">
+                  Post Free & Get {settings.clientFreePartnerViews} Free Views
                 </Button>
               </Link>
             </div>
           </div>
 
-          {/* Premium Annual Tier */}
-          <div className={`border-2 rounded-[18px] p-8 flex flex-col justify-between shadow-[0_8px_30px_rgba(0,0,0,0.06)] bg-white relative ${
-            isGlobal ? 'border-blue-600' : 'border-[#E8192C]'
-          }`}>
-            <div className={`absolute -top-3.5 left-1/2 -translate-x-1/2 text-white text-[11px] font-extrabold uppercase tracking-wider px-4 py-1 rounded-full ${
-              isGlobal ? 'bg-blue-600' : 'bg-[#E8192C]'
-            }`}>
-              Most Popular • Best Value
+          {/* Partner Plan */}
+          <div className="border-2 border-[#E8192C] rounded-3xl p-8 flex flex-col justify-between shadow-lg bg-white relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#E8192C] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
+              {settings.partnerFreeClaims} Free Lead Applications Included
             </div>
             <div>
-              <div className="flex items-center justify-between mb-4 mt-2">
-                <span className={`text-xs font-bold uppercase tracking-wider ${
-                  isGlobal ? 'text-blue-600' : 'text-[#E8192C]'
-                }`}>
-                  {roleTab === 'absorber' ? 'Annual Provider' : 'Annual Creator'}
+              <div className="flex items-center justify-between mb-3 mt-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#E8192C]">
+                  For Partners
                 </span>
-                <span className="text-xs font-semibold text-neutral-800 bg-neutral-100 px-2.5 py-1 rounded-full">
-                  {gatewayLabel}
+                <span className="text-[11px] font-semibold text-neutral-700 bg-neutral-100 px-2.5 py-0.5 rounded-full">
+                  {partnerAllowanceLabel}
                 </span>
               </div>
-              <h3 className="text-2xl font-bold text-[#222222]">
-                {roleTab === 'absorber' ? 'Full Provider Membership' : 'Unlimited Creator Plan'}
-              </h3>
-              <div className="my-6">
-                <span className="text-4xl font-black text-[#222222]">{priceAmount}</span>
-                <span className="text-xs text-[#717171]"> / year ({currencyLabel})</span>
+              <h3 className="text-xl font-bold text-[#111827]">Partner Monthly Plan</h3>
+              <div className="my-5">
+                <span className="text-4xl font-black text-[#111827]">{partnerPriceDisplay}</span>
+                <span className="text-xs text-[#6B7280]"> / month after free starter claims</span>
+                <div className="text-[11px] text-[#6B7280] mt-1">{gatewayText}</div>
               </div>
-              <ul className="space-y-3 text-sm text-[#222222]">
-                <li className="flex items-center gap-2"><Check className={`w-4 h-4 ${isGlobal ? 'text-blue-600' : 'text-[#E8192C]'}`} /> Full technical specification & drawing file access</li>
-                <li className="flex items-center gap-2"><Check className={`w-4 h-4 ${isGlobal ? 'text-blue-600' : 'text-[#E8192C]'}`} /> Submit unlimited quotes & proposals</li>
-                <li className="flex items-center gap-2"><Check className={`w-4 h-4 ${isGlobal ? 'text-blue-600' : 'text-[#E8192C]'}`} /> Direct phone & WhatsApp handshake unmasking</li>
-                <li className="flex items-center gap-2"><Check className={`w-4 h-4 ${isGlobal ? 'text-blue-600' : 'text-[#E8192C]'}`} /> Cross-border hiring: Connect across India and worldwide</li>
-                <li className="flex items-center gap-2 font-semibold text-[#059669]"><Zap className="w-4 h-4 text-[#059669]" /> Keep 100% of deal value — zero broker commission</li>
+              <ul className="space-y-2.5 text-xs sm:text-sm text-[#111827]">
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#E8192C] shrink-0" /> {settings.partnerFreeClaims}{' '}
+                  free valid lead applications on signup
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#E8192C] shrink-0" /> {partnerAllowanceLabel} on
+                  active Partner Plan
+                </li>
+                <li className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-[#E8192C] shrink-0" /> Zero deduction on expired or
+                  declined 5-minute WhatsApp offers
+                </li>
+                <li className="flex items-center gap-2 font-semibold text-emerald-700">
+                  <Zap className="w-4 h-4 text-emerald-600 shrink-0" /> Keep 100% of contract value
+                </li>
               </ul>
             </div>
-            <div className="mt-8 pt-6 border-t border-[#EBEBEB]">
-              <Link href={roleTab === 'absorber' ? '/absorber/subscription' : '/creator/subscription'}>
-                <Button className={`w-full font-bold py-3 text-white ${
-                  isGlobal ? 'bg-blue-600 hover:bg-blue-700' : 'bg-[#E8192C] hover:bg-[#C0111F]'
-                }`}>
-                  Get Started — {priceAmount}/year
+            <div className="mt-8 pt-5 border-t border-[#E5E7EB]">
+              <Link href="/register?role=partner">
+                <Button className="w-full rounded-xl bg-[#E8192C] hover:bg-[#C0111F] text-white font-bold">
+                  Start with {settings.partnerFreeClaims} Free Applications
                 </Button>
               </Link>
             </div>

@@ -1,93 +1,134 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getMockStore } from '@/lib/data/mock-db';
+import { type NextRequest } from 'next/server';
+import { z } from 'zod';
+import { requireSuperadmin } from '@/lib/auth/server-session';
+import {
+  listCrmContacts,
+  updateCrmContactById,
+  upsertCrmContactNonDestructive,
+} from '@/lib/services/crm';
+import { BadRequestError, handleApiError, jsonOk } from '@/lib/utils/api-handler';
+import type {
+  ConsentStatus,
+  CrmContact,
+  CrmContactState,
+  CrmDatabaseType,
+  CrmInvitationStatus,
+  CustomerRole,
+} from '@/lib/types/domain';
 
-export async function GET(req: NextRequest) {
-  const store = getMockStore();
-  const { searchParams } = new URL(req.url);
-  const search = searchParams.get('q')?.toLowerCase();
-  const status = searchParams.get('status');
-  const country = searchParams.get('country');
+const createCrmSchema = z.object({
+  databaseType: z.enum(['client', 'partner']).optional(),
+  phoneRaw: z.string().min(5),
+  whatsappRaw: z.string().optional(),
+  confirmedCountry: z.string().optional(),
+  contactName: z.string().min(1),
+  companyName: z.string().optional(),
+  businessInfo: z.string().optional(),
+  servicesOffered: z.array(z.string()).optional(),
+  email: z.string().email().optional().or(z.literal('')).nullable(),
+  website: z.string().optional().nullable(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  country: z.string().optional(),
+  sectorId: z.string().optional().nullable(),
+  sectorName: z.string().optional(),
+  categoryId: z.string().optional().nullable(),
+  categoryName: z.string().optional(),
+  subcategoryId: z.string().optional().nullable(),
+  subcategoryName: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  roles: z.array(z.enum(['client', 'partner'])).optional(),
+  consentStatus: z.enum(['none', 'consent_pending', 'opted_in', 'opted_out']).optional(),
+  source: z.string().optional(),
+  notes: z.string().optional(),
+});
 
-  let list = [...store.crmContacts];
+const patchCrmSchema = z.object({
+  id: z.string().optional(),
+  phoneE164: z.string().optional(),
+  patch: z
+    .object({
+      contactName: z.string().min(1).optional(),
+      companyName: z.string().optional(),
+      businessInfo: z.string().optional(),
+      servicesOffered: z.array(z.string()).optional(),
+      email: z.string().email().optional().or(z.literal('')).nullable(),
+      website: z.string().optional().nullable(),
+      city: z.string().optional(),
+      state: z.string().optional(),
+      country: z.string().optional(),
+      sectorId: z.string().optional().nullable(),
+      sectorName: z.string().optional(),
+      categoryId: z.string().optional().nullable(),
+      categoryName: z.string().optional(),
+      subcategoryId: z.string().optional().nullable(),
+      subcategoryName: z.string().optional(),
+      skills: z.array(z.string()).optional(),
+      notes: z.string().optional(),
+      crmState: z
+        .enum([
+          'imported_prospect',
+          'opted_out_contact',
+          'suspended_contact',
+          'registered_customer',
+        ])
+        .optional(),
+    })
+    .passthrough()
+    .optional(),
+}).passthrough();
 
-  if (search) {
-    list = list.filter((c: any) =>
-      c.company.toLowerCase().includes(search) ||
-      c.name.toLowerCase().includes(search) ||
-      c.email.toLowerCase().includes(search) ||
-      c.whatsapp.includes(search)
-    );
+export async function GET(request: NextRequest) {
+  try {
+    await requireSuperadmin();
+    const sp = request.nextUrl.searchParams;
+    const contacts = await listCrmContacts({
+      databaseType: (sp.get('databaseType') as CrmDatabaseType) || undefined,
+      invitationStatus: (sp.get('invitationStatus') as CrmInvitationStatus) || undefined,
+      search: sp.get('search') || undefined,
+      crmState: (sp.get('crmState') as CrmContactState) || undefined,
+      consentStatus: (sp.get('consentStatus') as ConsentStatus) || undefined,
+      role: (sp.get('role') as CustomerRole) || undefined,
+      sectorId: sp.get('sectorId') || undefined,
+      categoryId: sp.get('categoryId') || undefined,
+      city: sp.get('city') || undefined,
+      limit: sp.get('limit') ? Number(sp.get('limit')) : 300,
+    });
+    return jsonOk({ contacts });
+  } catch (err) {
+    return handleApiError(err);
   }
-
-  if (status && status !== 'all') {
-    list = list.filter((c: any) => c.status === status);
-  }
-
-  if (country && country !== 'all') {
-    list = list.filter((c: any) => c.country === country);
-  }
-
-  return NextResponse.json({
-    success: true,
-    data: list,
-    stats: {
-      total: store.crmContacts.length,
-      notContacted: store.crmContacts.filter((c: any) => c.status === 'not_contacted').length,
-      contacted: store.crmContacts.filter((c: any) => c.status === 'contacted').length,
-      registered: store.crmContacts.filter((c: any) => c.status === 'registered').length,
-      subscribed: store.crmContacts.filter((c: any) => c.status === 'subscribed').length,
-      optedInConsent: store.crmContacts.filter((c: any) => c.consentStatus === 'opted_in').length,
-    }
-  });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const body = await req.json();
-    const store = getMockStore();
+    await requireSuperadmin();
+    const body = createCrmSchema.parse(await request.json());
+    const result = await upsertCrmContactNonDestructive({
+      ...body,
+      email: body.email || null,
+    });
+    return jsonOk(result, 201);
+  } catch (err) {
+    return handleApiError(err);
+  }
+}
 
-    if (body.action === 'updateStatus') {
-      const contact = store.crmContacts.find((c: any) => c.id === body.id);
-      if (contact) {
-        contact.status = body.status;
-        contact.lastContacted = new Date().toISOString();
-        return NextResponse.json({ success: true, message: 'Status updated', data: contact });
-      }
-      return NextResponse.json({ success: false, error: 'Contact not found' }, { status: 404 });
+export async function PATCH(request: NextRequest) {
+  try {
+    const session = await requireSuperadmin();
+    const body = patchCrmSchema.parse(await request.json());
+    const phoneE164 = String(body.phoneE164 || body.id || '');
+    if (!phoneE164) {
+      throw new BadRequestError('Target contact phoneE164 or id is required.');
     }
-
-    if (body.action === 'optOut') {
-      const contact = store.crmContacts.find((c: any) => c.id === body.id);
-      if (contact) {
-        contact.consentStatus = 'opted_out';
-        contact.status = 'opted_out';
-        return NextResponse.json({ success: true, message: 'Contact opted out', data: contact });
-      }
-    }
-
-    const newContact = {
-      id: 'crm_' + Date.now(),
-      name: body.name,
-      company: body.company,
-      phone: body.phone,
-      whatsapp: body.whatsapp || body.phone,
-      email: body.email,
-      website: body.website || '',
-      country: body.country || 'India',
-      city: body.city || '',
-      industry: body.industry || 'Manufacturing',
-      sectorCode: body.sectorCode || 'MFG',
-      source: body.source || 'manual',
-      status: 'not_contacted',
-      consentStatus: 'opted_in',
-      campaignHistoryCount: 0,
-      notes: body.notes || '',
-      createdAt: new Date().toISOString()
-    };
-    store.crmContacts.unshift(newContact);
-
-    return NextResponse.json({ success: true, data: newContact });
-  } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    const patchData = (body.patch || body) as Partial<CrmContact>;
+    const contact = await updateCrmContactById(phoneE164, patchData, {
+      uid: session.uid,
+      name: session.user.displayName,
+    });
+    return jsonOk({ contact });
+  } catch (err) {
+    return handleApiError(err);
   }
 }

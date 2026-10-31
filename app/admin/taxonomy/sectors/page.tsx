@@ -1,151 +1,155 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Plus, Edit2, Building2 } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import type { TaxonomySector } from '@/lib/types/domain';
+import { Plus, GitMerge } from 'lucide-react';
 
-interface SectorItem {
-  code: string;
-  name: string;
-  description: string;
-  categoriesCount?: number;
-  activeLeads?: number;
-  status: string;
-}
+export default function AdminTaxonomySectorsPage() {
+  const [sectors, setSectors] = useState<TaxonomySector[]>([]);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [sourceId, setSourceId] = useState('');
+  const [targetId, setTargetId] = useState('');
+  const [msg, setMsg] = useState<string | null>(null);
 
-export default function SectorsPage() {
-  const [sectors, setSectors] = useState<SectorItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [form, setForm] = useState({ code: '', name: '', description: '', status: 'active' });
-
-  useEffect(() => {
-    fetch('/api/taxonomy/sectors')
-      .then(res => res.json())
-      .then(res => {
-        if (res.success) setSectors(res.data);
-      })
-      .finally(() => setLoading(false));
+  const load = useCallback(async () => {
+    const res = await fetch('/api/taxonomy/sectors');
+    if (res.ok) {
+      const d = await res.json();
+      setSectors(d.sectors || []);
+    }
   }, []);
 
-  const handleSave = async (e: React.FormEvent) => {
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function createSector(e: React.FormEvent) {
     e.preventDefault();
     const res = await fetch('/api/taxonomy/sectors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      body: JSON.stringify({ name: name.trim(), description: description.trim() }),
     });
-    const data = await res.json();
-    if (data.success) {
-      setSectors(data.data);
-      setModalOpen(false);
+    if (res.ok) {
+      setName('');
+      setDescription('');
+      setMsg('Sector saved.');
+      await load();
     }
-  };
+  }
 
-  if (loading) {
-    return <div className="p-8 text-center text-xs text-[#717171]">Loading sectors...</div>;
+  async function mergeSectors(e: React.FormEvent) {
+    e.preventDefault();
+    if (!sourceId || !targetId || sourceId === targetId) return;
+    const res = await fetch('/api/taxonomy/sectors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'merge', sourceId, targetId }),
+    });
+    if (res.ok) {
+      setMsg('Duplicate sector merged cleanly.');
+      setSourceId('');
+      setTargetId('');
+      await load();
+    }
   }
 
   return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-black text-[#222222] tracking-tight">Sectors (Tier-1 Classification)</h1>
-          <p className="text-xs text-[#717171] mt-0.5">Core industrial and commercial sectors across Indian and Global trade.</p>
-        </div>
-        <Button onClick={() => setModalOpen(true)} className="bg-[#E8192C] hover:bg-[#D01627] text-white text-xs font-semibold rounded-xl flex items-center gap-1.5">
-          <Plus className="w-3.5 h-3.5" /> Add Sector
-        </Button>
-      </div>
-
-      <Card className="rounded-2xl border border-[#EBEBEB] bg-white overflow-hidden shadow-none">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAFAFA] border-b border-[#EBEBEB] text-[#717171] uppercase tracking-wider font-bold">
-              <tr>
-                <th className="p-4">Sector Code</th>
-                <th className="p-4">Sector Name</th>
-                <th className="p-4">Description</th>
-                <th className="p-4">Categories</th>
-                <th className="p-4">Active Leads</th>
-                <th className="p-4">Status</th>
-                <th className="p-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#EBEBEB]">
-              {sectors.map((sec) => (
-                <tr key={sec.code} className="hover:bg-[#FDFDFD]">
-                  <td className="p-4 font-mono font-bold text-[#222222]">{sec.code}</td>
-                  <td className="p-4 font-bold text-[#222222] flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-[#E8192C]" />
-                    {sec.name}
-                  </td>
-                  <td className="p-4 text-[#717171] max-w-xs truncate">{sec.description}</td>
-                  <td className="p-4 font-semibold text-[#555555]">{sec.categoriesCount || 3} Categories</td>
-                  <td className="p-4 font-bold text-[#222222]">{sec.activeLeads || 8}</td>
-                  <td className="p-4">
-                    <Badge variant={sec.status === 'active' ? 'success' : 'neutral'} className="text-[10px]">
-                      {sec.status.toUpperCase()}
-                    </Badge>
-                  </td>
-                  <td className="p-4 text-right">
-                    <button className="text-[#717171] hover:text-[#E8192C] transition-colors">
-                      <Edit2 className="w-4 h-4 inline" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {modalOpen && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 border border-[#EBEBEB] shadow-xl">
-            <h3 className="text-base font-black text-[#222222]">Add New Sector</h3>
-            <form onSubmit={handleSave} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-[#717171] uppercase tracking-wider mb-1">Code</label>
-                <input
-                  type="text"
-                  required
-                  value={form.code}
-                  onChange={e => setForm({ ...form, code: e.target.value })}
-                  placeholder="e.g. TEXTILE, LOGISTICS"
-                  className="w-full px-3 py-2 rounded-xl border border-[#EBEBEB] focus:border-[#E8192C] outline-none font-mono"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-[#717171] uppercase tracking-wider mb-1">Sector Name</label>
-                <input
-                  type="text"
-                  required
-                  value={form.name}
-                  onChange={e => setForm({ ...form, name: e.target.value })}
-                  placeholder="e.g. Textiles, Apparel & Garments"
-                  className="w-full px-3 py-2 rounded-xl border border-[#EBEBEB] focus:border-[#E8192C] outline-none"
-                />
-              </div>
-              <div>
-                <label className="block font-bold text-[#717171] uppercase tracking-wider mb-1">Description</label>
-                <textarea
-                  rows={3}
-                  value={form.description}
-                  onChange={e => setForm({ ...form, description: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-[#EBEBEB] focus:border-[#E8192C] outline-none"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => setModalOpen(false)}>Cancel</Button>
-                <Button type="submit" size="sm" className="bg-[#E8192C] text-white">Save Sector</Button>
-              </div>
-            </form>
-          </div>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-extrabold text-[#111827]">Tier 1 — Sectors & Duplicate Merge</h1>
+      {msg && (
+        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
+          {msg}
         </div>
       )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form
+          onSubmit={createSector}
+          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-3"
+        >
+          <div className="text-xs font-bold flex items-center gap-1.5 text-[#111827]">
+            <Plus className="w-4 h-4 text-[#111827]" /> Add / Update Sector
+          </div>
+          <input
+            type="text"
+            required
+            placeholder="Sector Name (e.g., Renewable Energy)"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="w-full px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+          />
+          <input
+            type="text"
+            placeholder="Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            className="w-full px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs"
+          />
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+          >
+            Save Sector
+          </button>
+        </form>
+
+        <form
+          onSubmit={mergeSectors}
+          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-3"
+        >
+          <div className="text-xs font-bold flex items-center gap-1.5">
+            <GitMerge className="w-4 h-4 text-amber-600" /> Merge Duplicate Sector
+          </div>
+          <select
+            value={sourceId}
+            onChange={(e) => setSourceId(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+          >
+            <option value="">Select Duplicate Source Sector</option>
+            {sectors.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.code})
+              </option>
+            ))}
+          </select>
+          <select
+            value={targetId}
+            onChange={(e) => setTargetId(e.target.value)}
+            className="w-full px-3 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs"
+          >
+            <option value="">Select Canonical Target Sector</option>
+            {sectors.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.code})
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-bold"
+          >
+            Merge & Re-link Categories
+          </button>
+        </form>
+      </div>
+
+      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5">
+        <div className="divide-y divide-[#F3F4F6] text-xs">
+          {sectors.map((s) => (
+            <div key={s.id} className="py-2.5 flex items-center justify-between">
+              <div>
+                <span className="font-bold">{s.name}</span>{' '}
+                <span className="font-mono text-[#6B7280]">{s.code}</span>
+              </div>
+              <span className={s.isActive ? 'text-emerald-700 font-bold' : 'text-red-600'}>
+                {s.isActive ? 'Active' : 'Merged/Inactive'}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

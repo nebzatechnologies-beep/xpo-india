@@ -1,0 +1,51 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSuperadmin() {
+      return isSignedIn() && request.auth.token.superadmin == true;
+    }
+
+    // Private KYC & Verification Documents — strictly owner upload + Superadmin review (never publicly exposed)
+    match /kyc/{uid}/{allPaths=**} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isSuperadmin());
+      allow write: if isSignedIn() && request.auth.uid == uid
+                   && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    // Candidate Resumes — owner upload; readable only by owner, Superadmin, or via signed server URL upon application
+    match /resumes/{uid}/{allPaths=**} {
+      allow read: if isSignedIn() && (request.auth.uid == uid || isSuperadmin());
+      allow write: if isSignedIn() && request.auth.uid == uid
+                   && request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Requirement Supporting Specifications & CAD/PDF Docs
+    match /requirements/{uid}/{allPaths=**} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == uid
+                   && request.resource.size < 25 * 1024 * 1024;
+    }
+
+    // Partner Portfolio Assets
+    match /portfolios/{uid}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isSignedIn() && request.auth.uid == uid
+                   && request.resource.size < 15 * 1024 * 1024;
+    }
+
+    // Superadmin Excel & CSV Import Sheets & Error Reports
+    match /imports/{allPaths=**} {
+      allow read, write: if isSuperadmin();
+    }
+
+    // WhatsApp Inbound Media Vault (written by Firebase Admin SDK)
+    match /whatsapp-media/{allPaths=**} {
+      allow read: if isSuperadmin();
+      allow write: if false;
+    }
+  }
+}

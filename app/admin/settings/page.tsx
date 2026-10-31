@@ -1,122 +1,262 @@
 'use client';
 
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Workflow, ArrowRight, Zap, ShieldCheck } from 'lucide-react';
+import { ArrowRight, Loader2, Save, Settings, Shield } from 'lucide-react';
+import type { PlatformSettingsBundle } from '@/lib/types/domain';
 
-export default function AdminSettingsPage() {
+export default function AdminPlatformSettingsPage() {
+  const [settings, setSettings] = useState<PlatformSettingsBundle | null>(null);
+  const [keywordsText, setKeywordsText] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch('/api/admin/settings');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to load platform settings');
+      setSettings(data.settings);
+      setKeywordsText((data.settings?.moderation?.blockedKeywords || []).join(', '));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load settings');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!settings) return;
+    try {
+      setSaving(true);
+      setMessage(null);
+      setError(null);
+      const blockedKeywords = keywordsText
+        .split(',')
+        .map((k) => k.trim().toLowerCase())
+        .filter(Boolean);
+
+      const res = await fetch('/api/admin/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          roles: settings.roles,
+          moderation: {
+            ...settings.moderation,
+            blockedKeywords,
+          },
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to save platform settings');
+      setSettings(data.settings);
+      setMessage('Platform role availability & moderation rules saved and audit logged.');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Save failed');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      <div>
-        <h1 className="text-2xl font-black text-[#222222] tracking-tight">System & Gateway Settings</h1>
-        <p className="text-xs text-[#717171] mt-0.5">Configure live production keys for Razorpay, PayPal, Firebase, and Hostinger n8n Automation.</p>
-      </div>
-
-      {/* Hostinger n8n Integration Highlight Card */}
-      <Card className="p-6 rounded-3xl border border-rose-200 bg-gradient-to-br from-rose-50/50 via-white to-orange-50/30 space-y-4 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3.5">
-            <div className="p-3 bg-[#E8192C] text-white rounded-2xl shadow-md shrink-0">
-              <Workflow className="w-6 h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-black text-[#222222]">Hostinger n8n Automation Bridge</h3>
-                <Badge variant="outline" className="border-rose-300 text-[#E8192C] bg-white text-[10px] font-bold">
-                  Recommended
-                </Badge>
-              </div>
-              <p className="text-xs text-[#717171] mt-1 max-w-xl">
-                Connect XPO Firebase backend with Hostinger n8n for automated WhatsApp/Email alerts, lead deadline reminders, partner audience matching & daily Superadmin activity reports.
-              </p>
-            </div>
-          </div>
-          <Link href="/admin/settings/integrations/n8n" className="shrink-0">
-            <Button variant="primary" size="md" className="rounded-2xl font-semibold gap-2 shadow-sm">
-              Configure n8n Bridge <ArrowRight className="w-4 h-4" />
-            </Button>
+    <div className="space-y-6 max-w-4xl">
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
+            <Settings className="w-6 h-6 text-[#111827]" />
+            General Settings
+          </h1>
+          <p className="text-xs text-[#6B7280] mt-1">
+            Manage Client & Partner availability, auto-moderation rules, and regional scope.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/settings/gateways"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold hover:bg-black shadow-xs"
+          >
+            Payment & API Keys <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+          <Link
+            href="/admin/settings/matching"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-gray-700 border border-gray-300 text-xs font-semibold hover:bg-gray-50 shadow-xs"
+          >
+            Matching & Dispatch <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
-      </Card>
-
-      {/* Razorpay */}
-      <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-bold text-[#222222]">Razorpay (Domestic India)</h3>
-            <p className="text-xs text-[#717171]">Used for ₹999/year domestic subscriptions, UPI, Cards, and AutoPay.</p>
-          </div>
-          <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50 text-xs">
-            Live Ready
-          </Badge>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-[#222222] block mb-1">Key ID</label>
-            <Input defaultValue="rzp_test_demo123" className="rounded-xl border-[#EBEBEB] text-xs font-mono" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[#222222] block mb-1">Key Secret</label>
-            <Input defaultValue="••••••••••••••••" type="password" className="rounded-xl border-[#EBEBEB] text-xs font-mono" />
-          </div>
-        </div>
-      </Card>
-
-      {/* PayPal */}
-      <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-bold text-[#222222]">PayPal (International)</h3>
-            <p className="text-xs text-[#717171]">Used for $49/year global subscriptions across 190+ countries.</p>
-          </div>
-          <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50 text-xs">
-            Sandbox / Live
-          </Badge>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-[#222222] block mb-1">Client ID</label>
-            <Input defaultValue="paypal_client_demo123" className="rounded-xl border-[#EBEBEB] text-xs font-mono" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[#222222] block mb-1">Secret</label>
-            <Input defaultValue="••••••••••••••••" type="password" className="rounded-xl border-[#EBEBEB] text-xs font-mono" />
-          </div>
-        </div>
-      </Card>
-
-      {/* Firebase */}
-      <Card className="p-6 rounded-3xl border border-[#EBEBEB] bg-white space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-base font-bold text-[#222222]">Firebase Storage & Hosting</h3>
-            <p className="text-xs text-[#717171]">Connected Live Account: tanmaydevsare@gmail.com (Project: xpo-india-ca951)</p>
-          </div>
-          <Badge variant="outline" className="border-emerald-200 text-emerald-700 bg-emerald-50 text-xs font-bold">
-            Live Connected
-          </Badge>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-xs font-semibold text-[#222222] block mb-1">Project ID</label>
-            <Input defaultValue="xpo-india-ca951" className="rounded-xl border-[#EBEBEB] text-xs font-mono" />
-          </div>
-          <div>
-            <label className="text-xs font-semibold text-[#222222] block mb-1">Storage Bucket</label>
-            <Input defaultValue="xpo-india-ca951.firebasestorage.app" className="rounded-xl border-[#EBEBEB] text-xs font-mono" />
-          </div>
-        </div>
-      </Card>
-
-      <div className="flex justify-end">
-        <Button variant="primary" size="md" className="rounded-2xl font-semibold px-6">
-          Save Settings
-        </Button>
       </div>
+
+      {error && (
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+          {error}
+        </div>
+      )}
+      {message && (
+        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-700">
+          {message}
+        </div>
+      )}
+
+      {loading || !settings ? (
+        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading settings...
+        </div>
+      ) : (
+        <form
+          onSubmit={handleSave}
+          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-6 text-xs"
+        >
+          {/* Role Enablement */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-extrabold text-[#111827]">
+              Active Customer Roles (WhatsApp & Web)
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              {(
+                [
+                  ['clientEnabled', 'Clients — Post Requirements & Connect'],
+                  ['partnerEnabled', 'Partners — Receive Business Leads'],
+                ] as const
+              ).map(([key, label]) => (
+                <label
+                  key={key}
+                  className="flex items-center justify-between p-3.5 rounded-xl border border-[#E5E7EB] hover:bg-gray-50 cursor-pointer"
+                >
+                  <span className="font-bold text-[#111827]">{label}</span>
+                  <input
+                    type="checkbox"
+                    checked={settings.roles[key]}
+                    onChange={(e) =>
+                      setSettings({
+                        ...settings,
+                        roles: { ...settings.roles, [key]: e.target.checked },
+                      })
+                    }
+                    className="w-4 h-4 accent-[#111827]"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
+
+          {/* Moderation & KYC Policy */}
+          <div className="space-y-3 pt-4 border-t border-[#E5E7EB]">
+            <h2 className="text-sm font-extrabold text-[#111827] flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-[#111827]" />
+              Moderation, KYC & Geography Scope
+            </h2>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <label className="flex items-center justify-between p-3.5 rounded-xl border border-[#E5E7EB] cursor-pointer">
+                <span>
+                  <strong className="block text-[#111827]">
+                    Auto-Approve Clean Client Requirements
+                  </strong>
+                  <span className="text-[11px] text-[#6B7280]">
+                    Immediately start 5-minute Partner matching if no blocked keywords trigger
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={settings.moderation.autoApproveCleanRequirements}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      moderation: {
+                        ...settings.moderation,
+                        autoApproveCleanRequirements: e.target.checked,
+                      },
+                    })
+                  }
+                  className="w-4 h-4 accent-[#111827]"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3.5 rounded-xl border border-[#E5E7EB] cursor-pointer">
+                <span>
+                  <strong className="block text-[#111827]">
+                    Require Approved KYC Before Partner Claims
+                  </strong>
+                  <span className="text-[11px] text-[#6B7280]">
+                    When off, phone-verified Partners can claim; KYC grants Verified Trust Badge
+                  </span>
+                </span>
+                <input
+                  type="checkbox"
+                  checked={settings.moderation.requirePartnerKycForClaims}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      moderation: {
+                        ...settings.moderation,
+                        requirePartnerKycForClaims: e.target.checked,
+                      },
+                    })
+                  }
+                  className="w-4 h-4 accent-[#111827]"
+                />
+              </label>
+            </div>
+
+            <div className="grid sm:grid-cols-2 gap-4 pt-2">
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">
+                  Launch Geography Scope
+                </label>
+                <select
+                  value={settings.moderation.launchGeographyScope}
+                  onChange={(e) =>
+                    setSettings({
+                      ...settings,
+                      moderation: {
+                        ...settings.moderation,
+                        launchGeographyScope: e.target.value as 'india_and_global' | 'india_only',
+                      },
+                    })
+                  }
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#D1D5DB] bg-white font-semibold"
+                >
+                  <option value="india_and_global">
+                    India-First + Global Expansion (INR Razorpay + USD PayPal)
+                  </option>
+                  <option value="india_only">India Domestic Only (+91 INR)</option>
+                </select>
+              </div>
+              <div>
+                <label className="block font-bold text-[#374151] mb-1">
+                  Auto-Hold Blocked Moderation Keywords (comma-separated)
+                </label>
+                <input
+                  type="text"
+                  value={keywordsText}
+                  onChange={(e) => setKeywordsText(e.target.value)}
+                  placeholder="crypto, gambling, whatsapp group link, ..."
+                  className="w-full px-3.5 py-2 rounded-xl border border-[#D1D5DB]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-2">
+            <button
+              type="submit"
+              disabled={saving}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white font-bold text-xs disabled:opacity-50"
+            >
+              {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              <span>{saving ? 'Saving...' : 'Save General Settings'}</span>
+            </button>
+          </div>
+        </form>
+      )}
     </div>
   );
 }

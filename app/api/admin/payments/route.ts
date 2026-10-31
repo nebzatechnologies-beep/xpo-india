@@ -1,58 +1,39 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { xpoStore } from '@/lib/data/mock-db';
+import { requireSuperadmin } from '@/lib/auth/server-session';
+import { requireFirestore } from '@/lib/firebase/admin';
+import { handleApiError, jsonOk } from '@/lib/utils/api-handler';
+import type { PaymentEventRecord } from '@/lib/types/domain';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const gateway = searchParams.get('gateway');
-    const status = searchParams.get('status');
-    const search = searchParams.get('search');
+    await requireSuperadmin();
+    const db = requireFirestore();
+    const snap = await db
+      .collection('payment_events')
+      .orderBy('occurredAt', 'desc')
+      .limit(200)
+      .get();
 
-    let list = [...xpoStore.payments];
+    const events = snap.docs.map((d) => d.data() as PaymentEventRecord);
+    const totalInr = events
+      .filter((e) => e.status === 'captured' && e.currency === 'INR')
+      .reduce((a, b) => a + b.amount, 0);
+    const totalGstInr = events
+      .filter((e) => e.status === 'captured' && e.currency === 'INR')
+      .reduce((a, b) => a + b.taxAmount, 0);
+    const totalUsd = events
+      .filter((e) => e.status === 'captured' && e.currency === 'USD')
+      .reduce((a, b) => a + b.amount, 0);
 
-    if (gateway && gateway !== 'all') {
-      list = list.filter((p: any) => p.gateway === gateway);
-    }
-    if (status && status !== 'all') {
-      list = list.filter((p: any) => p.status === status);
-    }
-    if (search) {
-      const q = search.toLowerCase();
-      list = list.filter(
-        (p: any) =>
-          p.gatewayOrderId?.toLowerCase().includes(q) ||
-          p.gatewayPaymentId?.toLowerCase().includes(q) ||
-          p.user?.name?.toLowerCase().includes(q) ||
-          p.user?.email?.toLowerCase().includes(q)
-      );
-    }
-
-    let razorpayRevenue = 0;
-    let paypalRevenue = 0;
-    for (const p of xpoStore.payments) {
-      if (p.status === 'captured') {
-        if (p.gateway === 'razorpay') razorpayRevenue += p.amount;
-        if (p.gateway === 'paypal') paypalRevenue += p.amount;
-      }
-    }
-
-    return NextResponse.json({
-      success: true,
-      payments: list,
-      stats: {
-        totalRevenue: razorpayRevenue,
-        razorpayRevenue,
-        paypalRevenue,
-        totalTransactions: xpoStore.payments.length,
-      },
-      pagination: {
-        page: 1,
-        limit: 50,
-        total: list.length,
-        totalPages: 1,
+    return jsonOk({
+      events,
+      summary: {
+        totalInr: Number(totalInr.toFixed(2)),
+        totalGstInr: Number(totalGstInr.toFixed(2)),
+        totalUsd: Number(totalUsd.toFixed(2)),
+        failedEventsCount: events.filter((e) => e.status === 'failed').length,
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  } catch (err) {
+    return handleApiError(err);
   }
 }
