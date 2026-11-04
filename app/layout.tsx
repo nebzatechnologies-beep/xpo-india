@@ -1,11 +1,26 @@
 import type { Metadata } from 'next';
+import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: '--font-jakarta',
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700', '800'],
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  variable: '--font-mono',
+  subsets: ['latin'],
+  weight: ['500', '700'],
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
-  title: 'XPO — WhatsApp-First B2B Client & Partner Marketplace',
+  title: 'XPO India — End-to-End Client & Partner Workspace',
   description:
-    'XPO connects Clients and verified Partners across industries through AI-guided WhatsApp onboarding, 5-minute lead distribution, and mutual-consent contact privacy.',
+    'Tell us what you need in plain words. We match up to 10 verified Indian businesses in 5-minute waves and connect you directly on WhatsApp.',
 };
 
 export default function RootLayout({
@@ -14,16 +29,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        />
-      </head>
-      <body className="min-h-screen bg-[#F8F9FA] text-[#111827] antialiased selection:bg-[#E8192C] selection:text-white">
+    <html lang="en" className={`${plusJakartaSans.variable} ${jetbrainsMono.variable}`}>
+      <body className="min-h-screen bg-[#F6F6F4] text-[#15171C] antialiased selection:bg-[#C8102E] selection:text-white">
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -187,25 +187,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col lg:flex-row antialiased">
-      <aside className="w-64 bg-white border-r border-[#E5E7EB] shrink-0 hidden lg:flex flex-col justify-between h-screen sticky top-0 z-30 select-none shadow-[1px_0_4px_rgba(0,0,0,0.02)]">
+    <div className="min-h-screen bg-[#F6F6F4] text-[#15171C] flex flex-col lg:flex-row antialiased">
+      <aside className="w-64 bg-white border-r border-[#E4E5E9] shrink-0 hidden lg:flex flex-col justify-between h-screen sticky top-0 z-30 select-none">
         <div className="flex flex-col h-full overflow-hidden">
-          <div className="h-16 px-5 border-b border-[#E5E7EB] flex items-center shrink-0">
+          <div className="h-14 px-5 border-b border-[#E4E5E9] flex items-center justify-between shrink-0">
             <Link href="/admin/dashboard" className="inline-flex items-center gap-2.5 group">
-              <span className="w-8 h-8 rounded-xl bg-[#E8192C] flex items-center justify-center text-white font-extrabold text-base shadow-xs group-hover:scale-105 transition-transform">
-                X
-              </span>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-black tracking-tight text-[#111827]">
-                    XPO <span className="text-[#E8192C]">Admin</span>
-                  </span>
-                </div>
-                <span className="block text-[10px] text-[#6B7280] font-medium">
-                  Superadmin Dashboard
-                </span>
-              </div>
+              <img
+                src="/xpo-logo.png"
+                alt="XPO"
+                className="h-7 w-auto object-contain"
+              />
             </Link>
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F1E9FB] text-[#5B21B6] uppercase tracking-wider">
+              SUPERADMIN
+            </span>
           </div>
 
           <nav className="flex-1 overflow-y-auto p-3 space-y-4 text-xs">
@@ -218,7 +213,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     onClick={() =>
                       setOpenSections((prev) => ({ ...prev, [sec.title]: !isOpen }))
                     }
-                    className="w-full flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider hover:text-[#374151]"
+                    className="w-full flex items-center justify-between px-2.5 py-1 text-[10px] font-bold text-[#8A8E97] uppercase tracking-wider hover:text-[#15171C]"
                   >
                     <span>{sec.title}</span>
                     {isOpen ? (
@@ -242,14 +237,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                               href={item.href}
                               className={`flex items-center justify-between px-3 py-2 rounded-xl font-medium transition ${
                                 isActive
-                                  ? 'bg-[#111827] text-white font-semibold shadow-xs'
-                                  : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
+                                  ? 'bg-[#15171C] text-white font-semibold shadow-xs'
+                                  : 'text-[#4A4F59] hover:text-[#15171C] hover:bg-[#EDEDEA]'
                               }`}
                             >
                               <div className="flex items-center gap-2.5 truncate">
                                 <Icon
                                   className={`w-4 h-4 shrink-0 ${
-                                    isActive ? 'text-white' : 'text-[#6B7280]'
+                                    isActive ? 'text-white' : 'text-[#8A8E97]'
                                   }`}
                                 />
                                 <span className="truncate">{item.label}</span>
@@ -257,7 +252,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             </Link>
 
                             {item.subItems && isActive && (
-                              <div className="pl-6 pr-2 py-1 space-y-0.5 border-l-2 border-gray-200 ml-4 my-1">
+                              <div className="pl-6 pr-2 py-1 space-y-0.5 border-l-2 border-[#E4E5E9] ml-4 my-1">
                                 {item.subItems.map((sub) => {
                                   const isSubActive = pathname === sub.href;
                                   return (
@@ -266,8 +261,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                                       href={sub.href}
                                       className={`block px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition ${
                                         isSubActive
-                                          ? 'text-[#111827] font-bold bg-gray-100'
-                                          : 'text-[#6B7280] hover:text-[#111827] hover:bg-gray-50'
+                                          ? 'text-[#15171C] font-bold bg-[#EDEDEA]'
+                                          : 'text-[#4A4F59] hover:text-[#15171C] hover:bg-[#FBFBFA]'
                                       }`}
                                     >
                                       {sub.label}
@@ -287,13 +282,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </nav>
         </div>
 
-        <div className="p-3 border-t border-[#E5E7EB] space-y-1">
+        <div className="p-3 border-t border-[#E4E5E9] space-y-1">
           <Link
-            href="/dashboard"
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#4B5563] hover:bg-[#F3F4F6] transition-colors"
+            href="/dashboard/client"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#4A4F59] hover:bg-[#EDEDEA] transition-colors"
           >
-            <span>Customer Workspace</span>
-            <ExternalLink className="w-3.5 h-3.5 text-gray-400" />
+            <span>Client Workspace</span>
+            <ExternalLink className="w-3.5 h-3.5 text-[#8A8E97]" />
+          </Link>
+          <Link
+            href="/dashboard/partner"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#4A4F59] hover:bg-[#EDEDEA] transition-colors"
+          >
+            <span>Partner Workspace</span>
+            <ExternalLink className="w-3.5 h-3.5 text-[#8A8E97]" />
           </Link>
           <button
             type="button"
@@ -301,7 +303,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               await signOut();
               window.location.href = '/admin/login';
             }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition-colors"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#C8102E] hover:bg-[#FDECEE] transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" /> Sign Out
           </button>
@@ -309,39 +311,39 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </aside>
 
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-[#E5E7EB] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <header className="h-14 bg-white border-b border-[#E4E5E9] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2 text-xs">
             <Link
               href="/admin/dashboard"
-              className="text-[#6B7280] hover:text-[#111827] font-medium"
+              className="text-[#8A8E97] hover:text-[#15171C] font-medium"
             >
               Superadmin
             </Link>
-            <span className="text-gray-300">/</span>
-            <span className="font-semibold text-[#111827]">{currentBreadcrumb}</span>
+            <span className="text-[#CFD1D6]">/</span>
+            <span className="font-bold text-[#15171C]">{currentBreadcrumb}</span>
           </div>
           <div className="flex items-center gap-3 text-xs">
             <div className="text-right hidden sm:block">
-              <div className="font-bold text-[#111827]">{adminName}</div>
-              <div className="text-[11px] text-[#6B7280]">{adminContact}</div>
+              <div className="font-bold text-[#15171C]">{adminName}</div>
+              <div className="text-[11px] text-[#8A8E97]">{adminContact}</div>
             </div>
             <button
               type="button"
               onClick={() => setCopilotOpen((prev) => !prev)}
               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold text-xs transition-colors shadow-xs ${
                 copilotOpen
-                  ? 'bg-[#111827] text-white border-[#111827]'
-                  : 'bg-white text-[#111827] border-[#D1D5DB] hover:bg-gray-50'
+                  ? 'bg-[#15171C] text-white border-[#15171C]'
+                  : 'bg-white text-[#15171C] border-[#CFD1D6] hover:bg-[#FBFBFA]'
               }`}
             >
-              <Bot className="w-3.5 h-3.5 text-[#E8192C]" />
+              <Bot className="w-3.5 h-3.5 text-[#C8102E]" />
               XPO Agent
             </button>
             <Link
               href="/admin/whatsapp/simulator"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 font-semibold text-xs hover:bg-emerald-100 transition-colors shadow-xs"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-[#E3F2E8] text-[#14532D] font-semibold text-xs hover:opacity-90 transition-colors"
             >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
               WhatsApp Simulator
             </Link>
           </div>
@@ -350,15 +352,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="flex-1 flex flex-col lg:flex-row min-w-0">
           <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 min-w-0">
             {!configured && (
-              <div className="mb-6 p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-900">
+              <div className="mb-6 p-3.5 rounded-xl bg-[#FFF4DF] border border-[#F59E0B]/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-[#7A4A00]">
                 <div className="flex items-center gap-2.5">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                  <AlertCircle className="w-4 h-4 text-[#D97706] shrink-0" />
                   <span>
                     <strong>Setup Pending:</strong> Configure your WhatsApp, Payment Gateway, and AI
                     Agent keys in{' '}
                     <Link
                       href="/admin/settings/gateways"
-                      className="underline font-bold hover:text-amber-950"
+                      className="underline font-bold"
                     >
                       Settings &gt; Gateways
                     </Link>
@@ -367,7 +369,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 </div>
                 <Link
                   href="/admin/settings/gateways"
-                  className="shrink-0 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-semibold text-xs shadow-xs"
+                  className="shrink-0 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-[#15171C] text-white font-semibold text-xs"
                 >
                   Configure Gateways →
                 </Link>
@@ -378,6 +380,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <AdminCopilotDrawer isOpen={copilotOpen} onClose={() => setCopilotOpen(false)} />
         </div>
+      </div>
+
+      {/* Prototype Quick-Switch Bar (matching XPO End-to-End UX) */}
+      <div className="fixed right-3.5 bottom-3.5 z-50 flex items-center gap-1.5 p-1.5 rounded-full bg-[#15171C] text-white shadow-xl text-xs font-bold">
+        <span className="w-2 h-2 rounded-full bg-[#C8102E] ml-2" />
+        <span className="px-1.5 text-[11.5px] text-white/80">Superadmin</span>
+        <Link
+          href="/dashboard/client"
+          className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11.5px] transition-colors"
+        >
+          Client app →
+        </Link>
+        <Link
+          href="/dashboard/partner"
+          className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11.5px] transition-colors"
+        >
+          Partner app →
+        </Link>
       </div>
     </div>
   );
