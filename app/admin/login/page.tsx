@@ -27,7 +27,7 @@ import {
 function AdminLoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const nextPath = searchParams.get('next') || '/admin/dashboard';
+  const nextPath = searchParams.get('next') || '/superadmin';
   const { refreshSession, signOut } = useAuth();
 
   const [mode, setMode] = useState<'email' | 'phone'>('email');
@@ -78,9 +78,9 @@ function AdminLoginContent() {
 
     await refreshSession();
     router.push(
-      nextPath.startsWith('/admin') && nextPath !== '/admin/login'
+      (nextPath.startsWith('/superadmin') || nextPath.startsWith('/admin')) && nextPath !== '/superadmin/login'
         ? nextPath
-        : '/admin/dashboard'
+        : '/superadmin'
     );
   }
 

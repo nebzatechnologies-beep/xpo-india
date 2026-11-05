@@ -702,78 +702,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
           >
             <span>Connected</span>
           </button>
-
-          <button
-            type="button"
-            className="nav"
-            aria-current={curScreen === 'notifs' ? 'page' : 'false'}
-            onClick={() => go('notifs')}
-            style={
-              curScreen === 'notifs'
-                ? { background: 'var(--rbg)', color: 'var(--rtx)' }
-                : { background: 'transparent', color: 'var(--tx2)' }
-            }
-          >
-            <span>Alerts</span>
-            {unread > 0 && (
-              <span
-                className="chip"
-                style={{ minHeight: 22, padding: '0 8px', background: '#C8102E', color: '#fff' }}
-              >
-                {unread}
-              </span>
-            )}
-          </button>
-
-          <button
-            type="button"
-            className="nav"
-            aria-current={
-              ['billing', 'profile', 'verify', 'help', 'account'].includes(curScreen)
-                ? 'page'
-                : 'false'
-            }
-            onClick={() => go('billing')}
-            style={
-              ['billing', 'profile', 'verify', 'help', 'account'].includes(curScreen)
-                ? { background: 'var(--rbg)', color: 'var(--rtx)' }
-                : { background: 'transparent', color: 'var(--tx2)' }
-            }
-          >
-            <span>Account &amp; Plan</span>
-          </button>
         </nav>
-
-        <div
-          style={{
-            marginTop: 'auto',
-            paddingTop: 14,
-            borderTop: '1px solid var(--ln)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
-          <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx2)' }}>
-            {planOn ? `${plan} of 30 plan views` : `${free} of 5 free views`}
-          </div>
-          <div className="bar">
-            <div
-              style={{
-                height: '100%',
-                background: '#C8102E',
-                width: `${(planOn ? plan / 30 : free / 5) * 100}%`,
-              }}
-            />
-          </div>
-          <span style={{ fontSize: 12, color: 'var(--tx2)' }}>
-            {planOn
-              ? 'Client Plan · renews 2 Dec'
-              : free > 0
-              ? 'Posting is always free'
-              : 'Get the Client Plan for 30 a month'}
-          </span>
-        </div>
       </aside>
 
       {/* MAIN COLUMN */}
@@ -781,33 +710,41 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
         {/* TOP HEADER */}
         <header className="top">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+            {['req', 'billing', 'profile', 'verify', 'help', 'account'].includes(screen) && (
+              <button
+                type="button"
+                className="ib only-sm"
+                aria-label="Back"
+                onClick={() => go(screen === 'req' ? 'requests' : 'home')}
+                style={{ marginLeft: -10 }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+            )}
             <img
               className="only-sm"
               src="/xpo-logo.png"
               alt="XPO India"
-              style={{ height: 22, width: 'auto' }}
+              style={{ height: 24, width: 'auto' }}
             />
-            <span className="crumb">{crumbs[screen]}</span>
+            {crumbs[screen]?.includes('/') && (
+              <span className="crumb">{crumbs[screen]}</span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
-            <button
-              type="button"
-              className="pill hide-sm"
-              onClick={() => setSheet('compose')}
-              title="Open Quick Post Composer (with Voice Input)"
-            >
-              Quick Post / Voice
-            </button>
-
-            <button
-              type="button"
-              className="pill hide-sm"
-              onClick={() => go('billing')}
-              aria-label={`Plan and credits: ${planOn ? `${plan} plan views` : `${free} free views`}`}
-            >
-              {planOn ? `${plan} plan views` : `${free} free views`}
-            </button>
+            {screen !== 'billing' && (
+              <button
+                type="button"
+                className="pill hide-sm"
+                onClick={() => go('billing')}
+                aria-label={`Plan and credits: ${planOn ? `${plan} plan views` : `${free} free views`}`}
+              >
+                {planOn ? `${plan} plan views` : `${free} free views`}
+              </button>
+            )}
 
             <button
               type="button"
@@ -1100,71 +1037,33 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                 </span>
               </section>
 
-              {/* Action Alert Banner (from Mobile Core Loop when partners are interested) */}
-              {reqs.r1 && reqs.r1.partners.some((p) => p.st === 'locked') && (
-                <button
-                  type="button"
-                  className="act"
-                  onClick={() => go('req', 'r1')}
-                >
-                  <span
-                    style={{
-                      width: 40,
-                      height: 40,
-                      borderRadius: 12,
-                      background: 'var(--gbg)',
-                      color: 'var(--gtx)',
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 800,
-                      flex: '0 0 40px',
-                    }}
-                  >
-                    {reqs.r1.partners.length}
-                  </span>
-                  <span
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 2,
-                      flex: 1,
-                      textAlign: 'left',
-                    }}
-                  >
-                    <b style={{ fontSize: 15 }}>Partners are interested</b>
-                    <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                      {reqs.r1.title} · review and connect
-                    </span>
-                  </span>
-                  <span aria-hidden="true" style={{ fontSize: 20, color: 'var(--tx2)' }}>
-                    ›
-                  </span>
-                </button>
-              )}
+              {/* Mobile 1-tap composer bar (Board 2 — Client mobile core loop) */}
+              <button
+                type="button"
+                className="ask only-sm"
+                aria-haspopup="dialog"
+                onClick={() => setSheet('compose')}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A4F59" strokeWidth="2.2" aria-hidden="true">
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="m20 20-3.5-3.5" />
+                </svg>
+                <span style={{ flex: 1, textAlign: 'left' }}>Describe what you need…</span>
+                <span className="askmic" aria-hidden="true">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <rect x="9" y="3" width="6" height="11" rx="3" />
+                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+                  </svg>
+                </span>
+              </button>
 
               <section
-                className="card"
+                className="card hide-sm"
                 style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <label htmlFor="ask" className="lbl">
-                    Your requirement
-                  </label>
-                  <button
-                    type="button"
-                    className="chipb"
-                    onClick={() => {
-                      setAsk(
-                        '10,000 printed 3-ply corrugated boxes delivered to Pune in 2 weeks, budget around ₹1.2L'
-                      );
-                      setAskErr(false);
-                    }}
-                    title="Speak instead of typing"
-                  >
-                    🎙️ Voice Dictation
-                  </button>
-                </div>
+                <label htmlFor="ask" className="lbl">
+                  Your requirement
+                </label>
                 <textarea
                   id="ask"
                   rows={3}
@@ -4173,7 +4072,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                 Partner app →
               </Link>
               <Link
-                href="/admin/dashboard"
+                href="/superadmin"
                 style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
               >
                 Superadmin →

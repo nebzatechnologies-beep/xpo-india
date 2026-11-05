@@ -50,13 +50,13 @@ export default function AdminTaxonomyTreePage() {
 
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/admin/taxonomy/form-builder"
+            href="/superadmin/taxonomy/form-builder"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D1D5DB] bg-white text-xs font-bold"
           >
             <Sliders className="w-3.5 h-3.5" /> Form Builder
           </Link>
           <Link
-            href="/admin/taxonomy/import-export"
+            href="/superadmin/taxonomy/import-export"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             <UploadCloud className="w-3.5 h-3.5" /> Import / Export
@@ -66,28 +66,28 @@ export default function AdminTaxonomyTreePage() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Link
-          href="/admin/taxonomy/sectors"
+          href="/superadmin/taxonomy/sectors"
           className="bg-white p-4 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <div className="text-xs text-[#6B7280] font-semibold">Sectors</div>
           <div className="text-2xl font-black mt-1">{loading ? '—' : sectors.length}</div>
         </Link>
         <Link
-          href="/admin/taxonomy/categories"
+          href="/superadmin/taxonomy/categories"
           className="bg-white p-4 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <div className="text-xs text-[#6B7280] font-semibold">Categories</div>
           <div className="text-2xl font-black mt-1">{loading ? '—' : categories.length}</div>
         </Link>
         <Link
-          href="/admin/taxonomy/subcategories"
+          href="/superadmin/taxonomy/subcategories"
           className="bg-white p-4 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <div className="text-xs text-[#6B7280] font-semibold">Subcategories</div>
           <div className="text-2xl font-black mt-1">{loading ? '—' : subcategories.length}</div>
         </Link>
         <Link
-          href="/admin/taxonomy/tags"
+          href="/superadmin/taxonomy/tags"
           className="bg-white p-4 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <div className="text-xs text-[#6B7280] font-semibold">Skill & Tags</div>

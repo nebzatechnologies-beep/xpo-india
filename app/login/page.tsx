@@ -59,7 +59,7 @@ function LoginContent() {
     }
     await refreshSession();
     if (data.user?.isSuperadmin) {
-      router.push(nextPath.startsWith('/admin') ? nextPath : '/admin/dashboard');
+      router.push((nextPath.startsWith('/superadmin') || nextPath.startsWith('/admin')) ? nextPath : '/superadmin');
       return;
     }
     const role = data.user?.role === 'partner' ? 'partner' : 'client';
@@ -343,7 +343,7 @@ function LoginContent() {
 
           <div className="mt-3 text-center">
             <Link
-              href="/admin/login"
+              href="/superadmin/login"
               className="text-[11px] font-semibold text-[#15171C] hover:text-black hover:underline inline-flex items-center gap-1"
             >
               Superadmin Portal →

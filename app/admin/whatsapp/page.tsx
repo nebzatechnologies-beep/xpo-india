@@ -55,13 +55,13 @@ export default function AdminWhatsAppOverviewPage() {
 
         <div className="flex gap-2">
           <Link
-            href="/admin/whatsapp/simulator"
+            href="/superadmin/whatsapp/simulator"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition"
           >
             <PlaySquare className="w-4 h-4" /> Open Simulator
           </Link>
           <Link
-            href="/admin/whatsapp/connect"
+            href="/superadmin/whatsapp/connect"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             <PlugZap className="w-4 h-4" /> API Settings
@@ -100,7 +100,7 @@ export default function AdminWhatsAppOverviewPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
-          href="/admin/whatsapp/builder"
+          href="/superadmin/whatsapp/builder"
           className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <Workflow className="w-5 h-5 text-[#15171C] mb-2" />
@@ -110,7 +110,7 @@ export default function AdminWhatsAppOverviewPage() {
           </p>
         </Link>
         <Link
-          href="/admin/whatsapp/inbox"
+          href="/superadmin/whatsapp/inbox"
           className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <Inbox className="w-5 h-5 text-blue-600 mb-2" />
@@ -120,7 +120,7 @@ export default function AdminWhatsAppOverviewPage() {
           </p>
         </Link>
         <Link
-          href="/admin/whatsapp/templates"
+          href="/superadmin/whatsapp/templates"
           className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <MessageCircle className="w-5 h-5 text-emerald-600 mb-2" />
@@ -130,7 +130,7 @@ export default function AdminWhatsAppOverviewPage() {
           </p>
         </Link>
         <Link
-          href="/admin/whatsapp/logs"
+          href="/superadmin/whatsapp/logs"
           className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <ScrollText className="w-5 h-5 text-amber-600 mb-2" />

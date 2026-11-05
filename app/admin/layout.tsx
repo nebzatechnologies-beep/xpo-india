@@ -43,11 +43,11 @@ const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Core Databases',
     items: [
-      { label: 'Overview', href: '/admin/dashboard', icon: LayoutDashboard },
-      { label: 'Client Database', href: '/admin/clients', icon: Building2 },
-      { label: 'Partner Database', href: '/admin/partners', icon: Briefcase },
-      { label: 'Requirements & Leads', href: '/admin/leads', icon: FileText },
-      { label: 'Verification & Trust', href: '/admin/verification', icon: ShieldCheck },
+      { label: 'Overview', href: '/superadmin', icon: LayoutDashboard },
+      { label: 'Client Database', href: '/superadmin/clients', icon: Building2 },
+      { label: 'Partner Database', href: '/superadmin/partners', icon: Briefcase },
+      { label: 'Requirements & Leads', href: '/superadmin/leads', icon: FileText },
+      { label: 'Verification & Trust', href: '/superadmin/verification', icon: ShieldCheck },
     ],
   },
   {
@@ -55,37 +55,37 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       {
         label: 'Categories & Services',
-        href: '/admin/taxonomy',
+        href: '/superadmin/taxonomy',
         icon: Layers,
         subItems: [
-          { label: 'All Categories', href: '/admin/taxonomy' },
-          { label: 'Sectors', href: '/admin/taxonomy/sectors' },
-          { label: 'Categories', href: '/admin/taxonomy/categories' },
-          { label: 'Subcategories', href: '/admin/taxonomy/subcategories' },
-          { label: 'Skills & Tags', href: '/admin/taxonomy/tags' },
-          { label: 'Custom Fields', href: '/admin/taxonomy/form-builder' },
-          { label: 'Import & Export', href: '/admin/taxonomy/import-export' },
-          { label: 'Change History', href: '/admin/taxonomy/history' },
+          { label: 'All Categories', href: '/superadmin/taxonomy' },
+          { label: 'Sectors', href: '/superadmin/taxonomy/sectors' },
+          { label: 'Categories', href: '/superadmin/taxonomy/categories' },
+          { label: 'Subcategories', href: '/superadmin/taxonomy/subcategories' },
+          { label: 'Skills & Tags', href: '/superadmin/taxonomy/tags' },
+          { label: 'Custom Fields', href: '/superadmin/taxonomy/form-builder' },
+          { label: 'Import & Export', href: '/superadmin/taxonomy/import-export' },
+          { label: 'Change History', href: '/superadmin/taxonomy/history' },
         ],
       },
       {
         label: 'Unified CRM & Consent',
-        href: '/admin/crm',
+        href: '/superadmin/crm',
         icon: Database,
         subItems: [
-          { label: 'All Contacts', href: '/admin/crm' },
-          { label: 'Audience Segments', href: '/admin/crm/segments' },
-          { label: 'Opt-Outs & Consent', href: '/admin/crm/consent' },
+          { label: 'All Contacts', href: '/superadmin/crm' },
+          { label: 'Audience Segments', href: '/superadmin/crm/segments' },
+          { label: 'Opt-Outs & Consent', href: '/superadmin/crm/consent' },
         ],
       },
       {
         label: 'Excel Uploads',
-        href: '/admin/import/companies',
+        href: '/superadmin/import/companies',
         icon: UploadCloud,
         subItems: [
-          { label: 'Contact Uploads', href: '/admin/import/companies' },
-          { label: 'Import Categories', href: '/admin/import/taxonomy' },
-          { label: 'Upload History', href: '/admin/import/history' },
+          { label: 'Contact Uploads', href: '/superadmin/import/companies' },
+          { label: 'Import Categories', href: '/superadmin/import/taxonomy' },
+          { label: 'Upload History', href: '/superadmin/import/history' },
         ],
       },
     ],
@@ -95,21 +95,21 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       {
         label: 'WhatsApp Automation',
-        href: '/admin/whatsapp',
+        href: '/superadmin/whatsapp',
         icon: MessageCircle,
         subItems: [
-          { label: 'Overview', href: '/admin/whatsapp' },
-          { label: 'API Settings', href: '/admin/whatsapp/connect' },
-          { label: 'Conversation Flows', href: '/admin/whatsapp/builder' },
-          { label: 'Message Templates', href: '/admin/whatsapp/templates' },
-          { label: 'Support Inbox', href: '/admin/whatsapp/inbox' },
-          { label: 'Simulator', href: '/admin/whatsapp/simulator' },
-          { label: 'Activity Logs', href: '/admin/whatsapp/logs' },
+          { label: 'Overview', href: '/superadmin/whatsapp' },
+          { label: 'API Settings', href: '/superadmin/whatsapp/connect' },
+          { label: 'Conversation Flows', href: '/superadmin/whatsapp/builder' },
+          { label: 'Message Templates', href: '/superadmin/whatsapp/templates' },
+          { label: 'Support Inbox', href: '/superadmin/whatsapp/inbox' },
+          { label: 'Simulator', href: '/superadmin/whatsapp/simulator' },
+          { label: 'Activity Logs', href: '/superadmin/whatsapp/logs' },
         ],
       },
       {
         label: 'Invitations & Broadcasts',
-        href: '/admin/campaigns',
+        href: '/superadmin/campaigns',
         icon: Send,
       },
     ],
@@ -119,32 +119,32 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       {
         label: 'Plans & Quotas',
-        href: '/admin/subscriptions',
+        href: '/superadmin/subscriptions',
         icon: CreditCard,
       },
       {
         label: 'Payment Transactions',
-        href: '/admin/payments',
+        href: '/superadmin/payments',
         icon: Receipt,
       },
       {
         label: 'Registered Accounts',
-        href: '/admin/users',
+        href: '/superadmin/users',
         icon: Users,
       },
       {
         label: 'Audit Logs',
-        href: '/admin/audit-logs',
+        href: '/superadmin/audit-logs',
         icon: ScrollText,
       },
       {
         label: 'Platform Settings',
-        href: '/admin/settings',
+        href: '/superadmin/settings',
         icon: Settings,
         subItems: [
-          { label: 'General Settings', href: '/admin/settings' },
-          { label: 'Payment & API Keys', href: '/admin/settings/gateways' },
-          { label: 'Matching & Dispatch', href: '/admin/settings/matching' },
+          { label: 'General Settings', href: '/superadmin/settings' },
+          { label: 'Payment & API Keys', href: '/superadmin/settings/gateways' },
+          { label: 'Matching & Dispatch', href: '/superadmin/settings/matching' },
         ],
       },
     ],
@@ -162,9 +162,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   });
   const [copilotOpen, setCopilotOpen] = useState(false);
 
-  if (pathname === '/admin/login') {
+  if (pathname === '/admin/login' || pathname === '/superadmin/login') {
     return <>{children}</>;
   }
+
+  // Normalize pathname so both /superadmin/* and /admin/* highlight the active item
+  const normPath =
+    pathname === '/admin' || pathname === '/admin/dashboard' || pathname === '/superadmin/dashboard'
+      ? '/superadmin'
+      : pathname.startsWith('/admin/')
+      ? pathname.replace(/^\/admin/, '/superadmin')
+      : pathname;
 
   const adminName = user?.displayName || 'Superadmin';
   const adminContact = user?.email || user?.phoneE164 || 'Platform Admin';
@@ -172,12 +180,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   let currentBreadcrumb = 'Overview';
   for (const section of NAV_SECTIONS) {
     for (const item of section.items) {
-      if (pathname === item.href) {
+      if (normPath === item.href) {
         currentBreadcrumb = item.label;
         break;
       }
       if (item.subItems) {
-        const sub = item.subItems.find((s) => s.href === pathname);
+        const sub = item.subItems.find((s) => s.href === normPath);
         if (sub) {
           currentBreadcrumb = `${item.label} / ${sub.label}`;
           break;
@@ -191,7 +199,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <aside className="w-64 bg-white border-r border-[#E4E5E9] shrink-0 hidden lg:flex flex-col justify-between h-screen sticky top-0 z-30 select-none">
         <div className="flex flex-col h-full overflow-hidden">
           <div className="h-14 px-5 border-b border-[#E4E5E9] flex items-center justify-between shrink-0">
-            <Link href="/admin/dashboard" className="inline-flex items-center gap-2.5 group">
+            <Link href="/superadmin" className="inline-flex items-center gap-2.5 group">
               <img
                 src="/xpo-logo.png"
                 alt="XPO"
@@ -227,8 +235,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     <div className="space-y-0.5">
                       {sec.items.map((item) => {
                         const Icon = item.icon;
-                        const isDirect = pathname === item.href;
-                        const isSub = item.subItems?.some((s) => pathname === s.href);
+                        const isDirect = normPath === item.href;
+                        const isSub = item.subItems?.some((s) => normPath === s.href);
                         const isActive = isDirect || isSub;
 
                         return (
@@ -254,7 +262,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                             {item.subItems && isActive && (
                               <div className="pl-6 pr-2 py-1 space-y-0.5 border-l-2 border-[#E4E5E9] ml-4 my-1">
                                 {item.subItems.map((sub) => {
-                                  const isSubActive = pathname === sub.href;
+                                  const isSubActive = normPath === sub.href;
                                   return (
                                     <Link
                                       key={sub.href}
@@ -301,7 +309,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             type="button"
             onClick={async () => {
               await signOut();
-              window.location.href = '/admin/login';
+              window.location.href = '/superadmin/login';
             }}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#C8102E] hover:bg-[#FDECEE] transition-colors"
           >
@@ -314,7 +322,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <header className="h-14 bg-white border-b border-[#E4E5E9] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-20">
           <div className="flex items-center gap-2 text-xs">
             <Link
-              href="/admin/dashboard"
+              href="/superadmin"
               className="text-[#8A8E97] hover:text-[#15171C] font-medium"
             >
               Superadmin
@@ -339,13 +347,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Bot className="w-3.5 h-3.5 text-[#C8102E]" />
               XPO Agent
             </button>
-            <Link
-              href="/admin/whatsapp/simulator"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-emerald-300 bg-[#E3F2E8] text-[#14532D] font-semibold text-xs hover:opacity-90 transition-colors"
-            >
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
-              WhatsApp Simulator
-            </Link>
           </div>
         </header>
 
@@ -357,18 +358,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   <AlertCircle className="w-4 h-4 text-[#D97706] shrink-0" />
                   <span>
                     <strong>Setup Pending:</strong> Configure your WhatsApp, Payment Gateway, and AI
-                    Agent keys in{' '}
-                    <Link
-                      href="/admin/settings/gateways"
-                      className="underline font-bold"
-                    >
-                      Settings &gt; Gateways
-                    </Link>
-                    .
+                    Agent keys to enable live production dispatch.
                   </span>
                 </div>
                 <Link
-                  href="/admin/settings/gateways"
+                  href="/superadmin/settings/gateways"
                   className="shrink-0 self-start sm:self-auto px-3 py-1.5 rounded-lg bg-[#15171C] text-white font-semibold text-xs"
                 >
                   Configure Gateways →
@@ -380,24 +374,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <AdminCopilotDrawer isOpen={copilotOpen} onClose={() => setCopilotOpen(false)} />
         </div>
-      </div>
-
-      {/* Prototype Quick-Switch Bar (matching XPO End-to-End UX) */}
-      <div className="fixed right-3.5 bottom-3.5 z-50 flex items-center gap-1.5 p-1.5 rounded-full bg-[#15171C] text-white shadow-xl text-xs font-bold">
-        <span className="w-2 h-2 rounded-full bg-[#C8102E] ml-2" />
-        <span className="px-1.5 text-[11.5px] text-white/80">Superadmin</span>
-        <Link
-          href="/dashboard/client"
-          className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11.5px] transition-colors"
-        >
-          Client app →
-        </Link>
-        <Link
-          href="/dashboard/partner"
-          className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11.5px] transition-colors"
-        >
-          Partner app →
-        </Link>
       </div>
     </div>
   );

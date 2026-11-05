@@ -655,7 +655,7 @@ export function XpoPartnerApp({
                 className="only-sm"
                 style={{ height: 24, width: 'auto', objectFit: 'contain' }}
               />
-              {S.screen === 'opp' && activeOpp ? (
+              {S.screen === 'opp' && activeOpp && (
                 <div className="crumb fx">
                   <button
                     className="bl"
@@ -667,30 +667,20 @@ export function XpoPartnerApp({
                   <span>/</span>
                   <b className="truncate max-w-[200px] sm:max-w-[360px]">{activeOpp.title}</b>
                 </div>
-              ) : (
-                <div className="crumb fx">
-                  <b>
-                    {S.screen === 'feed'
-                      ? 'Matched client requests'
-                      : S.screen === 'replies'
-                      ? 'My replies'
-                      : S.screen === 'conn'
-                      ? 'Connected clients'
-                      : 'Account & Plan'}
-                  </b>
-                </div>
               )}
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
-              <button
-                className="pill"
-                onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
-                title="Each reply to a client request uses 1 reply credit"
-              >
-                <span className="pdot" style={{ background: creditDot }} />
-                <span>{creditLabel}</span>
-              </button>
+              {S.screen !== 'billing' && (
+                <button
+                  className="pill"
+                  onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
+                  title="Each reply to a client request uses 1 reply credit"
+                >
+                  <span className="pdot" style={{ background: creditDot }} />
+                  <span>{creditLabel}</span>
+                </button>
+              )}
 
               <button
                 className="ib"
@@ -782,12 +772,6 @@ export function XpoPartnerApp({
                   </div>
                   <button
                     className="mi"
-                    onClick={() => setS((prev) => ({ ...prev, screen: 'billing', menuOpen: 'none' }))}
-                  >
-                    <span>Account &amp; Plan</span>
-                  </button>
-                  <button
-                    className="mi"
                     onClick={() =>
                       setS((prev) => ({ ...prev, dark: !prev.dark, menuOpen: 'none' }))
                     }
@@ -797,9 +781,22 @@ export function XpoPartnerApp({
                   </button>
                   <button
                     className="mi"
-                    onClick={() => router.push('/creator/dashboard')}
+                    onClick={() => router.push('/dashboard/client')}
                   >
                     <span>Switch to Client app →</span>
+                  </button>
+                  <button
+                    className="mi"
+                    onClick={() => router.push('/superadmin')}
+                  >
+                    <span>Superadmin →</span>
+                  </button>
+                  <button
+                    className="mi"
+                    style={{ color: 'var(--rtx)', borderTop: '1px solid var(--ln)', marginTop: 4 }}
+                    onClick={() => router.push('/login')}
+                  >
+                    <span>Sign out</span>
                   </button>
                 </div>
               )}
@@ -925,7 +922,7 @@ export function XpoPartnerApp({
 
               {/* Feed cards */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {filteredOpps.map((o) => (
+                {filteredOpps.filter((o) => !(incomingCount > 0 && o.id === 'req-1' && o.myReplyStatus === 'client_requested')).map((o) => (
                   <div
                     key={o.id}
                     className="rowb"
@@ -1816,7 +1813,7 @@ export function XpoPartnerApp({
               <button
                 className="btn b2 sm"
                 style={{ flex: 1 }}
-                onClick={() => router.push('/admin/dashboard')}
+                onClick={() => router.push('/superadmin')}
               >
                 Superadmin →
               </button>

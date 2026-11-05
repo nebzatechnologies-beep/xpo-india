@@ -134,11 +134,11 @@ export function WorkspaceShell({
         ];
       case 'admin':
         return [
-          { label: 'Monitor', href: '/admin/dashboard', icon: LayoutDashboard },
-          { label: 'Clients', href: '/admin/clients', icon: Users },
-          { label: 'Partners', href: '/admin/partners', icon: Shield },
-          { label: 'WhatsApp', href: '/admin/whatsapp', icon: MessageCircle },
-          { label: 'Taxonomy', href: '/admin/taxonomy', icon: Layers },
+          { label: 'Monitor', href: '/superadmin', icon: LayoutDashboard },
+          { label: 'Clients', href: '/superadmin/clients', icon: Users },
+          { label: 'Partners', href: '/superadmin/partners', icon: Shield },
+          { label: 'WhatsApp', href: '/superadmin/whatsapp', icon: MessageCircle },
+          { label: 'Taxonomy', href: '/superadmin/taxonomy', icon: Layers },
         ];
       case 'client':
       default:
@@ -160,9 +160,7 @@ export function WorkspaceShell({
         <div className="flex flex-col h-full overflow-hidden">
           <div className="h-16 px-5 border-b border-[#E4E5E9] flex items-center shrink-0">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <span className="w-8 h-8 rounded-xl bg-[#C8102E] flex items-center justify-center text-white font-extrabold text-base shadow-sm group-hover:scale-105 transition-transform">
-                X
-              </span>
+              <img src="/xpo-logo.png" alt="XPO India" className="h-7 w-auto object-contain" />
               <div>
                 <span className="text-sm font-black tracking-tight text-[#15171C]">
                   XPO <span className="text-[#C8102E]">{workspaceTitle}</span>
@@ -239,13 +237,11 @@ export function WorkspaceShell({
         <header className="h-16 bg-white border-b border-[#E4E5E9] px-3.5 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <Link href="/dashboard" className="inline-flex items-center gap-2 group">
-              <span className="w-8 h-8 rounded-xl bg-[#C8102E] flex items-center justify-center text-white font-extrabold text-sm shadow-xs shrink-0">
-                X
-              </span>
+              <img src="/xpo-logo.png" alt="XPO India" className="h-6 w-auto object-contain lg:hidden shrink-0" />
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black tracking-tight text-[#15171C]">
-                    XPO <span className="text-[#C8102E]">{workspaceTitle}</span>
+                  <span className="text-xs font-black tracking-tight text-[#15171C] lg:hidden">
+                    {workspaceTitle}
                   </span>
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${theme.badgeBg}`}
@@ -338,7 +334,7 @@ export function WorkspaceShell({
                     </Link>
                     {authUser?.isSuperadmin && (
                       <Link
-                        href="/admin/dashboard"
+                        href="/superadmin"
                         onClick={() => setProfileDropdownOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#15171C] hover:bg-gray-50"
                       >

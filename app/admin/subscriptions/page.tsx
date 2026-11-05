@@ -78,7 +78,7 @@ export default function AdminSubscriptionsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/settings/gateways"
+            href="/superadmin/settings/gateways"
             className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#15171C] text-white text-xs font-semibold hover:bg-black shadow-xs"
           >
             Payment Gateways

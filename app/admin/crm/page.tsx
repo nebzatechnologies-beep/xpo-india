@@ -49,14 +49,14 @@ export default function AdminCrmDirectoryPage() {
 
         <div className="flex flex-wrap items-center gap-2">
           <Link
-            href="/admin/clients"
+            href="/superadmin/clients"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D1D5DB] bg-white hover:bg-gray-50 text-xs font-bold text-[#15171C]"
           >
             <Database className="w-3.5 h-3.5 text-[#C8102E]" /> Client Database{' '}
             <ArrowRight className="w-3 h-3" />
           </Link>
           <Link
-            href="/admin/partners"
+            href="/superadmin/partners"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-bold"
           >
             <Database className="w-3.5 h-3.5 text-[#C8102E]" /> Partner Database{' '}

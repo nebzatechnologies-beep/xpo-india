@@ -81,13 +81,13 @@ export default function AdminPlatformSettingsPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
-            href="/admin/settings/gateways"
+            href="/superadmin/settings/gateways"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#15171C] text-white text-xs font-semibold hover:bg-black shadow-xs"
           >
             Payment & API Keys <ArrowRight className="w-3.5 h-3.5" />
           </Link>
           <Link
-            href="/admin/settings/matching"
+            href="/superadmin/settings/matching"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-white text-gray-700 border border-gray-300 text-xs font-semibold hover:bg-gray-50 shadow-xs"
           >
             Matching & Dispatch <ArrowRight className="w-3.5 h-3.5" />

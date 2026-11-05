@@ -184,7 +184,7 @@ export default function AdminExecutiveDashboardPage() {
             </div>
           </div>
           <Link
-            href="/admin/clients"
+            href="/superadmin/clients"
             className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-bold"
           >
             Open Client DB <ArrowRight className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export default function AdminExecutiveDashboardPage() {
             </div>
           </div>
           <Link
-            href="/admin/partners"
+            href="/superadmin/partners"
             className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white text-xs font-bold"
           >
             Open Partner DB <ArrowRight className="w-3.5 h-3.5" />
@@ -269,7 +269,7 @@ export default function AdminExecutiveDashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-[#15171C]">Recent Client Requirements</h3>
             <Link
-              href="/admin/leads"
+              href="/superadmin/leads"
               className="text-xs font-semibold text-[#15171C] hover:underline"
             >
               View All Requirements →
@@ -297,7 +297,7 @@ export default function AdminExecutiveDashboardPage() {
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-bold text-[#15171C]">Recent Subscription Payments</h3>
             <Link
-              href="/admin/subscriptions"
+              href="/superadmin/subscriptions"
               className="text-xs font-semibold text-[#15171C] hover:underline"
             >
               Manage Plans & Quotas →
