@@ -14,12 +14,12 @@ import { useAuth } from '@/lib/auth/auth-context';
 import {
   AlertCircle,
   ArrowRight,
-  KeyRound,
-  Lock,
+
+
   Mail,
   Phone,
-  Shield,
-  ShieldAlert,
+
+
   ShieldCheck,
   Loader2,
 } from 'lucide-react';

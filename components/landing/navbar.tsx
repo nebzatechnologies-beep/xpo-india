@@ -17,7 +17,7 @@ export function Navbar() {
     : '/how-it-works';
 
   const dashboardUrl = user?.isSuperadmin
-    ? '/admin/dashboard'
+    ? '/superadmin'
     : user?.role === 'partner'
       ? '/dashboard/partner'
       : '/dashboard/client';
@@ -101,7 +101,7 @@ export function Navbar() {
                     </Link>
                     {user.isSuperadmin && (
                       <Link
-                        href="/admin/dashboard"
+                        href="/superadmin"
                         onClick={() => setUserDropdownOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2 text-xs font-semibold text-[#15171C] hover:bg-gray-50"
                       >

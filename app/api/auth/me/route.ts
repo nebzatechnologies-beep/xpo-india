@@ -1,7 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { getServerSession, requireAuth } from '@/lib/auth/server-session';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
+
 import { getPlatformSettings } from '@/lib/services/platform-settings';
 import { getUserRoleProfiles, updateUserAndRoleProfile } from '@/lib/services/users';
 import { handleApiError, jsonOk } from '@/lib/utils/api-handler';

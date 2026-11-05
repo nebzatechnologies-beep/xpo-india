@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  turbopack: {
+    root: process.cwd(),
+  },
   async rewrites() {
     return [
       {
@@ -11,6 +14,10 @@ const nextConfig: NextConfig = {
       {
         source: '/superadmin/:path*',
         destination: '/admin/:path*',
+      },
+      {
+        source: '/trust',
+        destination: '/dashboard/verification',
       },
     ];
   },

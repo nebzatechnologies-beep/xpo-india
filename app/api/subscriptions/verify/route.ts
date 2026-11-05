@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     let isVerified = false;
-    let paymentAmount = sub.amountMonthly;
+    const paymentAmount = sub.amountMonthly;
 
     if (body.gateway === 'razorpay') {
       const creds = await getRazorpayCredentials();

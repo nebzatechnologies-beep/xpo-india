@@ -61,7 +61,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/admin/login" className="hover:text-[#C8102E] font-semibold">
+                <Link href="/superadmin/login" className="hover:text-[#C8102E] font-semibold">
                   Superadmin Portal
                 </Link>
               </li>

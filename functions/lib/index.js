@@ -5,7 +5,7 @@
  * 1. `reconcileOffers` (every 1 minute): Sweeps overdue 5-minute WhatsApp Lead Offers
  *    and dispatches `scheduled_tasks` due in Firestore by calling signed SSR worker endpoints.
  * 2. `reconcileSubscriptions` (every 60 minutes): Sweeps expired billing periods and resets
- *    past-due/expired Partner & Employer paid allowances cleanly.
+ *    past-due/expired Partner & Client paid allowances cleanly.
  */
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.reconcileSubscriptions = exports.reconcileOffers = exports.dispatchScheduledWorkerTask = void 0;
@@ -93,10 +93,20 @@ exports.reconcileSubscriptions = (0, scheduler_1.onSchedule)({
         batch.set(doc.ref, { status: 'expired', updatedAt: nowIso }, { merge: true });
         const profRef = db.collection('role_profiles').doc(`${sub.uid}_${sub.role}`);
         if (sub.role === 'partner') {
-            batch.set(profRef, { paidClaimsRemaining: 0, activeSubscriptionId: null, updatedAt: nowIso }, { merge: true });
+            batch.set(profRef, {
+                paidClaimsRemaining: 0,
+                paidClaimsUnlimited: false,
+                activeSubscriptionId: null,
+                updatedAt: nowIso,
+            }, { merge: true });
         }
-        else {
-            batch.set(profRef, { paidJobPostingsRemaining: 0, activeSubscriptionId: null, updatedAt: nowIso }, { merge: true });
+        else if (sub.role === 'client') {
+            batch.set(profRef, {
+                paidPartnerViewsRemaining: 0,
+                paidViewsUnlimited: false,
+                activeSubscriptionId: null,
+                updatedAt: nowIso,
+            }, { merge: true });
         }
         await batch.commit();
     }

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { AdminCopilotDrawer } from '@/components/agent/admin-copilot-drawer';
 import { useAuth } from '@/lib/auth/auth-context';
 import {
@@ -153,6 +153,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, configured, signOut } = useAuth();
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     'Core Databases': true,
@@ -309,7 +310,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             type="button"
             onClick={async () => {
               await signOut();
-              window.location.href = '/superadmin/login';
+              router.push('/superadmin/login');
             }}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[#C8102E] hover:bg-[#FDECEE] transition-colors"
           >
