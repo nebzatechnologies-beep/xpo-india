@@ -71,8 +71,8 @@ export default function AdminPlatformSettingsPage() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
-            <Settings className="w-6 h-6 text-[#111827]" />
+          <h1 className="text-2xl font-black tracking-tight text-[#15171C] flex items-center gap-2">
+            <Settings className="w-6 h-6 text-[#15171C]" />
             General Settings
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -82,7 +82,7 @@ export default function AdminPlatformSettingsPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/admin/settings/gateways"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold hover:bg-black shadow-xs"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#15171C] text-white text-xs font-semibold hover:bg-black shadow-xs"
           >
             Payment & API Keys <ArrowRight className="w-3.5 h-3.5" />
           </Link>
@@ -107,17 +107,17 @@ export default function AdminPlatformSettingsPage() {
       )}
 
       {loading || !settings ? (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
-          <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading settings...
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#15171C]" /> Loading settings...
         </div>
       ) : (
         <form
           onSubmit={handleSave}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-6 text-xs"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-6 text-xs"
         >
           {/* Role Enablement */}
           <div className="space-y-3">
-            <h2 className="text-sm font-extrabold text-[#111827]">
+            <h2 className="text-sm font-extrabold text-[#15171C]">
               Active Customer Roles (WhatsApp & Web)
             </h2>
             <div className="grid sm:grid-cols-2 gap-3">
@@ -129,9 +129,9 @@ export default function AdminPlatformSettingsPage() {
               ).map(([key, label]) => (
                 <label
                   key={key}
-                  className="flex items-center justify-between p-3.5 rounded-xl border border-[#E5E7EB] hover:bg-gray-50 cursor-pointer"
+                  className="flex items-center justify-between p-3.5 rounded-xl border border-[#E4E5E9] hover:bg-gray-50 cursor-pointer"
                 >
-                  <span className="font-bold text-[#111827]">{label}</span>
+                  <span className="font-bold text-[#15171C]">{label}</span>
                   <input
                     type="checkbox"
                     checked={settings.roles[key]}
@@ -141,7 +141,7 @@ export default function AdminPlatformSettingsPage() {
                         roles: { ...settings.roles, [key]: e.target.checked },
                       })
                     }
-                    className="w-4 h-4 accent-[#111827]"
+                    className="w-4 h-4 accent-[#15171C]"
                   />
                 </label>
               ))}
@@ -149,15 +149,15 @@ export default function AdminPlatformSettingsPage() {
           </div>
 
           {/* Moderation & KYC Policy */}
-          <div className="space-y-3 pt-4 border-t border-[#E5E7EB]">
-            <h2 className="text-sm font-extrabold text-[#111827] flex items-center gap-1.5">
-              <Shield className="w-4 h-4 text-[#111827]" />
+          <div className="space-y-3 pt-4 border-t border-[#E4E5E9]">
+            <h2 className="text-sm font-extrabold text-[#15171C] flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-[#15171C]" />
               Moderation, KYC & Geography Scope
             </h2>
             <div className="grid sm:grid-cols-2 gap-3">
-              <label className="flex items-center justify-between p-3.5 rounded-xl border border-[#E5E7EB] cursor-pointer">
+              <label className="flex items-center justify-between p-3.5 rounded-xl border border-[#E4E5E9] cursor-pointer">
                 <span>
-                  <strong className="block text-[#111827]">
+                  <strong className="block text-[#15171C]">
                     Auto-Approve Clean Client Requirements
                   </strong>
                   <span className="text-[11px] text-[#6B7280]">
@@ -176,13 +176,13 @@ export default function AdminPlatformSettingsPage() {
                       },
                     })
                   }
-                  className="w-4 h-4 accent-[#111827]"
+                  className="w-4 h-4 accent-[#15171C]"
                 />
               </label>
 
-              <label className="flex items-center justify-between p-3.5 rounded-xl border border-[#E5E7EB] cursor-pointer">
+              <label className="flex items-center justify-between p-3.5 rounded-xl border border-[#E4E5E9] cursor-pointer">
                 <span>
-                  <strong className="block text-[#111827]">
+                  <strong className="block text-[#15171C]">
                     Require Approved KYC Before Partner Claims
                   </strong>
                   <span className="text-[11px] text-[#6B7280]">
@@ -201,7 +201,7 @@ export default function AdminPlatformSettingsPage() {
                       },
                     })
                   }
-                  className="w-4 h-4 accent-[#111827]"
+                  className="w-4 h-4 accent-[#15171C]"
                 />
               </label>
             </div>
@@ -249,7 +249,7 @@ export default function AdminPlatformSettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white font-bold text-xs disabled:opacity-50"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white font-bold text-xs disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               <span>{saving ? 'Saving...' : 'Save General Settings'}</span>

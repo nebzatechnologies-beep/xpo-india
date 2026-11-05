@@ -22,7 +22,7 @@ export function SectorStrip() {
     <section className="py-6 border-y border-[#EBEBEB] bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row items-center gap-4 md:gap-8 justify-between">
-          <div className="text-xs font-bold text-[#222222] uppercase tracking-wider shrink-0">
+          <div className="text-xs font-bold text-[#15171C] uppercase tracking-wider shrink-0">
             One platform. Services & Hiring.
           </div>
           <div className="flex items-center gap-2 overflow-x-auto w-full no-scrollbar pb-1 md:pb-0">
@@ -34,7 +34,7 @@ export function SectorStrip() {
                     ? '/categories'
                     : `/categories?q=${encodeURIComponent(s)}`
                 }
-                className="whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-medium text-[#717171] hover:text-[#222222] hover:bg-[#F7F7F7] border border-transparent hover:border-[#EBEBEB] transition-all"
+                className="whitespace-nowrap px-3.5 py-1.5 rounded-full text-xs font-medium text-[#4A4F59] hover:text-[#15171C] hover:bg-[#F7F7F7] border border-transparent hover:border-[#EBEBEB] transition-all"
               >
                 {s}
               </Link>

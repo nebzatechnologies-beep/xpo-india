@@ -148,15 +148,12 @@ function LoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F6F6F4] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black text-[#111827]">
-          <span className="w-8 h-8 rounded-xl bg-[#E8192C] text-white flex items-center justify-center text-sm font-black">
-            X
-          </span>
-          XPO
+        <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black text-[#15171C]">
+          <img src="/xpo-logo.png" alt="XPO India" className="h-9 w-auto object-contain" />
         </Link>
-        <h1 className="mt-4 text-2xl font-extrabold text-[#111827]">
+        <h1 className="mt-4 text-2xl font-extrabold text-[#15171C]">
           Sign in to XPO
         </h1>
         <p className="mt-1 text-xs text-[#6B7280]">
@@ -165,7 +162,7 @@ function LoginContent() {
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-lg">
-        <div className="bg-white py-8 px-6 shadow-xs rounded-2xl border border-[#E5E7EB] sm:px-8 space-y-5">
+        <div className="bg-white py-8 px-6 shadow-xs rounded-2xl border border-[#E4E5E9] sm:px-8 space-y-5">
 
           {!clientConfigured && (
             <div className="mb-5 p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
@@ -187,8 +184,8 @@ function LoginContent() {
               }}
               className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition ${
                 mode === 'phone'
-                  ? 'bg-white text-[#111827] shadow-xs'
-                  : 'text-[#6B7280] hover:text-[#111827]'
+                  ? 'bg-white text-[#15171C] shadow-xs'
+                  : 'text-[#6B7280] hover:text-[#15171C]'
               }`}
             >
               <Phone className="w-3.5 h-3.5" /> WhatsApp / Mobile OTP
@@ -201,8 +198,8 @@ function LoginContent() {
               }}
               className={`flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition ${
                 mode === 'email'
-                  ? 'bg-white text-[#111827] shadow-xs'
-                  : 'text-[#6B7280] hover:text-[#111827]'
+                  ? 'bg-white text-[#15171C] shadow-xs'
+                  : 'text-[#6B7280] hover:text-[#15171C]'
               }`}
             >
               <Mail className="w-3.5 h-3.5" /> Email & Password
@@ -219,7 +216,7 @@ function LoginContent() {
             !otpSent ? (
               <form onSubmit={handleSendOtp} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#111827] mb-1.5">
+                  <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                     WhatsApp / Mobile Number
                   </label>
                   <div className="flex gap-2">
@@ -240,7 +237,7 @@ function LoginContent() {
                       value={phoneInput}
                       onChange={(e) => setPhoneInput(e.target.value)}
                       placeholder="98765 43210"
-                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-sm focus:outline-none focus:border-[#111827]"
+                      className="flex-1 px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-sm focus:outline-none focus:border-[#15171C]"
                     />
                   </div>
                 </div>
@@ -248,7 +245,7 @@ function LoginContent() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 rounded-xl bg-[#111827] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#15171C] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting ? (
                     <>
@@ -266,7 +263,7 @@ function LoginContent() {
             ) : (
               <form onSubmit={handleVerifyOtp} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#111827] mb-1.5">
+                  <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                     Enter 6-Digit Verification OTP
                   </label>
                   <input
@@ -276,13 +273,13 @@ function LoginContent() {
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value)}
                     placeholder="123456"
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-center tracking-widest text-base font-bold focus:outline-none focus:border-[#111827]"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-center tracking-widest text-base font-bold focus:outline-none focus:border-[#15171C]"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 rounded-xl bg-[#E8192C] text-white text-sm font-semibold hover:bg-[#c81324] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#C8102E] text-white text-sm font-semibold hover:bg-[#c81324] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{submitting ? 'Verifying...' : 'Verify & Sign In'}</span>
@@ -290,7 +287,7 @@ function LoginContent() {
                 <button
                   type="button"
                   onClick={() => setOtpSent(false)}
-                  className="w-full text-xs text-[#6B7280] hover:text-[#111827]"
+                  className="w-full text-xs text-[#6B7280] hover:text-[#15171C]"
                 >
                   Change phone number
                 </button>
@@ -299,7 +296,7 @@ function LoginContent() {
           ) : (
             <form onSubmit={handleEmailSignIn} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#111827] mb-1.5">
+                <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                   Work or Personal Email
                 </label>
                 <input
@@ -308,11 +305,11 @@ function LoginContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@company.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-sm focus:outline-none focus:border-[#111827]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-sm focus:outline-none focus:border-[#15171C]"
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#111827] mb-1.5">
+                <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                   Password
                 </label>
                 <input
@@ -321,13 +318,13 @@ function LoginContent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-sm focus:outline-none focus:border-[#111827]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-sm focus:outline-none focus:border-[#15171C]"
                 />
               </div>
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[#111827] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-[#15171C] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 <span>{submitting ? 'Signing In...' : 'Sign In'}</span>
@@ -339,7 +336,7 @@ function LoginContent() {
 
           <div className="mt-6 pt-5 border-t border-[#F3F4F6] flex items-center justify-between text-xs">
             <span className="text-[#6B7280]">New to XPO?</span>
-            <Link href="/register" className="font-bold text-[#E8192C] hover:underline">
+            <Link href="/register" className="font-bold text-[#C8102E] hover:underline">
               Register as Client or Partner →
             </Link>
           </div>
@@ -347,7 +344,7 @@ function LoginContent() {
           <div className="mt-3 text-center">
             <Link
               href="/admin/login"
-              className="text-[11px] font-semibold text-[#111827] hover:text-black hover:underline inline-flex items-center gap-1"
+              className="text-[11px] font-semibold text-[#15171C] hover:text-black hover:underline inline-flex items-center gap-1"
             >
               Superadmin Portal →
             </Link>

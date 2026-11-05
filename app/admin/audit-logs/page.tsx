@@ -30,7 +30,7 @@ export default function AdminAuditLogsPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#111827]">Immutable Governance Audit Logs</h1>
+          <h1 className="text-2xl font-extrabold text-[#15171C]">Immutable Governance Audit Logs</h1>
           <p className="text-xs text-[#6B7280] mt-1">
             Append-only server audit trail across Taxonomy, CRM, WhatsApp, Billing, Moderation, and
             DPDP actions.
@@ -58,7 +58,7 @@ export default function AdminAuditLogsPage() {
         </select>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6">
         {loading ? (
           <p className="text-xs text-[#6B7280]">Loading audit logs...</p>
         ) : logs.length === 0 ? (
@@ -67,7 +67,7 @@ export default function AdminAuditLogsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
+                <tr className="border-b border-[#E4E5E9] text-[#6B7280]">
                   <th className="py-2">Timestamp</th>
                   <th className="py-2">Actor</th>
                   <th className="py-2">Module</th>
@@ -82,7 +82,7 @@ export default function AdminAuditLogsPage() {
                       {new Date(l.createdAt).toLocaleString()}
                     </td>
                     <td className="py-2.5 font-semibold">{l.actorName}</td>
-                    <td className="py-2.5 uppercase text-[#E8192C] font-bold">{l.module}</td>
+                    <td className="py-2.5 uppercase text-[#C8102E] font-bold">{l.module}</td>
                     <td className="py-2.5 font-mono">{l.action}</td>
                     <td className="py-2.5 text-[#374151]">{l.summary}</td>
                   </tr>

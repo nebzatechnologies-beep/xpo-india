@@ -42,7 +42,7 @@ export default function AdminCrmConsentPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">
+        <h1 className="text-2xl font-extrabold text-[#15171C]">
           WhatsApp Consent Audit & Suppression List
         </h1>
         <p className="text-xs text-[#6B7280] mt-1">
@@ -59,7 +59,7 @@ export default function AdminCrmConsentPage() {
 
       <form
         onSubmit={recordManualConsent}
-        className="bg-white rounded-2xl border border-[#E5E7EB] p-5 grid grid-cols-1 sm:grid-cols-4 gap-3"
+        className="bg-white rounded-2xl border border-[#E4E5E9] p-5 grid grid-cols-1 sm:grid-cols-4 gap-3"
       >
         <input
           type="tel"
@@ -88,14 +88,14 @@ export default function AdminCrmConsentPage() {
         />
         <button
           type="submit"
-          className="px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-bold"
+          className="px-4 py-2 rounded-xl bg-[#15171C] text-white text-xs font-bold"
         >
           Record Consent Event
         </button>
       </form>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5">
           <h2 className="text-sm font-bold mb-3">
             Active Suppressed Phone Numbers ({suppressed.length})
           </h2>
@@ -112,7 +112,7 @@ export default function AdminCrmConsentPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5">
           <h2 className="text-sm font-bold mb-3">Recent Consent Audit Trail ({records.length})</h2>
           <div className="divide-y divide-[#F3F4F6] text-xs">
             {records.map((r) => (

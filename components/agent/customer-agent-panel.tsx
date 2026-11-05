@@ -130,10 +130,10 @@ export function CustomerAgentPanel({
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-xs overflow-hidden">
-      <div className="px-5 py-3.5 bg-[#111827] text-white flex items-center justify-between">
+    <div className="bg-white rounded-2xl border border-[#E4E5E9] shadow-xs overflow-hidden">
+      <div className="px-5 py-3.5 bg-[#15171C] text-white flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="w-7 h-7 rounded-lg bg-[#E8192C] flex items-center justify-center">
+          <span className="w-7 h-7 rounded-lg bg-[#C8102E] flex items-center justify-center">
             <Bot className="w-4 h-4 text-white" />
           </span>
           <div>
@@ -152,7 +152,7 @@ export function CustomerAgentPanel({
       </div>
 
       <div
-        className={`p-4 space-y-3 overflow-y-auto bg-[#F8F9FA] ${
+        className={`p-4 space-y-3 overflow-y-auto bg-[#F6F6F4] ${
           compact ? 'max-h-[340px]' : 'max-h-[460px]'
         }`}
       >
@@ -164,8 +164,8 @@ export function CustomerAgentPanel({
             <div
               className={`max-w-[90%] rounded-2xl px-4 py-2.5 text-xs leading-relaxed ${
                 turn.sender === 'user'
-                  ? 'bg-[#111827] text-white font-medium'
-                  : 'bg-white text-[#111827] border border-[#E5E7EB]'
+                  ? 'bg-[#15171C] text-white font-medium'
+                  : 'bg-white text-[#15171C] border border-[#E4E5E9]'
               }`}
             >
               <div>{turn.text}</div>
@@ -213,7 +213,7 @@ export function CustomerAgentPanel({
             type="button"
             disabled={busy}
             onClick={() => void sendTurn({ message: p })}
-            className="px-2.5 py-1 rounded-full bg-[#F8F9FA] hover:bg-gray-100 border border-[#E5E7EB] text-[11px] font-medium text-[#374151] transition-colors truncate max-w-full"
+            className="px-2.5 py-1 rounded-full bg-[#F6F6F4] hover:bg-gray-100 border border-[#E4E5E9] text-[11px] font-medium text-[#374151] transition-colors truncate max-w-full"
           >
             {p}
           </button>
@@ -225,7 +225,7 @@ export function CustomerAgentPanel({
           e.preventDefault();
           if (input.trim()) void sendTurn({ message: input.trim() });
         }}
-        className="p-3 bg-white border-t border-[#E5E7EB] flex items-center gap-2"
+        className="p-3 bg-white border-t border-[#E4E5E9] flex items-center gap-2"
       >
         <input
           type="text"
@@ -236,12 +236,12 @@ export function CustomerAgentPanel({
               ? 'Describe what you need or ask to review responded Partners...'
               : 'Describe your services/locations or ask for live 5-minute leads...'
           }
-          className="flex-1 px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs focus:outline-none focus:border-[#111827]"
+          className="flex-1 px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-xs focus:outline-none focus:border-[#15171C]"
         />
         <button
           type="submit"
           disabled={busy || !input.trim()}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white text-xs font-bold disabled:opacity-50 transition-colors"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white text-xs font-bold disabled:opacity-50 transition-colors"
         >
           {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
           <span>Send</span>
@@ -265,9 +265,9 @@ function AgentCardRenderer({
   if (card.type === 'requirement_draft') {
     const d = card.draft;
     return (
-      <div className="p-4 rounded-xl bg-white border border-[#E5E7EB] space-y-2.5 text-xs shadow-xs">
+      <div className="p-4 rounded-xl bg-white border border-[#E4E5E9] space-y-2.5 text-xs shadow-xs">
         <div className="flex items-center justify-between">
-          <span className="font-extrabold text-[#111827]">Structured Requirement Draft</span>
+          <span className="font-extrabold text-[#15171C]">Structured Requirement Draft</span>
           <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold">
             100% Free to Post
           </span>
@@ -302,7 +302,7 @@ function AgentCardRenderer({
                   'Confirm & publish requirement'
                 )
               }
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E8192C] text-white font-bold text-xs hover:bg-[#c81324] disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C8102E] text-white font-bold text-xs hover:bg-[#c81324] disabled:opacity-50"
             >
               {busy ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -329,7 +329,7 @@ function AgentCardRenderer({
         </div>
         <Link
           href="/dashboard/client/requirements"
-          className="inline-block font-bold text-[#111827] underline pt-1"
+          className="inline-block font-bold text-[#15171C] underline pt-1"
         >
           Open My Requirements →
         </Link>
@@ -339,9 +339,9 @@ function AgentCardRenderer({
 
   if (card.type === 'responded_partners') {
     return (
-      <div className="p-4 rounded-xl bg-white border border-[#E5E7EB] space-y-2.5 text-xs">
+      <div className="p-4 rounded-xl bg-white border border-[#E4E5E9] space-y-2.5 text-xs">
         <div className="flex items-center justify-between">
-          <span className="font-extrabold text-[#111827]">
+          <span className="font-extrabold text-[#15171C]">
             Interested Partners ({card.claims.length})
           </span>
           <span className="text-[11px] font-semibold text-[#6B7280]">
@@ -353,10 +353,10 @@ function AgentCardRenderer({
         {card.claims.slice(0, 4).map((clm) => (
           <div
             key={clm.id}
-            className="p-3 rounded-lg bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-between gap-2"
+            className="p-3 rounded-lg bg-[#F6F6F4] border border-[#E4E5E9] flex items-center justify-between gap-2"
           >
             <div>
-              <div className="font-bold text-[#111827]">
+              <div className="font-bold text-[#15171C]">
                 {clm.unlockedByClient ? clm.partnerBusinessName : '🔒 Verified XPO Partner'} (
                 {clm.partnerCity})
               </div>
@@ -372,7 +372,7 @@ function AgentCardRenderer({
                     `Unlock Partner profile for ${clm.xpoCode}`
                   )
                 }
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#111827] text-white font-bold text-[11px] disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#15171C] text-white font-bold text-[11px] disabled:opacity-50"
               >
                 {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unlock className="w-3 h-3" />}
                 <span>Unlock (1 Credit)</span>
@@ -387,7 +387,7 @@ function AgentCardRenderer({
                     `Request connection with ${clm.partnerBusinessName}`
                   )
                 }
-                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#E8192C] text-white font-bold text-[11px] disabled:opacity-50"
+                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#C8102E] text-white font-bold text-[11px] disabled:opacity-50"
               >
                 {busy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Handshake className="w-3 h-3" />}
                 <span>Connect</span>
@@ -410,7 +410,7 @@ function AgentCardRenderer({
     const clm = card.claim;
     return (
       <div className="p-4 rounded-xl bg-white border border-emerald-200 space-y-2 text-xs">
-        <div className="font-extrabold text-[#111827]">
+        <div className="font-extrabold text-[#15171C]">
           🔓 {clm.partnerBusinessName} ({clm.partnerCity})
         </div>
         {clm.capabilityNote && <div className="text-[#374151]">{clm.capabilityNote}</div>}
@@ -424,7 +424,7 @@ function AgentCardRenderer({
                 `Request mutual connection with ${clm.partnerBusinessName}`
               )
             }
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#E8192C] text-white font-bold text-[11px] disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#C8102E] text-white font-bold text-[11px] disabled:opacity-50"
           >
             {busy ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -441,18 +441,18 @@ function AgentCardRenderer({
   if (card.type === 'live_offers') {
     if (card.offers.length === 0) return null;
     return (
-      <div className="p-4 rounded-xl bg-white border border-[#E5E7EB] space-y-2 text-xs">
-        <div className="font-extrabold text-[#111827]">Live 5-Minute Lead Alerts</div>
+      <div className="p-4 rounded-xl bg-white border border-[#E4E5E9] space-y-2 text-xs">
+        <div className="font-extrabold text-[#15171C]">Live 5-Minute Lead Alerts</div>
         {card.offers.map((o) => (
           <div
             key={o.id}
-            className="p-3 rounded-lg bg-[#F8F9FA] border border-[#E5E7EB] flex items-center justify-between gap-2"
+            className="p-3 rounded-lg bg-[#F6F6F4] border border-[#E4E5E9] flex items-center justify-between gap-2"
           >
             <div>
-              <div className="font-bold text-[#111827]">
+              <div className="font-bold text-[#15171C]">
                 {o.xpoCode} • Round {o.round}
               </div>
-              <div className="text-[11px] text-[#E8192C] inline-flex items-center gap-1 font-semibold">
+              <div className="text-[11px] text-[#C8102E] inline-flex items-center gap-1 font-semibold">
                 <Clock className="w-3 h-3" /> Expires {new Date(o.expiresAt).toLocaleTimeString()}
               </div>
             </div>
@@ -495,15 +495,15 @@ function AgentCardRenderer({
   if (card.type === 'subscription_required') {
     return (
       <div className="p-4 rounded-xl bg-red-50/60 border border-red-200 space-y-2 text-xs">
-        <div className="flex items-center gap-1.5 font-extrabold text-[#111827]">
-          <Lock className="w-3.5 h-3.5 text-[#E8192C]" />
+        <div className="flex items-center gap-1.5 font-extrabold text-[#15171C]">
+          <Lock className="w-3.5 h-3.5 text-[#C8102E]" />
           {card.role === 'partner' ? 'Partner Plan Required' : 'Client Plan Required'} (
           {card.priceLabel})
         </div>
         <p className="text-[#374151]">{card.reason}</p>
         <a
           href={card.checkoutUrl}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E8192C] text-white font-bold text-xs"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C8102E] text-white font-bold text-xs"
         >
           Activate Plan ({card.allowanceLabel}) →
         </a>
@@ -525,9 +525,9 @@ function AgentCardRenderer({
 
   if (card.type === 'entitlement_summary') {
     return (
-      <div className="p-3.5 rounded-xl bg-white border border-[#E5E7EB] text-xs flex items-center justify-between">
+      <div className="p-3.5 rounded-xl bg-white border border-[#E4E5E9] text-xs flex items-center justify-between">
         <div>
-          <div className="font-bold text-[#111827]">
+          <div className="font-bold text-[#15171C]">
             {card.role === 'client' ? 'Partner Profile View Credits' : 'Lead Application Credits'}
           </div>
           <div className="text-[#6B7280] mt-0.5">
@@ -537,7 +537,7 @@ function AgentCardRenderer({
         </div>
         <Link
           href="/dashboard/subscription"
-          className="px-3 py-1.5 rounded-lg bg-[#111827] text-white font-bold text-[11px]"
+          className="px-3 py-1.5 rounded-lg bg-[#15171C] text-white font-bold text-[11px]"
         >
           Manage Plan
         </Link>

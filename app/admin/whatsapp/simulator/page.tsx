@@ -85,7 +85,7 @@ export default function AdminWhatsAppSimulatorPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#111827]">
+          <h1 className="text-2xl font-extrabold text-[#15171C]">
             Firestore-Backed WhatsApp Conversation Simulator
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -106,8 +106,8 @@ export default function AdminWhatsAppSimulatorPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col min-h-[540px]">
-          <div className="grid grid-cols-2 gap-3 pb-3 border-b border-[#E5E7EB] text-xs">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E4E5E9] p-5 flex flex-col min-h-[540px]">
+          <div className="grid grid-cols-2 gap-3 pb-3 border-b border-[#E4E5E9] text-xs">
             <input
               type="text"
               value={phoneE164}
@@ -137,7 +137,7 @@ export default function AdminWhatsAppSimulatorPage() {
                 className={`max-w-[85%] p-3.5 rounded-2xl text-xs whitespace-pre-line ${
                   m.direction === 'inbound'
                     ? 'ml-auto bg-emerald-600 text-white'
-                    : 'bg-[#F3F4F6] text-[#111827] border border-[#E5E7EB]'
+                    : 'bg-[#F3F4F6] text-[#15171C] border border-[#E4E5E9]'
                 }`}
               >
                 <div>{m.body}</div>
@@ -154,7 +154,7 @@ export default function AdminWhatsAppSimulatorPage() {
                             buttonReplyTitle: opt.title,
                           })
                         }
-                        className="px-3 py-1.5 rounded-xl bg-white text-[#111827] border border-gray-300 font-bold text-[11px] hover:bg-gray-50"
+                        className="px-3 py-1.5 rounded-xl bg-white text-[#15171C] border border-gray-300 font-bold text-[11px] hover:bg-gray-50"
                       >
                         {opt.title}
                       </button>
@@ -170,7 +170,7 @@ export default function AdminWhatsAppSimulatorPage() {
               e.preventDefault();
               if (textInput.trim()) void sendSimulatedInbound({ textBody: textInput.trim() });
             }}
-            className="pt-3 border-t border-[#E5E7EB] flex gap-2"
+            className="pt-3 border-t border-[#E4E5E9] flex gap-2"
           >
             <input
               type="text"
@@ -190,11 +190,11 @@ export default function AdminWhatsAppSimulatorPage() {
         </div>
 
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 text-xs space-y-2">
-            <h2 className="font-extrabold text-sm text-[#111827]">Live Session Inspector</h2>
+          <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 text-xs space-y-2">
+            <h2 className="font-extrabold text-sm text-[#15171C]">Live Session Inspector</h2>
             <div>
               State:{' '}
-              <span className="px-2 py-0.5 rounded bg-gray-100 text-[#111827] font-bold">
+              <span className="px-2 py-0.5 rounded bg-gray-100 text-[#15171C] font-bold">
                 {session?.state || 'NEW_CONTACT'}
               </span>
             </div>
@@ -202,18 +202,18 @@ export default function AdminWhatsAppSimulatorPage() {
             <div>Current Step: {session?.workflowStepKey || 'None'}</div>
             <div className="pt-2">
               <div className="font-bold text-[#6B7280] mb-1">Draft Data JSON</div>
-              <pre className="p-2.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] overflow-x-auto text-[11px]">
+              <pre className="p-2.5 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9] overflow-x-auto text-[11px]">
                 {JSON.stringify(session?.draftData || {}, null, 2)}
               </pre>
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 text-xs space-y-2">
-            <h2 className="font-extrabold text-sm text-[#111827]">
+          <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 text-xs space-y-2">
+            <h2 className="font-extrabold text-sm text-[#15171C]">
               Simulated 5-Min Lead Offers ({simOffers.length})
             </h2>
             {simOffers.map((o) => (
-              <div key={o.id} className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div key={o.id} className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9]">
                 <div className="font-bold">
                   {o.xpoCode} • Round {o.round} ({o.status})
                 </div>

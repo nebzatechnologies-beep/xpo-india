@@ -189,7 +189,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
   const [failNext, setFailNext] = useState<boolean>(false);
   const [kyc, setKyc] = useState<'none' | 'pending' | 'verified' | 'rejected'>('verified');
   const [toast, setToast] = useState<string>('');
-  const [panel, setPanel] = useState<boolean>(true);
+  const [panel, setPanel] = useState<boolean>(false);
   const [seq, setSeq] = useState<number>(41230);
   const [notifsRead, setNotifsRead] = useState<boolean>(false);
   const [alertFilter, setAlertFilter] = useState<'all' | 'act'>('all');
@@ -1278,7 +1278,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                   <div
                     style={{
                       display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                       gap: 16,
                     }}
                   >
@@ -3062,7 +3062,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                     <div
                       style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
                         gap: 14,
                       }}
                     >
@@ -3479,7 +3479,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                   <span style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--tx2)' }}>
                     Popular
                   </span>
-                  <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                     {[
                       'Packaging boxes',
                       'Website for my shop',
@@ -4003,8 +4003,8 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
             padding: 0,
           }}
         >
-          <span>Prototype controls</span>
-          <span>{panel ? '−' : '+'}</span>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 7, height: 7, borderRadius: 99, background: '#C8102E' }} />Prototype controls</span>
+          <span style={{ marginLeft: 10 }}>{panel ? '−' : '+'}</span>
         </button>
 
         {panel && (

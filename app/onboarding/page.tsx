@@ -140,13 +140,13 @@ function OnboardingContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-xl mx-auto bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-xs">
+    <div className="min-h-screen bg-[#F6F6F4] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-xl mx-auto bg-white rounded-2xl border border-[#E4E5E9] p-6 sm:p-8 shadow-xs">
         <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold">
           <CheckCircle2 className="w-3.5 h-3.5" />{' '}
           {resolvedRole === 'partner' ? 'Partner Profile Setup' : 'Client Profile Setup'}
         </div>
-        <h1 className="mt-3 text-2xl font-extrabold text-[#111827]">
+        <h1 className="mt-3 text-2xl font-extrabold text-[#15171C]">
           Activate Your XPO {resolvedRole === 'partner' ? 'Partner' : 'Client'} Profile
         </h1>
         <p className="mt-1 text-xs text-[#6B7280]">
@@ -315,7 +315,7 @@ function OnboardingContent() {
           <button
             type="submit"
             disabled={saving}
-            className="w-full py-3 rounded-xl bg-[#111827] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full py-3 rounded-xl bg-[#15171C] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {saving ? (
               <>

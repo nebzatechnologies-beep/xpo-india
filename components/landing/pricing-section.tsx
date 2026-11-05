@@ -110,7 +110,7 @@ export function PricingSection({
           <Badge variant="primary" className="font-semibold">
             Starter Free Quotas • Zero Deal Commission
           </Badge>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#111827] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#15171C] tracking-tight">
             Start Free on Both Sides. Subscribe Only as You Grow.
           </h2>
           <p className="text-[#6B7280] text-sm sm:text-base leading-relaxed">
@@ -119,21 +119,21 @@ export function PricingSection({
             applications before needing a monthly plan.
           </p>
 
-          <div className="mt-6 inline-flex items-center p-1 rounded-full bg-[#F3F4F6] border border-[#E5E7EB]">
+          <div className="mt-6 inline-flex items-center p-1 rounded-full bg-[#F3F4F6] border border-[#E4E5E9]">
             <button
               type="button"
               onClick={() => setCurrency('INR')}
               className={`px-5 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
-                currency === 'INR' ? 'bg-white text-[#111827] shadow-sm' : 'text-[#6B7280]'
+                currency === 'INR' ? 'bg-white text-[#15171C] shadow-sm' : 'text-[#6B7280]'
               }`}
             >
-              <CreditCard className="w-3.5 h-3.5 text-[#E8192C]" /> India Billing (INR)
+              <CreditCard className="w-3.5 h-3.5 text-[#C8102E]" /> India Billing (INR)
             </button>
             <button
               type="button"
               onClick={() => setCurrency('USD')}
               className={`px-5 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 transition-all ${
-                currency === 'USD' ? 'bg-white text-[#111827] shadow-sm' : 'text-[#6B7280]'
+                currency === 'USD' ? 'bg-white text-[#15171C] shadow-sm' : 'text-[#6B7280]'
               }`}
             >
               <Globe2 className="w-3.5 h-3.5 text-blue-600" /> International Billing (USD)
@@ -143,8 +143,8 @@ export function PricingSection({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
           {/* Client Plan */}
-          <div className="border border-[#E5E7EB] rounded-3xl p-8 flex flex-col justify-between bg-[#F8F9FA] relative">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#111827] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
+          <div className="border border-[#E4E5E9] rounded-3xl p-8 flex flex-col justify-between bg-[#F6F6F4] relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#15171C] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
               Post Requirements Free + {settings.clientFreePartnerViews} Free Partner Views
             </div>
             <div>
@@ -156,9 +156,9 @@ export function PricingSection({
                   {clientAllowanceLabel}
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-[#111827]">Client Monthly Plan</h3>
+              <h3 className="text-xl font-bold text-[#15171C]">Client Monthly Plan</h3>
               <div className="my-5">
-                <span className="text-4xl font-black text-[#111827]">{clientPriceDisplay}</span>
+                <span className="text-4xl font-black text-[#15171C]">{clientPriceDisplay}</span>
                 <span className="text-xs text-[#6B7280]"> / month after free starter views</span>
                 <div className="text-[11px] text-[#6B7280] mt-1">{gatewayText}</div>
               </div>
@@ -181,9 +181,9 @@ export function PricingSection({
                 </li>
               </ul>
             </div>
-            <div className="mt-8 pt-5 border-t border-[#E5E7EB]">
+            <div className="mt-8 pt-5 border-t border-[#E4E5E9]">
               <Link href="/register?role=client">
-                <Button className="w-full rounded-xl bg-[#111827] hover:bg-black text-white font-bold">
+                <Button className="w-full rounded-xl bg-[#15171C] hover:bg-black text-white font-bold">
                   Post Free & Get {settings.clientFreePartnerViews} Free Views
                 </Button>
               </Link>
@@ -191,36 +191,36 @@ export function PricingSection({
           </div>
 
           {/* Partner Plan */}
-          <div className="border-2 border-[#E8192C] rounded-3xl p-8 flex flex-col justify-between shadow-lg bg-white relative">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#E8192C] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
+          <div className="border-2 border-[#C8102E] rounded-3xl p-8 flex flex-col justify-between shadow-lg bg-white relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 bg-[#C8102E] text-white text-[10px] font-extrabold uppercase tracking-wider px-4 py-1 rounded-full">
               {settings.partnerFreeClaims} Free Lead Applications Included
             </div>
             <div>
               <div className="flex items-center justify-between mb-3 mt-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-[#E8192C]">
+                <span className="text-xs font-bold uppercase tracking-wider text-[#C8102E]">
                   For Partners
                 </span>
                 <span className="text-[11px] font-semibold text-neutral-700 bg-neutral-100 px-2.5 py-0.5 rounded-full">
                   {partnerAllowanceLabel}
                 </span>
               </div>
-              <h3 className="text-xl font-bold text-[#111827]">Partner Monthly Plan</h3>
+              <h3 className="text-xl font-bold text-[#15171C]">Partner Monthly Plan</h3>
               <div className="my-5">
-                <span className="text-4xl font-black text-[#111827]">{partnerPriceDisplay}</span>
+                <span className="text-4xl font-black text-[#15171C]">{partnerPriceDisplay}</span>
                 <span className="text-xs text-[#6B7280]"> / month after free starter claims</span>
                 <div className="text-[11px] text-[#6B7280] mt-1">{gatewayText}</div>
               </div>
-              <ul className="space-y-2.5 text-xs sm:text-sm text-[#111827]">
+              <ul className="space-y-2.5 text-xs sm:text-sm text-[#15171C]">
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-[#E8192C] shrink-0" /> {settings.partnerFreeClaims}{' '}
+                  <Check className="w-4 h-4 text-[#C8102E] shrink-0" /> {settings.partnerFreeClaims}{' '}
                   free valid lead applications on signup
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-[#E8192C] shrink-0" /> {partnerAllowanceLabel} on
+                  <Check className="w-4 h-4 text-[#C8102E] shrink-0" /> {partnerAllowanceLabel} on
                   active Partner Plan
                 </li>
                 <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-[#E8192C] shrink-0" /> Zero deduction on expired or
+                  <Check className="w-4 h-4 text-[#C8102E] shrink-0" /> Zero deduction on expired or
                   declined 5-minute WhatsApp offers
                 </li>
                 <li className="flex items-center gap-2 font-semibold text-emerald-700">
@@ -228,9 +228,9 @@ export function PricingSection({
                 </li>
               </ul>
             </div>
-            <div className="mt-8 pt-5 border-t border-[#E5E7EB]">
+            <div className="mt-8 pt-5 border-t border-[#E4E5E9]">
               <Link href="/register?role=partner">
-                <Button className="w-full rounded-xl bg-[#E8192C] hover:bg-[#C0111F] text-white font-bold">
+                <Button className="w-full rounded-xl bg-[#C8102E] hover:bg-[#A50D25] text-white font-bold">
                   Start with {settings.partnerFreeClaims} Free Applications
                 </Button>
               </Link>

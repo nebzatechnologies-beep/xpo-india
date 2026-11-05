@@ -109,8 +109,8 @@ export default function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
-            <Users className="w-6 h-6 text-[#111827]" />
+          <h1 className="text-2xl font-black tracking-tight text-[#15171C] flex items-center gap-2">
+            <Users className="w-6 h-6 text-[#15171C]" />
             Registered Accounts & Quotas
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -134,9 +134,9 @@ export default function AdminUsersPage() {
       )}
 
       {/* Search & Role Filter */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4 flex flex-wrap items-center gap-3 text-xs">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4 flex flex-wrap items-center gap-3 text-xs">
         <div className="relative flex-1 min-w-[220px]">
-          <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-2.5" />
+          <Search className="w-4 h-4 text-[#8A8E97] absolute left-3 top-2.5" />
           <input
             type="text"
             value={search}
@@ -157,10 +157,10 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Directory Table */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] overflow-hidden">
         {loading ? (
           <div className="p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
-            <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading accounts...
+            <Loader2 className="w-4 h-4 animate-spin text-[#15171C]" /> Loading accounts...
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -176,7 +176,7 @@ export default function AdminUsersPage() {
                   <th className="px-4 py-3 text-right">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E7EB]">
+              <tbody className="divide-y divide-[#E4E5E9]">
                 {users.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-10 text-center text-[#6B7280]">
@@ -196,10 +196,10 @@ export default function AdminUsersPage() {
                     return (
                       <tr key={u.uid} className="hover:bg-gray-50 align-top">
                         <td className="px-4 py-3">
-                          <div className="font-bold text-[#111827] flex items-center gap-1.5">
+                          <div className="font-bold text-[#15171C] flex items-center gap-1.5">
                             {u.displayName}
                             {u.isSuperadmin && (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#111827] text-white text-[10px] font-extrabold">
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#15171C] text-white text-[10px] font-extrabold">
                                 <Shield className="w-3 h-3" /> Superadmin
                               </span>
                             )}
@@ -210,7 +210,7 @@ export default function AdminUsersPage() {
                         </td>
 
                         <td className="px-4 py-3">
-                          <div className="font-mono font-semibold text-[#111827]">
+                          <div className="font-mono font-semibold text-[#15171C]">
                             {u.phoneE164 || '—'}
                           </div>
                           <div className="text-[11px] text-[#6B7280]">
@@ -219,7 +219,7 @@ export default function AdminUsersPage() {
                         </td>
 
                         <td className="px-4 py-3">
-                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-[#111827] text-white">
+                          <span className="px-2.5 py-0.5 rounded-md text-[10px] font-bold uppercase bg-[#15171C] text-white">
                             {u.role}
                           </span>
                         </td>
@@ -267,12 +267,12 @@ export default function AdminUsersPage() {
                                   />
                                 </label>
                               </div>
-                              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[#111827]">
+                              <label className="flex items-center gap-1.5 text-[11px] font-semibold text-[#15171C]">
                                 <input
                                   type="checkbox"
                                   checked={unlimitedInput}
                                   onChange={(e) => setUnlimitedInput(e.target.checked)}
-                                  className="accent-[#111827]"
+                                  className="accent-[#15171C]"
                                 />
                                 Unlimited Plan Override
                               </label>
@@ -281,7 +281,7 @@ export default function AdminUsersPage() {
                                   type="button"
                                   disabled={busyUid === u.uid}
                                   onClick={() => saveInlineQuotaEdit(u)}
-                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#111827] text-white font-bold text-[10px] disabled:opacity-50"
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#15171C] text-white font-bold text-[10px] disabled:opacity-50"
                                 >
                                   {busyUid === u.uid ? (
                                     <Loader2 className="w-3 h-3 animate-spin" />
@@ -302,11 +302,11 @@ export default function AdminUsersPage() {
                           ) : u.role === 'partner' ? (
                             <div>
                               Free Claims:{' '}
-                              <strong className="text-[#111827]">
+                              <strong className="text-[#15171C]">
                                 {partnerProf?.freeClaimsRemaining ?? 5}
                               </strong>{' '}
                               | Plan:{' '}
-                              <strong className="text-[#111827]">
+                              <strong className="text-[#15171C]">
                                 {partnerProf?.paidClaimsUnlimited
                                   ? 'Unlimited'
                                   : partnerProf?.paidClaimsRemaining ?? 0}
@@ -315,11 +315,11 @@ export default function AdminUsersPage() {
                           ) : (
                             <div>
                               Free Views:{' '}
-                              <strong className="text-[#111827]">
+                              <strong className="text-[#15171C]">
                                 {clientProf?.freePartnerViewsRemaining ?? 5}
                               </strong>{' '}
                               | Plan:{' '}
-                              <strong className="text-[#111827]">
+                              <strong className="text-[#15171C]">
                                 {clientProf?.paidViewsUnlimited
                                   ? 'Unlimited'
                                   : clientProf?.paidPartnerViewsRemaining ?? 0}
@@ -354,7 +354,7 @@ export default function AdminUsersPage() {
                               }}
                               className={`px-2.5 py-1 rounded-lg border font-semibold text-[11px] shadow-xs transition-colors ${
                                 isEditing
-                                  ? 'border-[#111827] bg-[#111827] text-white'
+                                  ? 'border-[#15171C] bg-[#15171C] text-white'
                                   : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                               }`}
                             >

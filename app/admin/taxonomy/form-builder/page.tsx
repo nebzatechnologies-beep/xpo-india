@@ -78,7 +78,7 @@ export default function AdminTaxonomyFormBuilderPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">Dynamic Category Form Builder</h1>
+        <h1 className="text-2xl font-extrabold text-[#15171C]">Dynamic Category Form Builder</h1>
         <p className="text-xs text-[#6B7280] mt-1">
           Configure category-specific intake questions rendered automatically on Client Post
           Requirement forms.
@@ -91,7 +91,7 @@ export default function AdminTaxonomyFormBuilderPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <select
             value={targetId}
@@ -117,7 +117,7 @@ export default function AdminTaxonomyFormBuilderPage() {
               type="button"
               disabled={saving}
               onClick={() => void saveSchema()}
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
             >
               <Save className="w-3.5 h-3.5" /> {saving ? 'Saving...' : 'Save Schema'}
             </button>
@@ -128,7 +128,7 @@ export default function AdminTaxonomyFormBuilderPage() {
           {fields.map((f, idx) => (
             <div
               key={f.id}
-              className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] grid grid-cols-1 sm:grid-cols-5 gap-3 items-center text-xs"
+              className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9] grid grid-cols-1 sm:grid-cols-5 gap-3 items-center text-xs"
             >
               <input
                 type="text"
@@ -195,7 +195,7 @@ export default function AdminTaxonomyFormBuilderPage() {
               </button>
 
               {f.type === 'dropdown' && (
-                <div className="col-span-full pt-1.5 border-t border-[#E5E7EB] mt-1">
+                <div className="col-span-full pt-1.5 border-t border-[#E4E5E9] mt-1">
                   <label className="block text-[10px] font-bold text-[#6B7280] mb-1">
                     Dropdown Select Options (comma-separated):
                   </label>

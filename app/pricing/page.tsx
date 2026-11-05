@@ -36,10 +36,10 @@ export default async function PricingPage() {
   const cViews = initialSettings?.clientPaidMonthlyPartnerViews ?? 30;
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-[#111827]">
+    <div className="min-h-screen flex flex-col bg-white text-[#15171C]">
       <Navbar />
       <main className="flex-1">
-        <section className="pt-16 pb-6 bg-[#F8F9FA] border-b border-[#E5E7EB]">
+        <section className="pt-16 pb-6 bg-[#F6F6F4] border-b border-[#E4E5E9]">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
               Zero Commission Marketplace
@@ -58,21 +58,21 @@ export default async function PricingPage() {
 
         <PricingSection initialSettings={initialSettings} />
 
-        <section className="py-16 bg-[#F8F9FA] border-t border-[#E5E7EB]">
+        <section className="py-16 bg-[#F6F6F4] border-t border-[#E4E5E9]">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="text-2xl font-bold text-center mb-10">
               Billing, Quotas & Governance Rules
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB]">
-                <Zap className="w-6 h-6 text-[#E8192C] mb-3" />
+              <div className="bg-white p-6 rounded-2xl border border-[#E4E5E9]">
+                <Zap className="w-6 h-6 text-[#C8102E] mb-3" />
                 <h3 className="font-bold text-sm">Fair Usage Protection</h3>
                 <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
                   Partners are never charged for expired or declined 5-minute alerts. Clients unlock
                   each Partner once and re-view forever without double-deduction.
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB]">
+              <div className="bg-white p-6 rounded-2xl border border-[#E4E5E9]">
                 <CreditCard className="w-6 h-6 text-emerald-600 mb-3" />
                 <h3 className="font-bold text-sm">INR & USD AutoPay</h3>
                 <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
@@ -80,15 +80,15 @@ export default async function PricingPage() {
                   International billing runs via PayPal AutoPay (${pPriceUsd}/mo USD).
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB]">
-                <RefreshCw className="w-6 h-6 text-[#111827] mb-3" />
+              <div className="bg-white p-6 rounded-2xl border border-[#E4E5E9]">
+                <RefreshCw className="w-6 h-6 text-[#15171C] mb-3" />
                 <h3 className="font-bold text-sm">Monthly Cycle Refresh</h3>
                 <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
                   Active Partner Plans refresh {pClaims} lead claims/month and active Client Plans
                   refresh {cViews} Partner views/month (or Unlimited when enabled).
                 </p>
               </div>
-              <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB]">
+              <div className="bg-white p-6 rounded-2xl border border-[#E4E5E9]">
                 <ShieldCheck className="w-6 h-6 text-amber-600 mb-3" />
                 <h3 className="font-bold text-sm">Webhook-Verified Ledger</h3>
                 <p className="mt-2 text-xs text-[#6B7280] leading-relaxed">
@@ -101,7 +101,7 @@ export default async function PricingPage() {
             <div className="mt-12 text-center">
               <Link
                 href="/register"
-                className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#111827] text-white font-semibold text-sm hover:bg-black transition"
+                className="inline-flex items-center justify-center px-6 py-3 rounded-xl bg-[#15171C] text-white font-semibold text-sm hover:bg-black transition"
               >
                 Create Your XPO Account
               </Link>

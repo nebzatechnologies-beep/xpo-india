@@ -9,10 +9,10 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, description, badge, actions }: PageHeaderProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 mb-8 border-b border-[#E5E7EB]">
+    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 mb-8 border-b border-[#E4E5E9]">
       <div className="space-y-1">
         <div className="flex items-center gap-2.5 flex-wrap">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#111827] tracking-tight">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-[#15171C] tracking-tight">
             {title}
           </h1>
           {badge}

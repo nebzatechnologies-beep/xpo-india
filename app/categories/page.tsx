@@ -82,14 +82,14 @@ function CategoriesDirectoryContent() {
   }, [tree, query]);
 
   return (
-    <main className="flex-1 bg-[#F8F9FA]">
-      <section className="bg-white border-b border-[#E5E7EB] py-12">
+    <main className="flex-1 bg-[#F6F6F4]">
+      <section className="bg-white border-b border-[#E4E5E9] py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="max-w-3xl">
-            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#E8192C]">
+            <span className="inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-[#C8102E]">
               <Layers className="w-4 h-4" /> 4-Tier Marketplace Taxonomy
             </span>
-            <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-[#111827]">
+            <h1 className="mt-2 text-3xl sm:text-4xl font-extrabold text-[#15171C]">
               Explore Sectors, Categories, Subcategories & Skill Tags
             </h1>
             <p className="mt-3 text-sm sm:text-base text-[#6B7280]">
@@ -105,7 +105,7 @@ function CategoriesDirectoryContent() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search sectors, categories, subcategories, or tags..."
-              className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#D1D5DB] bg-white text-sm focus:outline-none focus:border-[#111827]"
+              className="w-full pl-11 pr-4 py-3 rounded-xl border border-[#D1D5DB] bg-white text-sm focus:outline-none focus:border-[#15171C]"
             />
           </div>
         </div>
@@ -130,13 +130,13 @@ function CategoriesDirectoryContent() {
             {[1, 2, 3, 4].map((n) => (
               <div
                 key={n}
-                className="h-48 rounded-2xl bg-white border border-[#E5E7EB] animate-pulse p-6"
+                className="h-48 rounded-2xl bg-white border border-[#E4E5E9] animate-pulse p-6"
               />
             ))}
           </div>
         ) : filteredTree.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-10 text-center">
-            <p className="text-base font-semibold text-[#111827]">
+          <div className="bg-white rounded-2xl border border-[#E4E5E9] p-10 text-center">
+            <p className="text-base font-semibold text-[#15171C]">
               No matching taxonomy categories found.
             </p>
             <p className="mt-1 text-sm text-[#6B7280]">
@@ -151,7 +151,7 @@ function CategoriesDirectoryContent() {
               </button>
               <Link
                 href="/dashboard/client/post-requirement"
-                className="px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold hover:bg-black"
+                className="px-4 py-2 rounded-xl bg-[#15171C] text-white text-xs font-semibold hover:bg-black"
               >
                 Post Requirement Free
               </Link>
@@ -162,11 +162,11 @@ function CategoriesDirectoryContent() {
             {filteredTree.map((sector) => (
               <div
                 key={sector.id}
-                className="bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-xs"
+                className="bg-white rounded-2xl border border-[#E4E5E9] p-6 sm:p-8 shadow-xs"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#F3F4F6]">
                   <div>
-                    <h2 className="text-xl font-bold text-[#111827]">{sector.name}</h2>
+                    <h2 className="text-xl font-bold text-[#15171C]">{sector.name}</h2>
                     <p className="text-xs text-[#6B7280] mt-0.5">
                       {(sector.categories || []).length} Categories active
                     </p>
@@ -174,13 +174,13 @@ function CategoriesDirectoryContent() {
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/dashboard/client/post-requirement?sectorId=${encodeURIComponent(sector.id)}`}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#E8192C] text-white text-xs font-semibold hover:bg-[#C0111F]"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#C8102E] text-white text-xs font-semibold hover:bg-[#A50D25]"
                     >
                       Post Requirement Free <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                     <Link
                       href="/register?role=partner"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-[#111827] text-xs font-semibold hover:bg-[#F3F4F6]"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D1D5DB] text-[#15171C] text-xs font-semibold hover:bg-[#F3F4F6]"
                     >
                       Join as Partner
                     </Link>
@@ -191,9 +191,9 @@ function CategoriesDirectoryContent() {
                   {(sector.categories || []).map((cat) => (
                     <div
                       key={cat.id}
-                      className="p-4 rounded-xl bg-[#F8F9FA] border border-[#E5E7EB]"
+                      className="p-4 rounded-xl bg-[#F6F6F4] border border-[#E4E5E9]"
                     >
-                      <h3 className="font-bold text-sm text-[#111827]">{cat.name}</h3>
+                      <h3 className="font-bold text-sm text-[#15171C]">{cat.name}</h3>
                       <div className="mt-3 space-y-2.5">
                         {(cat.subcategories || []).map((sub) => (
                           <div key={sub.id}>
@@ -203,7 +203,7 @@ function CategoriesDirectoryContent() {
                                 {(sub.tags || []).map((t) => (
                                   <span
                                     key={t.id}
-                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E5E7EB] text-[11px] text-[#6B7280]"
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#E4E5E9] text-[11px] text-[#6B7280]"
                                   >
                                     <Tag className="w-2.5 h-2.5" />
                                     {t.name}
@@ -228,7 +228,7 @@ function CategoriesDirectoryContent() {
 
 export default function CategoriesPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-white text-[#111827]">
+    <div className="min-h-screen flex flex-col bg-white text-[#15171C]">
       <Navbar />
       <Suspense fallback={<div className="flex-1 p-12 text-center text-sm">Loading taxonomy...</div>}>
         <CategoriesDirectoryContent />

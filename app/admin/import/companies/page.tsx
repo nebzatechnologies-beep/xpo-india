@@ -16,7 +16,7 @@ export default function AdminImportCrmCompaniesPage() {
           onClick={() => setTargetDb('client_database')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
             targetDb === 'client_database'
-              ? 'bg-[#111827] text-white'
+              ? 'bg-[#15171C] text-white'
               : 'bg-white border border-[#D1D5DB] text-[#4B5563]'
           }`}
         >
@@ -27,7 +27,7 @@ export default function AdminImportCrmCompaniesPage() {
           onClick={() => setTargetDb('partner_database')}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
             targetDb === 'partner_database'
-              ? 'bg-[#111827] text-white'
+              ? 'bg-[#15171C] text-white'
               : 'bg-white border border-[#D1D5DB] text-[#4B5563]'
           }`}
         >

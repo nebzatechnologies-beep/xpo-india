@@ -161,18 +161,15 @@ function AdminLoginContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F6F6F4] flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black text-[#222222]">
-          <span className="w-8 h-8 rounded-xl bg-[#E8192C] text-white flex items-center justify-center text-sm font-black shadow-xs">
-            X
-          </span>
-          <span>XPO <span className="text-[#E8192C]">Admin</span></span>
+        <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black text-[#15171C]">
+          <img src="/xpo-logo.png" alt="XPO India" className="h-9 w-auto object-contain" /><span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#F1E9FB] text-[#5B21B6] uppercase tracking-wider">Superadmin</span>
         </Link>
-        <h1 className="mt-4 text-2xl font-extrabold text-[#222222]">
+        <h1 className="mt-4 text-2xl font-extrabold text-[#15171C]">
           Platform Administration
         </h1>
-        <p className="mt-1 text-xs text-[#717171]">
+        <p className="mt-1 text-xs text-[#4A4F59]">
           Sign in to access platform management, settings, and logs
         </p>
       </div>
@@ -199,8 +196,8 @@ function AdminLoginContent() {
               }}
               className={`flex items-center justify-center gap-1.5 py-2 rounded-lg font-semibold transition ${
                 mode === 'email'
-                  ? 'bg-white text-[#222222] shadow-xs'
-                  : 'text-[#717171] hover:text-[#222222]'
+                  ? 'bg-white text-[#15171C] shadow-xs'
+                  : 'text-[#4A4F59] hover:text-[#15171C]'
               }`}
             >
               <Mail className="w-3.5 h-3.5" /> Admin Email
@@ -213,8 +210,8 @@ function AdminLoginContent() {
               }}
               className={`flex items-center justify-center gap-1.5 py-2 rounded-lg font-semibold transition ${
                 mode === 'phone'
-                  ? 'bg-white text-[#222222] shadow-xs'
-                  : 'text-[#717171] hover:text-[#222222]'
+                  ? 'bg-white text-[#15171C] shadow-xs'
+                  : 'text-[#4A4F59] hover:text-[#15171C]'
               }`}
             >
               <Phone className="w-3.5 h-3.5" /> Admin Phone OTP
@@ -230,7 +227,7 @@ function AdminLoginContent() {
           {mode === 'email' ? (
             <form onSubmit={handleEmailSignIn} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-[#222222] mb-1.5">
+                <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                   Admin Email Address
                 </label>
                 <input
@@ -239,12 +236,12 @@ function AdminLoginContent() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="admin@xpoindia.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-sm focus:outline-none focus:border-[#222222]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-sm focus:outline-none focus:border-[#15171C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#222222] mb-1.5">
+                <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                   Admin Password
                 </label>
                 <input
@@ -253,14 +250,14 @@ function AdminLoginContent() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-sm focus:outline-none focus:border-[#222222]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-sm focus:outline-none focus:border-[#15171C]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[#111827] hover:bg-black text-white font-semibold text-sm shadow-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-[#15171C] hover:bg-black text-white font-semibold text-sm shadow-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? (
                   <>
@@ -278,7 +275,7 @@ function AdminLoginContent() {
           ) : !otpSent ? (
             <form onSubmit={handleSendOtp} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-[#222222] mb-1.5">
+                <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                   Authorized Admin Mobile Number
                 </label>
                 <div className="flex gap-2">
@@ -298,7 +295,7 @@ function AdminLoginContent() {
                     value={phoneInput}
                     onChange={(e) => setPhoneInput(e.target.value)}
                     placeholder="98765 43210"
-                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-sm focus:outline-none focus:border-[#222222]"
+                    className="flex-1 px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-sm focus:outline-none focus:border-[#15171C]"
                   />
                 </div>
               </div>
@@ -306,7 +303,7 @@ function AdminLoginContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[#111827] hover:bg-black text-white font-semibold text-sm shadow-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
+                className="w-full py-3 rounded-xl bg-[#15171C] hover:bg-black text-white font-semibold text-sm shadow-xs transition flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 {submitting ? (
                   <>
@@ -324,7 +321,7 @@ function AdminLoginContent() {
           ) : (
             <form onSubmit={handleVerifyOtp} className="space-y-4 text-xs">
               <div>
-                <label className="block text-xs font-semibold text-[#222222] mb-1.5">
+                <label className="block text-xs font-semibold text-[#15171C] mb-1.5">
                   Enter 6-Digit Admin Verification OTP
                 </label>
                 <input
@@ -334,14 +331,14 @@ function AdminLoginContent() {
                   value={otpCode}
                   onChange={(e) => setOtpCode(e.target.value)}
                   placeholder="123456"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-center tracking-widest text-base font-bold focus:outline-none focus:border-[#222222]"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[#DDDDDD] text-center tracking-widest text-base font-bold focus:outline-none focus:border-[#15171C]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[#E8192C] hover:bg-[#D01525] text-white font-semibold text-sm shadow-xs transition disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-[#C8102E] hover:bg-[#D01525] text-white font-semibold text-sm shadow-xs transition disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 <span>{submitting ? 'Verifying...' : 'Verify & Enter'}</span>
@@ -350,7 +347,7 @@ function AdminLoginContent() {
               <button
                 type="button"
                 onClick={() => setOtpSent(false)}
-                className="w-full text-center text-xs text-[#717171] hover:text-[#222222]"
+                className="w-full text-center text-xs text-[#4A4F59] hover:text-[#15171C]"
               >
                 Change phone number
               </button>
@@ -360,13 +357,13 @@ function AdminLoginContent() {
           <div id="recaptcha-admin-container" />
 
           <div className="mt-6 pt-5 border-t border-[#F0F0F0] flex items-center justify-between text-xs">
-            <span className="text-[#717171]">Customer or Partner?</span>
-            <Link href="/login" className="font-bold text-[#E8192C] hover:underline">
+            <span className="text-[#4A4F59]">Customer or Partner?</span>
+            <Link href="/login" className="font-bold text-[#C8102E] hover:underline">
               Marketplace Login →
             </Link>
           </div>
 
-          <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-[#717171]">
+          <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-[#4A4F59]">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             Protected by Firebase Authentication & Admin Role Gate
           </div>
@@ -380,7 +377,7 @@ export default function AdminLoginPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center text-xs text-[#717171]">
+        <div className="min-h-screen bg-[#F6F6F4] flex items-center justify-center text-xs text-[#4A4F59]">
           Loading Admin Portal...
         </div>
       }

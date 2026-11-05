@@ -24,7 +24,7 @@ export function MetricCard({
   const colorMap = {
     red: {
       bg: 'bg-red-50',
-      text: 'text-[#E8192C]',
+      text: 'text-[#C8102E]',
     },
     blue: {
       bg: 'bg-blue-50',
@@ -32,11 +32,11 @@ export function MetricCard({
     },
     purple: {
       bg: 'bg-[#F3F4F6]',
-      text: 'text-[#111827]',
+      text: 'text-[#15171C]',
     },
     slate: {
       bg: 'bg-[#F3F4F6]',
-      text: 'text-[#111827]',
+      text: 'text-[#15171C]',
     },
     emerald: {
       bg: 'bg-emerald-50',
@@ -51,7 +51,7 @@ export function MetricCard({
   const currentTheme = colorMap[accentColor];
 
   return (
-    <Card className="p-5 sm:p-6 rounded-2xl border border-[#E5E7EB] bg-white shadow-xs hover:border-[#D1D5DB] transition-all">
+    <Card className="p-5 sm:p-6 rounded-2xl border border-[#E4E5E9] bg-white shadow-xs hover:border-[#D1D5DB] transition-all">
       <div className="flex items-center justify-between">
         <span className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">
           {label}
@@ -64,7 +64,7 @@ export function MetricCard({
       </div>
 
       <div className="mt-4 flex items-baseline gap-2">
-        <span className="text-2xl sm:text-3xl font-black text-[#111827] tracking-tight">
+        <span className="text-2xl sm:text-3xl font-black text-[#15171C] tracking-tight">
           {value}
         </span>
         {trend && (

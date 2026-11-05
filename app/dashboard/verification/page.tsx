@@ -101,7 +101,7 @@ export default function VerificationKycPage() {
     <div className="max-w-3xl space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#111827]">KYC & XPO Verified Badge</h1>
+          <h1 className="text-2xl font-extrabold text-[#15171C]">KYC & XPO Verified Badge</h1>
           <p className="text-xs text-[#6B7280] mt-1">
             Verified Clients and Partners receive a priority ranking boost in matching and a
             Verified Trust Badge on profile cards.
@@ -132,7 +132,7 @@ export default function VerificationKycPage() {
               <ShieldCheck className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#111827]">Account Verified with Trust Badge</h2>
+              <h2 className="text-base font-bold text-[#15171C]">Account Verified with Trust Badge</h2>
               <p className="text-xs text-[#6B7280] mt-0.5">
                 Your KYC compliance documents have been verified by Superadmins. Your account displays the Verified Trust Badge and receives priority in matching.
               </p>
@@ -158,7 +158,7 @@ export default function VerificationKycPage() {
               ⏳
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#111827]">KYC Review In Progress</h2>
+              <h2 className="text-base font-bold text-[#15171C]">KYC Review In Progress</h2>
               <p className="text-xs text-[#6B7280] mt-0.5">
                 Your submitted documents are in the active Superadmin review queue. Verified badges are granted once documents are validated.
               </p>
@@ -170,18 +170,18 @@ export default function VerificationKycPage() {
       {(user?.verificationStatus !== 'verified' || showReupload) && (
         <form
           onSubmit={handleSubmit}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4"
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-[#111827] mb-1">Account Role</label>
-              <div className="px-3.5 py-2.5 rounded-xl border border-[#E5E7EB] bg-[#F8F9FA] text-xs font-bold uppercase text-[#111827]">
+              <label className="block text-xs font-bold text-[#15171C] mb-1">Account Role</label>
+              <div className="px-3.5 py-2.5 rounded-xl border border-[#E4E5E9] bg-[#F6F6F4] text-xs font-bold uppercase text-[#15171C]">
                 {activeRole}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#111827] mb-1">Document Type</label>
+              <label className="block text-xs font-bold text-[#15171C] mb-1">Document Type</label>
               <select
                 value={documentType}
                 onChange={(e) =>
@@ -201,7 +201,7 @@ export default function VerificationKycPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-[#111827] mb-1">
+              <label className="block text-xs font-bold text-[#15171C] mb-1">
                 GSTIN / Registration / ID Number
               </label>
               <input
@@ -213,7 +213,7 @@ export default function VerificationKycPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-[#111827] mb-1">
+              <label className="block text-xs font-bold text-[#15171C] mb-1">
                 Registered Legal Entity Name
               </label>
               <input
@@ -227,7 +227,7 @@ export default function VerificationKycPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#111827] mb-1">
+            <label className="block text-xs font-bold text-[#15171C] mb-1">
               Official Website / Portfolio URL (Optional)
             </label>
             <input
@@ -240,13 +240,13 @@ export default function VerificationKycPage() {
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-[#111827] mb-1.5">
+            <label className="block text-xs font-bold text-[#15171C] mb-1.5">
               Upload Encrypted KYC Document (Visible only to XPO Superadmins)
             </label>
-            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-[#9CA3AF] text-xs font-semibold cursor-pointer hover:bg-[#F9FAFB]">
+            <label className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-dashed border-[#8A8E97] text-xs font-semibold cursor-pointer hover:bg-[#F9FAFB]">
               {uploading ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin text-[#111827]" />
+                  <Loader2 className="w-4 h-4 animate-spin text-[#15171C]" />
                   <span>Uploading encrypted proof...</span>
                 </>
               ) : (
@@ -267,7 +267,7 @@ export default function VerificationKycPage() {
           <button
             type="submit"
             disabled={submitting || uploading}
-            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#111827] text-white text-xs font-bold hover:bg-black disabled:opacity-50"
+            className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#15171C] text-white text-xs font-bold hover:bg-black disabled:opacity-50"
           >
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>{submitting ? 'Submitting...' : 'Submit for Manual KYC Verification'}</span>
@@ -276,8 +276,8 @@ export default function VerificationKycPage() {
       )}
 
       {requests.length > 0 && (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
-          <h2 className="text-sm font-bold text-[#111827] mb-3">Submission History</h2>
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6">
+          <h2 className="text-sm font-bold text-[#15171C] mb-3">Submission History</h2>
           <div className="divide-y divide-[#F3F4F6] text-xs">
             {requests.map((r) => (
               <div key={r.id} className="py-3 flex items-center justify-between">

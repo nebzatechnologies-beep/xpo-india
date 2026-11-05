@@ -17,10 +17,10 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     }[size];
 
     const variantClasses = {
-      primary: 'bg-[#E8192C] text-white hover:bg-[#C0111F] shadow-sm hover:shadow-md active:scale-[0.99]',
-      secondary: 'bg-[#222222] text-white hover:bg-[#000000] active:scale-[0.99]',
-      outline: 'bg-white text-[#222222] border border-[#EBEBEB] hover:border-[#222222] hover:bg-[#F7F7F7]',
-      ghost: 'bg-transparent text-[#222222] hover:bg-[#F7F7F7]',
+      primary: 'bg-[#C8102E] text-white hover:bg-[#A50D25] shadow-sm hover:shadow-md active:scale-[0.99]',
+      secondary: 'bg-[#15171C] text-white hover:bg-[#000000] active:scale-[0.99]',
+      outline: 'bg-white text-[#15171C] border border-[#EBEBEB] hover:border-[#15171C] hover:bg-[#F7F7F7]',
+      ghost: 'bg-transparent text-[#15171C] hover:bg-[#F7F7F7]',
       danger: 'bg-red-600 text-white hover:bg-red-700',
     }[variant];
 

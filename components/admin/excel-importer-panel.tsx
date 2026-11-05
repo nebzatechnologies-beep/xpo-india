@@ -137,15 +137,15 @@ export function ExcelImporterPanel({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           {compactHeader ? (
-            <h2 className="text-base font-extrabold text-[#111827]">{title}</h2>
+            <h2 className="text-base font-extrabold text-[#15171C]">{title}</h2>
           ) : (
-            <h1 className="text-2xl font-extrabold text-[#111827]">{title}</h1>
+            <h1 className="text-2xl font-extrabold text-[#15171C]">{title}</h1>
           )}
           <p className="text-xs text-[#6B7280] mt-1">{subtitle}</p>
         </div>
         <a
           href={templateDownloadHref}
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-bold transition shrink-0"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-bold transition shrink-0"
         >
           <Download className="w-3.5 h-3.5" /> {templateLabel}
         </a>
@@ -157,13 +157,13 @@ export function ExcelImporterPanel({
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
-        <div className="text-xs font-bold uppercase tracking-wider text-[#E8192C]">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4">
+        <div className="text-xs font-bold uppercase tracking-wider text-[#C8102E]">
           Step 1 — Upload Excel / CSV File
         </div>
         <label className="flex flex-col items-center justify-center p-8 border-2 border-dashed border-[#D1D5DB] rounded-2xl cursor-pointer hover:bg-[#F9FAFB] transition">
-          <UploadCloud className="w-8 h-8 text-[#E8192C] mb-2" />
-          <span className="text-sm font-bold text-[#111827]">
+          <UploadCloud className="w-8 h-8 text-[#C8102E] mb-2" />
+          <span className="text-sm font-bold text-[#15171C]">
             {file ? file.name : 'Select .xlsx, .xls, or .csv file'}
           </span>
           <span className="text-xs text-[#6B7280] mt-1">
@@ -182,14 +182,14 @@ export function ExcelImporterPanel({
       </div>
 
       {sheets.length > 0 && !completedJob && (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
-          <div className="text-xs font-bold uppercase tracking-wider text-[#111827]">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#15171C]">
             Step 2 — Sheet Selection, Column Mapping & Duplicate Policy
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold text-[#111827] mb-1">Worksheet</label>
+              <label className="block text-xs font-bold text-[#15171C] mb-1">Worksheet</label>
               <select
                 value={selectedSheet}
                 onChange={(e) => {
@@ -209,7 +209,7 @@ export function ExcelImporterPanel({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-[#111827] mb-1">
+              <label className="block text-xs font-bold text-[#15171C] mb-1">
                 Duplicate Phone Policy
               </label>
               <select
@@ -229,8 +229,8 @@ export function ExcelImporterPanel({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-2">
             {canonicalFields.map((cf) => (
-              <div key={cf.key} className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
-                <div className="text-[11px] font-bold text-[#111827]">
+              <div key={cf.key} className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9]">
+                <div className="text-[11px] font-bold text-[#15171C]">
                   {cf.label} {cf.required ? '*' : ''}
                 </div>
                 <select
@@ -255,7 +255,7 @@ export function ExcelImporterPanel({
             type="button"
             disabled={busy}
             onClick={() => void handleStagePreview()}
-            className="px-5 py-2.5 rounded-xl bg-[#111827] text-white text-xs font-bold hover:bg-black disabled:opacity-50"
+            className="px-5 py-2.5 rounded-xl bg-[#15171C] text-white text-xs font-bold hover:bg-black disabled:opacity-50"
           >
             {busy ? 'Validating Rows...' : 'Preview & Validate Rows'}
           </button>
@@ -263,14 +263,14 @@ export function ExcelImporterPanel({
       )}
 
       {stagedJob && (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4">
-          <div className="text-xs font-bold uppercase tracking-wider text-[#E8192C]">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4">
+          <div className="text-xs font-bold uppercase tracking-wider text-[#C8102E]">
             Step 3 — Validation Summary (Job {stagedJob.id})
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-            <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+            <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9]">
               <div className="text-[#6B7280]">Total Rows</div>
-              <div className="text-xl font-extrabold text-[#111827]">{stagedJob.totalRows}</div>
+              <div className="text-xl font-extrabold text-[#15171C]">{stagedJob.totalRows}</div>
             </div>
             <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-100">
               <div className="text-emerald-800">New Contacts</div>
@@ -295,7 +295,7 @@ export function ExcelImporterPanel({
               type="button"
               disabled={busy || validStagedCount === 0}
               onClick={() => void handleConfirmExecution()}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white text-xs font-bold disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white text-xs font-bold disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               {busy ? 'Importing Records...' : `Confirm & Save ${validStagedCount} Valid Rows`}

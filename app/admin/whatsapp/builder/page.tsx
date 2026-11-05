@@ -82,7 +82,7 @@ export default function AdminWhatsAppConversationBuilderPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">
+        <h1 className="text-2xl font-extrabold text-[#15171C]">
           WhatsApp Conversation & Agent Flow Builder
         </h1>
         <p className="text-xs text-[#6B7280] mt-1">
@@ -105,7 +105,7 @@ export default function AdminWhatsAppConversationBuilderPage() {
             onClick={() => selectWorkflow(id)}
             className={`px-4 py-2 rounded-xl text-xs font-bold capitalize border transition-colors ${
               activeId === id
-                ? 'bg-[#111827] text-white border-[#111827]'
+                ? 'bg-[#15171C] text-white border-[#15171C]'
                 : 'bg-white text-[#374151] border-[#D1D5DB] hover:bg-gray-50'
             }`}
           >
@@ -115,9 +115,9 @@ export default function AdminWhatsAppConversationBuilderPage() {
       </div>
 
       {current && (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-5 text-xs">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-5 text-xs">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-extrabold text-[#111827]">{current.title}</h2>
+            <h2 className="text-base font-extrabold text-[#15171C]">{current.title}</h2>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -130,7 +130,7 @@ export default function AdminWhatsAppConversationBuilderPage() {
                 type="button"
                 disabled={saving}
                 onClick={() => void saveWorkflow()}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white font-bold transition-colors disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white font-bold transition-colors disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -170,7 +170,7 @@ export default function AdminWhatsAppConversationBuilderPage() {
             {current.steps.map((step, idx) => (
               <div
                 key={step.key}
-                className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-2"
+                className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9] space-y-2"
               >
                 <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                   <input
@@ -224,7 +224,7 @@ export default function AdminWhatsAppConversationBuilderPage() {
                 />
 
                 {(step.inputType === 'buttons' || step.inputType === 'list') && (
-                  <div className="pt-2 border-t border-[#E5E7EB]">
+                  <div className="pt-2 border-t border-[#E4E5E9]">
                     <label className="block text-[10px] font-bold text-[#6B7280] mb-1">
                       {step.inputType === 'buttons'
                         ? 'Interactive Buttons (≤3, comma-separated titles):'

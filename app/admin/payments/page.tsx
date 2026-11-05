@@ -95,8 +95,8 @@ export default function AdminPaymentsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
-            <Receipt className="w-6 h-6 text-[#111827]" />
+          <h1 className="text-2xl font-black tracking-tight text-[#15171C] flex items-center gap-2">
+            <Receipt className="w-6 h-6 text-[#15171C]" />
             Payments & Transactions
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -114,7 +114,7 @@ export default function AdminPaymentsPage() {
           <button
             type="button"
             onClick={() => void load()}
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold hover:bg-black shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#15171C] text-white text-xs font-semibold hover:bg-black shadow-xs"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Refresh
           </button>
@@ -129,38 +129,38 @@ export default function AdminPaymentsPage() {
 
       {/* Summary KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="text-[11px] font-bold uppercase text-[#6B7280]">
             Captured Domestic Revenue (INR)
           </div>
-          <div className="text-2xl font-extrabold text-[#111827] mt-1">
+          <div className="text-2xl font-extrabold text-[#15171C] mt-1">
             ₹{summary.totalInr.toLocaleString('en-IN')}
           </div>
           <div className="text-[11px] text-emerald-700 font-semibold mt-1">
             Razorpay AutoPay Mandates
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="text-[11px] font-bold uppercase text-[#6B7280]">
             Collected GST Component (INR)
           </div>
-          <div className="text-2xl font-extrabold text-[#111827] mt-1">
+          <div className="text-2xl font-extrabold text-[#15171C] mt-1">
             ₹{summary.totalGstInr.toLocaleString('en-IN')}
           </div>
           <div className="text-[11px] text-[#6B7280] mt-1">Tax-compliant domestic invoices</div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="text-[11px] font-bold uppercase text-[#6B7280]">
             Captured Global Revenue (USD)
           </div>
-          <div className="text-2xl font-extrabold text-[#111827] mt-1">
+          <div className="text-2xl font-extrabold text-[#15171C] mt-1">
             ${summary.totalUsd.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </div>
           <div className="text-[11px] text-indigo-700 font-semibold mt-1">
             PayPal Subscriptions AutoPay
           </div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="text-[11px] font-bold uppercase text-[#6B7280]">
             Failed / Halted Webhook Charges
           </div>
@@ -172,8 +172,8 @@ export default function AdminPaymentsPage() {
       </div>
 
       {/* Filters + Ledger Table */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
-        <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3 text-xs">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] overflow-hidden">
+        <div className="p-4 border-b border-[#E4E5E9] flex flex-wrap items-center justify-between gap-3 text-xs">
           <div className="flex items-center gap-2">
             <select
               value={gatewayFilter}
@@ -203,7 +203,7 @@ export default function AdminPaymentsPage() {
 
         {loading ? (
           <div className="p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
-            <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading payment events...
+            <Loader2 className="w-4 h-4 animate-spin text-[#15171C]" /> Loading payment events...
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -220,7 +220,7 @@ export default function AdminPaymentsPage() {
                   <th className="px-4 py-3">Occurred At</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5E7EB]">
+              <tbody className="divide-y divide-[#E4E5E9]">
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-10 text-center text-[#6B7280]">
@@ -231,7 +231,7 @@ export default function AdminPaymentsPage() {
                   filtered.map((ev) => (
                     <tr key={ev.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <div className="font-mono font-bold text-[#111827]">
+                        <div className="font-mono font-bold text-[#15171C]">
                           {ev.invoiceNumber || ev.id}
                         </div>
                         <div className="font-mono text-[11px] text-[#6B7280]">
@@ -239,14 +239,14 @@ export default function AdminPaymentsPage() {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="uppercase font-bold text-[#111827]">{ev.gateway}</div>
+                        <div className="uppercase font-bold text-[#15171C]">{ev.gateway}</div>
                         <div className="font-mono text-[11px] text-[#6B7280]">{ev.eventType}</div>
                       </td>
                       <td className="px-4 py-3">
-                        <div className="font-mono text-[#111827]">{ev.uid}</div>
+                        <div className="font-mono text-[#15171C]">{ev.uid}</div>
                         <div className="capitalize text-[11px] text-[#6B7280]">{ev.role}</div>
                       </td>
-                      <td className="px-4 py-3 font-bold text-[#111827]">
+                      <td className="px-4 py-3 font-bold text-[#15171C]">
                         {ev.currency === 'INR' ? `₹${ev.amount}` : `$${ev.amount}`}
                       </td>
                       <td className="px-4 py-3 text-[#4B5563]">

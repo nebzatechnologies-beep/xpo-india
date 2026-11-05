@@ -46,7 +46,7 @@ export default function AdminWhatsAppTemplatesPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#111827]">
+          <h1 className="text-2xl font-extrabold text-[#15171C]">
             Meta WhatsApp Message Templates
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -66,7 +66,7 @@ export default function AdminWhatsAppTemplatesPage() {
           </button>
           <Link
             href="/admin/whatsapp/templates/create"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             <Plus className="w-3.5 h-3.5" /> Register Template
           </Link>
@@ -81,9 +81,9 @@ export default function AdminWhatsAppTemplatesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {templates.map((t) => (
-          <div key={t.id} className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-2">
+          <div key={t.id} className="bg-white rounded-2xl border border-[#E4E5E9] p-5 space-y-2">
             <div className="flex items-center justify-between">
-              <span className="font-mono font-bold text-xs text-[#111827]">{t.name}</span>
+              <span className="font-mono font-bold text-xs text-[#15171C]">{t.name}</span>
               <span
                 className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
                   t.metaStatus === 'APPROVED'

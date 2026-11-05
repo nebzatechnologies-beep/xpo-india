@@ -224,7 +224,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827]">
+          <h1 className="text-2xl font-black tracking-tight text-[#15171C]">
             {roleLabel} Database
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -238,14 +238,14 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
           <button
             type="button"
             onClick={() => setActiveTab('upload')}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D1D5DB] bg-white hover:bg-gray-50 text-xs font-bold text-[#111827]"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#D1D5DB] bg-white hover:bg-gray-50 text-xs font-bold text-[#15171C]"
           >
-            <UploadCloud className="w-3.5 h-3.5 text-[#E8192C]" /> Upload {roleLabel} Excel
+            <UploadCloud className="w-3.5 h-3.5 text-[#C8102E]" /> Upload {roleLabel} Excel
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('invitations')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white text-xs font-bold shadow-xs"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white text-xs font-bold shadow-xs"
           >
             <Send className="w-3.5 h-3.5" /> Bulk WhatsApp Invitations
           </button>
@@ -254,38 +254,38 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
 
       {/* KPI Summary Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="flex items-center justify-between text-xs text-[#6B7280]">
             <span>Uploaded {roleLabel}s</span>
-            <Database className="w-4 h-4 text-[#111827]" />
+            <Database className="w-4 h-4 text-[#15171C]" />
           </div>
-          <div className="text-2xl font-black text-[#111827] mt-1">{stats.total}</div>
+          <div className="text-2xl font-black text-[#15171C] mt-1">{stats.total}</div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="flex items-center justify-between text-xs text-[#6B7280]">
             <span>Verified Consent (Opt-In)</span>
             <ShieldCheck className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-black text-emerald-700 mt-1">{stats.consented}</div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="flex items-center justify-between text-xs text-[#6B7280]">
             <span>WhatsApp Invited</span>
-            <Send className="w-4 h-4 text-[#E8192C]" />
+            <Send className="w-4 h-4 text-[#C8102E]" />
           </div>
-          <div className="text-2xl font-black text-[#111827] mt-1">{stats.invited}</div>
+          <div className="text-2xl font-black text-[#15171C] mt-1">{stats.invited}</div>
         </div>
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4">
           <div className="flex items-center justify-between text-xs text-[#6B7280]">
             <span>Activated Accounts</span>
             <UserCheck className="w-4 h-4 text-emerald-600" />
           </div>
-          <div className="text-2xl font-black text-[#111827] mt-1">{stats.registered}</div>
+          <div className="text-2xl font-black text-[#15171C] mt-1">{stats.registered}</div>
         </div>
       </div>
 
       {/* Tab Bar */}
-      <div className="flex items-center gap-1.5 border-b border-[#E5E7EB] pb-2 text-xs">
+      <div className="flex items-center gap-1.5 border-b border-[#E4E5E9] pb-2 text-xs">
         {[
           { id: 'directory', label: `1. ${roleLabel} Directory (${contacts.length})` },
           { id: 'upload', label: `2. ${roleLabel} Excel Upload` },
@@ -297,8 +297,8 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`px-4 py-2 rounded-xl font-bold transition ${
               activeTab === tab.id
-                ? 'bg-[#111827] text-white'
-                : 'text-[#6B7280] hover:text-[#111827] hover:bg-gray-100'
+                ? 'bg-[#15171C] text-white'
+                : 'text-[#6B7280] hover:text-[#15171C] hover:bg-gray-100'
             }`}
           >
             {tab.label}
@@ -321,7 +321,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
       {/* TAB 1: DIRECTORY & INLINE DOSSIER */}
       {activeTab === 'directory' && (
         <div className="space-y-4">
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4 space-y-4">
+          <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 flex-1">
                 <div className="relative">
@@ -360,7 +360,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
               <button
                 type="button"
                 onClick={() => setShowQuickAdd((prev) => !prev)}
-                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-bold shrink-0"
+                className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-bold shrink-0"
               >
                 <Plus className="w-3.5 h-3.5" /> Add {roleLabel}
               </button>
@@ -369,7 +369,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
             {showQuickAdd && (
               <form
                 onSubmit={handleQuickAdd}
-                className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs"
+                className="p-4 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9] grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs"
               >
                 <input
                   type="text"
@@ -435,7 +435,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
                 <button
                   type="submit"
                   disabled={quickAddBusy}
-                  className="px-4 py-2 rounded-xl bg-[#E8192C] text-white font-bold hover:bg-[#c81324] disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl bg-[#C8102E] text-white font-bold hover:bg-[#c81324] disabled:opacity-50"
                 >
                   {quickAddBusy ? 'Saving...' : `Save ${roleLabel}`}
                 </button>
@@ -449,7 +449,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
             } gap-4 items-start`}
           >
             <div
-              className={`bg-white rounded-2xl border border-[#E5E7EB] p-5 ${
+              className={`bg-white rounded-2xl border border-[#E4E5E9] p-5 ${
                 selectedContact ? 'xl:col-span-7' : ''
               }`}
             >
@@ -459,7 +459,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
                 </p>
               ) : contacts.length === 0 ? (
                 <div className="py-8 text-center space-y-2">
-                  <p className="text-sm font-bold text-[#111827]">
+                  <p className="text-sm font-bold text-[#15171C]">
                     No {roleLabel} contacts uploaded yet
                   </p>
                   <p className="text-xs text-[#6B7280]">
@@ -471,7 +471,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
+                      <tr className="border-b border-[#E4E5E9] text-[#6B7280]">
                         <th className="py-2 pr-3">{roleLabel}</th>
                         <th className="py-2 pr-3">WhatsApp</th>
                         <th className="py-2 pr-3">Location</th>
@@ -494,12 +494,12 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
                             }`}
                           >
                             <td className="py-2.5 pr-3">
-                              <div className="font-bold text-[#111827]">{c.contactName}</div>
+                              <div className="font-bold text-[#15171C]">{c.contactName}</div>
                               {c.companyName && (
                                 <div className="text-[11px] text-[#6B7280]">{c.companyName}</div>
                               )}
                             </td>
-                            <td className="py-2.5 pr-3 font-mono font-semibold text-[#111827]">
+                            <td className="py-2.5 pr-3 font-mono font-semibold text-[#15171C]">
                               {c.phoneE164}
                             </td>
                             <td className="py-2.5 pr-3 text-[#4B5563]">
@@ -599,10 +599,10 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
         <div className="space-y-5">
           <form
             onSubmit={handleLaunchInvitations}
-            className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-5"
+            className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-5"
           >
             <div>
-              <h2 className="text-base font-extrabold text-[#111827]">
+              <h2 className="text-base font-extrabold text-[#15171C]">
                 Initiate {roleLabel} Bulk WhatsApp Invitations
               </h2>
               <p className="text-xs text-[#6B7280] mt-1">
@@ -614,7 +614,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div>
-                <label className="block font-bold text-[#111827] mb-1">
+                <label className="block font-bold text-[#15171C] mb-1">
                   Invitation Batch Label (Optional)
                 </label>
                 <input
@@ -627,7 +627,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
               </div>
 
               <div>
-                <label className="block font-bold text-[#111827] mb-1">
+                <label className="block font-bold text-[#15171C] mb-1">
                   Approved Meta Template
                 </label>
                 <select
@@ -644,7 +644,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
               </div>
 
               <div>
-                <label className="block font-bold text-[#111827] mb-1">
+                <label className="block font-bold text-[#15171C] mb-1">
                   Filter by City (Optional)
                 </label>
                 <input
@@ -687,15 +687,15 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
                     {invitePreview.suppressedCount}
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+                <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9]">
                   <div className="text-[#6B7280] font-semibold">Already Invited / Active</div>
-                  <div className="text-xl font-black text-[#111827] mt-0.5">
+                  <div className="text-xl font-black text-[#15171C] mt-0.5">
                     {invitePreview.alreadyInvitedCount + invitePreview.alreadyRegisteredCount}
                   </div>
                 </div>
-                <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+                <div className="p-3 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9]">
                   <div className="text-[#6B7280] font-semibold">Estimated Meta Cost</div>
-                  <div className="text-xl font-black text-[#111827] mt-0.5">
+                  <div className="text-xl font-black text-[#15171C] mt-0.5">
                     ₹{invitePreview.estimatedCostInr}
                   </div>
                 </div>
@@ -710,7 +710,7 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
               <button
                 type="submit"
                 disabled={inviteBusy || (invitePreview?.consentedEligibleCount || 0) === 0}
-                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white text-xs font-bold disabled:opacity-50 shrink-0"
+                className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white text-xs font-bold disabled:opacity-50 shrink-0"
               >
                 <Send className="w-3.5 h-3.5" />
                 {inviteBusy
@@ -720,8 +720,8 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
             </div>
           </form>
 
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-3 text-xs">
-            <h3 className="text-sm font-bold text-[#111827]">
+          <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-3 text-xs">
+            <h3 className="text-sm font-bold text-[#15171C]">
               {roleLabel} WhatsApp Invitation History
             </h3>
             {campaigns.length === 0 ? (
@@ -732,10 +732,10 @@ export function RoleDatabaseWorkspace({ databaseType }: RoleDatabaseWorkspacePro
               campaigns.map((c) => (
                 <div
                   key={c.id}
-                  className="p-4 rounded-xl border border-[#E5E7EB] flex flex-col sm:flex-row sm:items-center justify-between gap-2"
+                  className="p-4 rounded-xl border border-[#E4E5E9] flex flex-col sm:flex-row sm:items-center justify-between gap-2"
                 >
                   <div>
-                    <div className="font-bold text-[#111827]">{c.name}</div>
+                    <div className="font-bold text-[#15171C]">{c.name}</div>
                     <div className="text-[#6B7280] mt-0.5">
                       Template: <span className="font-mono">{c.templateName}</span> • Sent:{' '}
                       <strong>{c.sentCount}</strong> • Skipped (Unconsented/Suppressed):{' '}

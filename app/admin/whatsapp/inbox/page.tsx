@@ -79,7 +79,7 @@ export default function AdminWhatsAppInboxPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">
+        <h1 className="text-2xl font-extrabold text-[#15171C]">
           Live WhatsApp Support & Human Takeover Inbox
         </h1>
         <p className="text-xs text-[#6B7280] mt-1">
@@ -89,7 +89,7 @@ export default function AdminWhatsAppInboxPage() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[540px]">
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4 overflow-y-auto space-y-2">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4 overflow-y-auto space-y-2">
           <div className="text-xs font-bold text-[#6B7280] mb-2">
             Conversations ({sessions.length})
           </div>
@@ -100,8 +100,8 @@ export default function AdminWhatsAppInboxPage() {
               onClick={() => void openSession(s.id)}
               className={`w-full text-left p-3 rounded-xl border text-xs transition ${
                 selectedId === s.id
-                  ? 'border-[#111827] bg-gray-50 font-semibold'
-                  : 'border-[#E5E7EB] hover:bg-[#F9FAFB]'
+                  ? 'border-[#15171C] bg-gray-50 font-semibold'
+                  : 'border-[#E4E5E9] hover:bg-[#F9FAFB]'
               }`}
             >
               <div className="flex items-center justify-between font-bold">
@@ -122,14 +122,14 @@ export default function AdminWhatsAppInboxPage() {
           )}
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col justify-between">
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-[#E4E5E9] p-5 flex flex-col justify-between">
           {!activeSession ? (
             <div className="my-auto text-center text-xs text-[#6B7280]">
               Select a WhatsApp session on the left to inspect messages or enable Human Takeover.
             </div>
           ) : (
             <>
-              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E5E7EB]">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#E4E5E9]">
                 <div className="text-xs">
                   <span className="font-mono font-extrabold text-sm">
                     {activeSession.phoneE164}
@@ -176,8 +176,8 @@ export default function AdminWhatsAppInboxPage() {
                     key={m.id}
                     className={`max-w-[80%] p-3 rounded-2xl text-xs whitespace-pre-line ${
                       m.direction === 'outbound'
-                        ? 'ml-auto bg-emerald-50 border border-emerald-200 text-[#111827]'
-                        : 'bg-[#F3F4F6] text-[#111827]'
+                        ? 'ml-auto bg-emerald-50 border border-emerald-200 text-[#15171C]'
+                        : 'bg-[#F3F4F6] text-[#15171C]'
                     }`}
                   >
                     <div>{m.body}</div>
@@ -188,7 +188,7 @@ export default function AdminWhatsAppInboxPage() {
                 ))}
               </div>
 
-              <form onSubmit={sendCoordinatorReply} className="pt-3 border-t border-[#E5E7EB] flex gap-2">
+              <form onSubmit={sendCoordinatorReply} className="pt-3 border-t border-[#E4E5E9] flex gap-2">
                 <input
                   type="text"
                   value={replyText}
@@ -199,7 +199,7 @@ export default function AdminWhatsAppInboxPage() {
                 <button
                   type="submit"
                   disabled={sending}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-bold disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] text-white text-xs font-bold disabled:opacity-50"
                 >
                   {sending ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

@@ -18,10 +18,10 @@ export function SearchPill() {
   return (
     <form
       onSubmit={handleSearch}
-      className="bg-white rounded-full p-2 border border-[#E5E7EB] shadow-[0_8px_30px_rgb(0,0,0,0.06)] max-w-2xl mx-auto flex flex-col sm:flex-row items-center"
+      className="bg-white rounded-full p-2 border border-[#E4E5E9] shadow-[0_8px_30px_rgb(0,0,0,0.06)] max-w-2xl mx-auto flex flex-col sm:flex-row items-center"
     >
       <div className="flex-1 px-5 py-2 w-full text-left">
-        <label className="block text-[10px] font-bold text-[#111827] uppercase tracking-wider mb-0.5">
+        <label className="block text-[10px] font-bold text-[#15171C] uppercase tracking-wider mb-0.5">
           Search Services, Products, Categories or Skills
         </label>
         <input
@@ -29,14 +29,14 @@ export function SearchPill() {
           placeholder="e.g. CNC Turning, Next.js SaaS, Solar EPC, Corrugated Packaging..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full text-xs sm:text-sm text-[#111827] placeholder-[#9CA3AF] bg-transparent focus:outline-hidden font-medium"
+          className="w-full text-xs sm:text-sm text-[#15171C] placeholder-[#8A8E97] bg-transparent focus:outline-hidden font-medium"
         />
       </div>
 
       <div className="p-1 w-full sm:w-auto flex justify-end">
         <button
           type="submit"
-          className="w-full sm:w-auto h-12 px-7 rounded-full bg-[#E8192C] hover:bg-[#C0111F] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all shrink-0"
+          className="w-full sm:w-auto h-12 px-7 rounded-full bg-[#C8102E] hover:bg-[#A50D25] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all shrink-0"
         >
           <Search className="w-4 h-4 text-white" />
           <span>Explore Categories</span>

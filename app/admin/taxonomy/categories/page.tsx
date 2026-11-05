@@ -59,7 +59,7 @@ export default function AdminTaxonomyCategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-extrabold text-[#111827]">
+      <h1 className="text-2xl font-extrabold text-[#15171C]">
         Tier 2 — Categories & Duplicate Merge
       </h1>
       {msg && (
@@ -71,10 +71,10 @@ export default function AdminTaxonomyCategoriesPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <form
           onSubmit={createCategory}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-3"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-5 space-y-3"
         >
-          <div className="text-xs font-bold flex items-center gap-1.5 text-[#111827]">
-            <Plus className="w-4 h-4 text-[#111827]" /> Add Category
+          <div className="text-xs font-bold flex items-center gap-1.5 text-[#15171C]">
+            <Plus className="w-4 h-4 text-[#15171C]" /> Add Category
           </div>
           <select
             required
@@ -98,7 +98,7 @@ export default function AdminTaxonomyCategoriesPage() {
           />
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+            className="px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             Save Category
           </button>
@@ -106,7 +106,7 @@ export default function AdminTaxonomyCategoriesPage() {
 
         <form
           onSubmit={mergeCategory}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-3"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-5 space-y-3"
         >
           <div className="text-xs font-bold flex items-center gap-1.5">
             <GitMerge className="w-4 h-4 text-amber-600" /> Merge Duplicate Category
@@ -137,14 +137,14 @@ export default function AdminTaxonomyCategoriesPage() {
           </select>
           <button
             type="submit"
-            className="px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-bold"
+            className="px-4 py-2 rounded-xl bg-[#15171C] text-white text-xs font-bold"
           >
             Execute Merge
           </button>
         </form>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 divide-y divide-[#F3F4F6] text-xs">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 divide-y divide-[#F3F4F6] text-xs">
         {categories.map((c) => (
           <div key={c.id} className="py-2.5 flex items-center justify-between">
             <div>

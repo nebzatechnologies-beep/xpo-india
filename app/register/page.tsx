@@ -174,16 +174,13 @@ function RegisterContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#F6F6F4] py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-xl mx-auto">
         <div className="text-center">
-          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black text-[#111827]">
-            <span className="w-8 h-8 rounded-xl bg-[#E8192C] text-white flex items-center justify-center text-sm font-black">
-              X
-            </span>
-            XPO
+          <Link href="/" className="inline-flex items-center gap-2 text-2xl font-black text-[#15171C]">
+            <img src="/xpo-logo.png" alt="XPO India" className="h-9 w-auto object-contain" />
           </Link>
-          <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold text-[#111827]">
+          <h1 className="mt-4 text-2xl sm:text-3xl font-extrabold text-[#15171C]">
             Create Your XPO Account
           </h1>
           <p className="mt-1 text-xs sm:text-sm text-[#6B7280]">
@@ -191,7 +188,7 @@ function RegisterContent() {
           </p>
         </div>
 
-        <div className="mt-8 bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-xs">
+        <div className="mt-8 bg-white rounded-2xl border border-[#E4E5E9] p-6 sm:p-8 shadow-xs">
           {!clientConfigured && (
             <div className="mb-6 p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-start gap-2.5 text-xs text-amber-900">
               <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
@@ -217,17 +214,17 @@ function RegisterContent() {
                   onClick={() => setSelectedRole(opt.role)}
                   className={`text-left p-4 rounded-xl border transition ${
                     active
-                      ? 'border-[#111827] bg-gray-50 ring-1 ring-[#111827]'
-                      : 'border-[#E5E7EB] hover:border-[#9CA3AF]'
+                      ? 'border-[#15171C] bg-gray-50 ring-1 ring-[#15171C]'
+                      : 'border-[#E4E5E9] hover:border-[#8A8E97]'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <Icon className="w-4 h-4 text-[#E8192C] shrink-0" />
+                    <Icon className="w-4 h-4 text-[#C8102E] shrink-0" />
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                       {opt.badge}
                     </span>
                   </div>
-                  <div className="mt-2.5 font-bold text-sm text-[#111827]">{opt.title}</div>
+                  <div className="mt-2.5 font-bold text-sm text-[#15171C]">{opt.title}</div>
                   <div className="text-xs text-[#6B7280] mt-1 leading-relaxed">{opt.desc}</div>
                 </button>
               );
@@ -242,7 +239,7 @@ function RegisterContent() {
                 setError(null);
               }}
               className={`py-2 rounded-lg text-xs font-semibold ${
-                authMethod === 'phone' ? 'bg-white text-[#111827] shadow-xs' : 'text-[#6B7280]'
+                authMethod === 'phone' ? 'bg-white text-[#15171C] shadow-xs' : 'text-[#6B7280]'
               }`}
             >
               WhatsApp / Mobile OTP
@@ -254,7 +251,7 @@ function RegisterContent() {
                 setError(null);
               }}
               className={`py-2 rounded-lg text-xs font-semibold ${
-                authMethod === 'email' ? 'bg-white text-[#111827] shadow-xs' : 'text-[#6B7280]'
+                authMethod === 'email' ? 'bg-white text-[#15171C] shadow-xs' : 'text-[#6B7280]'
               }`}
             >
               Email & Password
@@ -324,7 +321,7 @@ function RegisterContent() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 rounded-xl bg-[#111827] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#15171C] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{submitting ? 'Sending OTP...' : 'Verify WhatsApp / Mobile & Continue'}</span>
@@ -347,7 +344,7 @@ function RegisterContent() {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="w-full py-3 rounded-xl bg-[#E8192C] text-white text-sm font-semibold hover:bg-[#c81324] disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl bg-[#C8102E] text-white text-sm font-semibold hover:bg-[#c81324] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{submitting ? 'Creating Account...' : 'Complete Registration'}</span>
@@ -436,7 +433,7 @@ function RegisterContent() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full py-3 rounded-xl bg-[#111827] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl bg-[#15171C] text-white text-sm font-semibold hover:bg-black disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 <span>{submitting ? 'Creating Account...' : `Register as ${selectedRole === 'partner' ? 'Partner' : 'Client'}`}</span>
@@ -448,7 +445,7 @@ function RegisterContent() {
 
           <div className="mt-6 pt-5 border-t border-[#F3F4F6] flex items-center justify-between text-xs">
             <span className="text-[#6B7280]">Already invited or registered on XPO?</span>
-            <Link href="/login" className="font-bold text-[#111827] hover:underline">
+            <Link href="/login" className="font-bold text-[#15171C] hover:underline">
               Sign in →
             </Link>
           </div>

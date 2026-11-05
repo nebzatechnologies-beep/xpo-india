@@ -65,25 +65,25 @@ export default function PublicTrustProfilePage({
   }, [id]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8F9FA] text-[#111827]">
+    <div className="min-h-screen flex flex-col bg-[#F6F6F4] text-[#15171C]">
       <Navbar />
       <main className="flex-1 py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-2xl mx-auto">
           {loading ? (
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-8 animate-pulse h-72" />
+            <div className="bg-white rounded-2xl border border-[#E4E5E9] p-8 animate-pulse h-72" />
           ) : error || !profile ? (
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-8 text-center">
+            <div className="bg-white rounded-2xl border border-[#E4E5E9] p-8 text-center">
               <h1 className="text-xl font-bold">XPO Masked Trust Profile</h1>
               <p className="mt-2 text-sm text-[#6B7280]">{error || 'Profile not found.'}</p>
               <Link
                 href="/"
-                className="mt-6 inline-flex px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold"
+                className="mt-6 inline-flex px-4 py-2 rounded-xl bg-[#15171C] text-white text-xs font-semibold"
               >
                 Back to XPO Home
               </Link>
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6 sm:p-8 shadow-xs">
+            <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6 sm:p-8 shadow-xs">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
@@ -101,7 +101,7 @@ export default function PublicTrustProfilePage({
                   )}
                 </div>
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 border border-gray-200 text-xs font-bold uppercase">
-                  <Briefcase className="w-3 h-3 text-[#E8192C]" />
+                  <Briefcase className="w-3 h-3 text-[#C8102E]" />
                   {profile.role}
                 </span>
               </div>
@@ -130,8 +130,8 @@ export default function PublicTrustProfilePage({
 
               <div className="mt-6 space-y-4">
                 {profile.partnerSummary && (
-                  <div className="p-4 rounded-xl bg-[#F8F9FA] border border-[#E5E7EB] text-xs space-y-2">
-                    <div className="font-bold text-[#111827]">Partner Capability Summary</div>
+                  <div className="p-4 rounded-xl bg-[#F6F6F4] border border-[#E4E5E9] text-xs space-y-2">
+                    <div className="font-bold text-[#15171C]">Partner Capability Summary</div>
                     <p className="text-[#374151]">
                       Classification: <strong>{profile.partnerSummary.classification}</strong>
                     </p>
@@ -149,8 +149,8 @@ export default function PublicTrustProfilePage({
                 )}
 
                 {profile.clientSummary && (
-                  <div className="p-4 rounded-xl bg-[#F8F9FA] border border-[#E5E7EB] text-xs space-y-1.5">
-                    <div className="font-bold text-[#111827]">Client Summary</div>
+                  <div className="p-4 rounded-xl bg-[#F6F6F4] border border-[#E4E5E9] text-xs space-y-1.5">
+                    <div className="font-bold text-[#15171C]">Client Summary</div>
                     {profile.clientSummary.industryName && (
                       <p className="text-[#374151]">Industry: {profile.clientSummary.industryName}</p>
                     )}

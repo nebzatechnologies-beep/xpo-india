@@ -50,7 +50,7 @@ export default function AdminCreateWhatsAppTemplatePage() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <h1 className="text-2xl font-extrabold text-[#111827]">Register Meta WhatsApp Template</h1>
+      <h1 className="text-2xl font-extrabold text-[#15171C]">Register Meta WhatsApp Template</h1>
 
       {errorMsg && (
         <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800">
@@ -60,7 +60,7 @@ export default function AdminCreateWhatsAppTemplatePage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4 text-xs"
+        className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4 text-xs"
       >
         <div>
           <label className="block font-bold mb-1">Template Name (snake_case) *</label>
@@ -131,7 +131,7 @@ export default function AdminCreateWhatsAppTemplatePage() {
         <button
           type="submit"
           disabled={saving}
-          className="px-5 py-2.5 rounded-xl bg-[#111827] hover:bg-black text-white font-semibold shadow-xs transition"
+          className="px-5 py-2.5 rounded-xl bg-[#15171C] hover:bg-black text-white font-semibold shadow-xs transition"
         >
           {saving ? 'Saving...' : 'Save Template'}
         </button>

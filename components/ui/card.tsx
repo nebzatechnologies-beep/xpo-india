@@ -20,9 +20,9 @@ export function CardHeader({ className, children }: React.HTMLAttributes<HTMLDiv
 }
 
 export function CardTitle({ className, children }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn('text-lg font-semibold text-[#222222]', className)}>{children}</h3>;
+  return <h3 className={cn('text-lg font-semibold text-[#15171C]', className)}>{children}</h3>;
 }
 
 export function CardDescription({ className, children }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn('text-sm text-[#717171] mt-1', className)}>{children}</p>;
+  return <p className={cn('text-sm text-[#4A4F59] mt-1', className)}>{children}</p>;
 }

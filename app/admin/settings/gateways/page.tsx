@@ -252,12 +252,12 @@ export default function AdminGatewaysControlPage() {
         <div>
           <Link
             href="/admin/settings"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#111827] hover:text-[#E8192C] mb-2"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#15171C] hover:text-[#C8102E] mb-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Platform Settings
           </Link>
-          <h1 className="text-2xl font-extrabold text-[#111827] flex items-center gap-2">
-            <KeyRound className="w-6 h-6 text-[#E8192C]" />
+          <h1 className="text-2xl font-extrabold text-[#15171C] flex items-center gap-2">
+            <KeyRound className="w-6 h-6 text-[#C8102E]" />
             Gateways, Webhooks & AI Agent Keys
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -286,7 +286,7 @@ export default function AdminGatewaysControlPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-[#E5E7EB] pb-3 text-xs">
+      <div className="flex flex-wrap gap-2 border-b border-[#E4E5E9] pb-3 text-xs">
         {[
           {
             id: 'whatsapp' as const,
@@ -326,8 +326,8 @@ export default function AdminGatewaysControlPage() {
               }}
               className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold transition ${
                 isActive
-                  ? 'bg-[#111827] text-white shadow-xs'
-                  : 'bg-white border border-[#E5E7EB] text-[#4B5563] hover:bg-gray-50'
+                  ? 'bg-[#15171C] text-white shadow-xs'
+                  : 'bg-white border border-[#E4E5E9] text-[#4B5563] hover:bg-gray-50'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -339,13 +339,13 @@ export default function AdminGatewaysControlPage() {
       </div>
 
       {loading ? (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
-          <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading credentials...
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#15171C]" /> Loading credentials...
         </div>
       ) : (
         <div className="space-y-6">
           {/* Status Header Banner */}
-          <div className="bg-white rounded-2xl border border-[#E5E7EB] p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="bg-white rounded-2xl border border-[#E4E5E9] p-4 flex flex-wrap items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-3">
               <span
                 className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full font-bold text-[11px] ${
@@ -380,12 +380,12 @@ export default function AdminGatewaysControlPage() {
               type="button"
               disabled={testing || saving}
               onClick={handleTest}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#D1D5DB] bg-[#F9FAFB] text-[#111827] font-bold hover:bg-gray-100 disabled:opacity-50"
+              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-[#D1D5DB] bg-[#F9FAFB] text-[#15171C] font-bold hover:bg-gray-100 disabled:opacity-50"
             >
               {testing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <Play className="w-3.5 h-3.5 text-[#E8192C]" />
+                <Play className="w-3.5 h-3.5 text-[#C8102E]" />
               )}
               {testing ? 'Testing Connection...' : 'Test Live Connection'}
             </button>
@@ -414,16 +414,16 @@ export default function AdminGatewaysControlPage() {
           )}
 
           {!testResult && activeTestMsg && (
-            <div className="p-3.5 rounded-xl bg-gray-50 border border-[#E5E7EB] text-xs text-[#4B5563]">
+            <div className="p-3.5 rounded-xl bg-gray-50 border border-[#E4E5E9] text-xs text-[#4B5563]">
               <strong>Last Test Result:</strong> {activeTestMsg}
             </div>
           )}
 
           {/* Webhook Endpoint Callout (for WhatsApp / Razorpay / PayPal) */}
           {activeTab !== 'ai' && (
-            <div className="p-4 rounded-2xl bg-[#F9FAFB] border border-[#E5E7EB] text-xs space-y-2">
+            <div className="p-4 rounded-2xl bg-[#F9FAFB] border border-[#E4E5E9] text-xs space-y-2">
               <div className="flex items-center justify-between">
-                <span className="font-bold text-[#111827]">
+                <span className="font-bold text-[#15171C]">
                   {activeTab === 'whatsapp'
                     ? 'Meta Webhook Callback URL'
                     : activeTab === 'razorpay'
@@ -433,7 +433,7 @@ export default function AdminGatewaysControlPage() {
                 <button
                   type="button"
                   onClick={() => copyToClipboard(webhookUrls[activeTab], `wh_${activeTab}`)}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#D1D5DB] text-[#111827] font-bold text-[11px] hover:bg-gray-50"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#D1D5DB] text-[#15171C] font-bold text-[11px] hover:bg-gray-50"
                 >
                   {copiedKey === `wh_${activeTab}` ? (
                     <>
@@ -446,7 +446,7 @@ export default function AdminGatewaysControlPage() {
                   )}
                 </button>
               </div>
-              <div className="font-mono text-[#111827] break-all bg-white p-2 rounded-lg border border-[#E5E7EB]">
+              <div className="font-mono text-[#15171C] break-all bg-white p-2 rounded-lg border border-[#E4E5E9]">
                 {webhookUrls[activeTab]}
               </div>
             </div>
@@ -455,11 +455,11 @@ export default function AdminGatewaysControlPage() {
           {/* Forms */}
           <form
             onSubmit={handleSave}
-            className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-5 text-xs"
+            className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-5 text-xs"
           >
             {activeTab === 'whatsapp' && (
               <div className="space-y-4">
-                <h2 className="text-sm font-extrabold text-[#111827]">
+                <h2 className="text-sm font-extrabold text-[#15171C]">
                   Meta WhatsApp Business Cloud API v21.0
                 </h2>
 
@@ -514,7 +514,7 @@ export default function AdminGatewaysControlPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-2 border-t border-[#E5E7EB]">
+                <div className="space-y-4 pt-2 border-t border-[#E4E5E9]">
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-bold text-[#374151]">
@@ -541,7 +541,7 @@ export default function AdminGatewaysControlPage() {
                       <button
                         type="button"
                         onClick={() => toggleSecret('wa_token')}
-                        className="absolute right-3 top-2.5 text-[#9CA3AF] hover:text-[#374151]"
+                        className="absolute right-3 top-2.5 text-[#8A8E97] hover:text-[#374151]"
                       >
                         {showSecrets['wa_token'] ? (
                           <EyeOff className="w-4 h-4" />
@@ -576,7 +576,7 @@ export default function AdminGatewaysControlPage() {
                       <button
                         type="button"
                         onClick={() => toggleSecret('wa_secret')}
-                        className="absolute right-3 top-2.5 text-[#9CA3AF] hover:text-[#374151]"
+                        className="absolute right-3 top-2.5 text-[#8A8E97] hover:text-[#374151]"
                       >
                         {showSecrets['wa_secret'] ? (
                           <EyeOff className="w-4 h-4" />
@@ -605,7 +605,7 @@ export default function AdminGatewaysControlPage() {
 
             {activeTab === 'razorpay' && (
               <div className="space-y-4">
-                <h2 className="text-sm font-extrabold text-[#111827]">
+                <h2 className="text-sm font-extrabold text-[#15171C]">
                   Razorpay Subscriptions AutoPay (INR Client & Partner Plans)
                 </h2>
 
@@ -648,7 +648,7 @@ export default function AdminGatewaysControlPage() {
                       <button
                         type="button"
                         onClick={() => toggleSecret('rzp_sec')}
-                        className="absolute right-3 top-2.5 text-[#9CA3AF] hover:text-[#374151]"
+                        className="absolute right-3 top-2.5 text-[#8A8E97] hover:text-[#374151]"
                       >
                         {showSecrets['rzp_sec'] ? (
                           <EyeOff className="w-4 h-4" />
@@ -660,7 +660,7 @@ export default function AdminGatewaysControlPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 pt-2 border-t border-[#E5E7EB]">
+                <div className="space-y-4 pt-2 border-t border-[#E4E5E9]">
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-bold text-[#374151]">Webhook Secret *</label>
@@ -718,7 +718,7 @@ export default function AdminGatewaysControlPage() {
 
             {activeTab === 'paypal' && (
               <div className="space-y-4">
-                <h2 className="text-sm font-extrabold text-[#111827]">
+                <h2 className="text-sm font-extrabold text-[#15171C]">
                   PayPal Subscriptions AutoPay (USD Client & Partner Plans)
                 </h2>
 
@@ -759,7 +759,7 @@ export default function AdminGatewaysControlPage() {
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-[#E5E7EB]">
+                <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-[#E4E5E9]">
                   <div>
                     <label className="block font-bold mb-1 text-[#374151]">
                       PayPal Webhook ID *
@@ -820,7 +820,7 @@ export default function AdminGatewaysControlPage() {
             {activeTab === 'ai' && (
               <div className="space-y-4">
                 <div>
-                  <h2 className="text-sm font-extrabold text-[#111827]">
+                  <h2 className="text-sm font-extrabold text-[#15171C]">
                     XPO Hybrid AI Agent Engine (WhatsApp, Customer Workspaces & Admin Copilot)
                   </h2>
                   <p className="text-[11px] text-[#6B7280] mt-1">
@@ -849,7 +849,7 @@ export default function AdminGatewaysControlPage() {
                   </select>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-[#E5E7EB]">
+                <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-[#E4E5E9]">
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-bold text-[#374151]">Google Gemini API Key</label>
@@ -882,7 +882,7 @@ export default function AdminGatewaysControlPage() {
                   </div>
                 </div>
 
-                <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-[#E5E7EB]">
+                <div className="grid sm:grid-cols-2 gap-4 pt-2 border-t border-[#E4E5E9]">
                   <div>
                     <div className="flex items-center justify-between mb-1">
                       <label className="font-bold text-[#374151]">OpenAI API Key</label>
@@ -917,7 +917,7 @@ export default function AdminGatewaysControlPage() {
               </div>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#E5E7EB]">
+            <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-[#E4E5E9]">
               <div className="flex items-center gap-2 text-[11px] text-[#6B7280]">
                 <ShieldCheck className="w-4 h-4 text-emerald-600" />
                 Changes apply immediately across Web, WhatsApp, and Cloud Functions.
@@ -925,7 +925,7 @@ export default function AdminGatewaysControlPage() {
               <button
                 type="submit"
                 disabled={saving || testing}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white font-bold disabled:opacity-60"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white font-bold disabled:opacity-60"
               >
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 {saving ? 'Saving...' : 'Save Configuration'}

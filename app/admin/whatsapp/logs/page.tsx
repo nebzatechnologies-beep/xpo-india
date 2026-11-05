@@ -33,7 +33,7 @@ export default function AdminWhatsAppLogsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">
+        <h1 className="text-2xl font-extrabold text-[#15171C]">
           WhatsApp Delivery, Webhook & Cost Telemetry
         </h1>
         <p className="text-xs text-[#6B7280] mt-1">
@@ -43,7 +43,7 @@ export default function AdminWhatsAppLogsPage() {
         </p>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6">
         {loading ? (
           <p className="text-xs text-[#6B7280]">Loading message logs...</p>
         ) : messages.length === 0 ? (
@@ -52,7 +52,7 @@ export default function AdminWhatsAppLogsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
+                <tr className="border-b border-[#E4E5E9] text-[#6B7280]">
                   <th className="py-2">Time</th>
                   <th className="py-2">Phone</th>
                   <th className="py-2">Dir / Type</th>

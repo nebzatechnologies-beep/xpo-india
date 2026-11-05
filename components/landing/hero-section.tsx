@@ -26,19 +26,19 @@ export function HeroSection() {
     : '/register';
 
   return (
-    <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 bg-gradient-to-b from-[#FFF5F6] via-[#FAFBFD] to-[#F8F9FA]">
+    <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28 bg-gradient-to-b from-[#FFF5F6] via-[#FAFBFD] to-[#F6F6F4]">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 text-center relative z-10 space-y-8">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white border border-red-200/80 shadow-[0_2px_8px_rgba(232,25,44,0.06)]">
-          <span className="w-2 h-2 rounded-full animate-pulse bg-[#E8192C]" />
-          <span className="text-xs font-bold text-[#111827]">
+          <span className="w-2 h-2 rounded-full animate-pulse bg-[#C8102E]" />
+          <span className="text-xs font-bold text-[#15171C]">
             WhatsApp-First B2B Client & Partner Marketplace
           </span>
         </div>
 
         <div className="space-y-4 max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#111827] tracking-tight leading-[1.06]">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-[#15171C] tracking-tight leading-[1.06]">
             Find the Right Partner. <br />
-            <span className="text-[#E8192C]">Win Verified Clients in 5 Minutes.</span>
+            <span className="text-[#C8102E]">Win Verified Clients in 5 Minutes.</span>
           </h1>
           <p className="text-base sm:text-xl text-[#4B5563] max-w-3xl mx-auto font-normal leading-relaxed">
             Clients post business requirements free and review interested Partners. Partners receive
@@ -52,14 +52,14 @@ export function HeroSection() {
         </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2 max-w-3xl mx-auto text-xs text-[#6B7280]">
-          <span className="font-semibold text-[#111827] text-[11px] uppercase tracking-wider">
+          <span className="font-semibold text-[#15171C] text-[11px] uppercase tracking-wider">
             Popular Categories:
           </span>
           {quickTags.map((tag) => (
             <Link
               key={tag}
               href={`/categories?q=${encodeURIComponent(tag)}`}
-              className="px-3 py-1 rounded-full bg-white border border-[#E5E7EB] hover:border-[#111827] text-[#374151] hover:text-[#111827] transition-all text-[11px] font-medium"
+              className="px-3 py-1 rounded-full bg-white border border-[#E4E5E9] hover:border-[#15171C] text-[#374151] hover:text-[#15171C] transition-all text-[11px] font-medium"
             >
               #{tag}
             </Link>
@@ -70,7 +70,7 @@ export function HeroSection() {
           <Link href="/register?role=client" className="w-full sm:w-auto">
             <Button
               size="lg"
-              className="w-full sm:w-auto font-bold text-xs sm:text-sm tracking-wide rounded-full px-7 py-3.5 text-white bg-[#E8192C] hover:bg-[#C0111F] shadow-md"
+              className="w-full sm:w-auto font-bold text-xs sm:text-sm tracking-wide rounded-full px-7 py-3.5 text-white bg-[#C8102E] hover:bg-[#A50D25] shadow-md"
             >
               START AS CLIENT — POST FREE
               <ArrowRight className="w-4 h-4 ml-2" />
@@ -81,7 +81,7 @@ export function HeroSection() {
             <Button
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto font-semibold text-xs sm:text-sm border-[#111827] text-[#111827] hover:bg-[#111827] hover:text-white rounded-full px-7 py-3.5"
+              className="w-full sm:w-auto font-semibold text-xs sm:text-sm border-[#15171C] text-[#15171C] hover:bg-[#15171C] hover:text-white rounded-full px-7 py-3.5"
             >
               REGISTER AS PARTNER (5 FREE LEADS)
             </Button>
@@ -108,11 +108,11 @@ export function HeroSection() {
         <div className="pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-3xl mx-auto text-left">
           <Link
             href="/register?role=client"
-            className="p-5 rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#E8192C] transition-all shadow-2xs"
+            className="p-5 rounded-2xl bg-white border border-[#E4E5E9] hover:border-[#C8102E] transition-all shadow-2xs"
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 font-bold text-sm text-[#111827]">
-                <Building2 className="w-4 h-4 text-[#E8192C]" />
+              <div className="flex items-center gap-2 font-bold text-sm text-[#15171C]">
+                <Building2 className="w-4 h-4 text-[#C8102E]" />
                 For Clients — Find the Right Partner
               </div>
               <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
@@ -127,14 +127,14 @@ export function HeroSection() {
 
           <Link
             href="/register?role=partner"
-            className="p-5 rounded-2xl bg-white border border-[#E5E7EB] hover:border-[#E8192C] transition-all shadow-2xs"
+            className="p-5 rounded-2xl bg-white border border-[#E4E5E9] hover:border-[#C8102E] transition-all shadow-2xs"
           >
             <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 font-bold text-sm text-[#111827]">
-                <Handshake className="w-4 h-4 text-[#E8192C]" />
+              <div className="flex items-center gap-2 font-bold text-sm text-[#15171C]">
+                <Handshake className="w-4 h-4 text-[#C8102E]" />
                 For Partners — Find New Clients
               </div>
-              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-[#E8192C] border border-red-200">
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-red-50 text-[#C8102E] border border-red-200">
                 5 Free Lead Claims
               </span>
             </div>

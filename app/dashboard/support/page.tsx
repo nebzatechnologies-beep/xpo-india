@@ -92,7 +92,7 @@ export default function SupportAndPrivacyPage() {
   return (
     <div className="max-w-4xl space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">
+        <h1 className="text-2xl font-extrabold text-[#15171C]">
           Trust & Safety Support + DPDP Privacy Rights
         </h1>
         <p className="text-xs text-[#6B7280] mt-1">
@@ -116,11 +116,11 @@ export default function SupportAndPrivacyPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <form
           onSubmit={submitTicket}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4"
         >
           <div className="flex items-center gap-2">
-            <ShieldAlert className="w-5 h-5 text-[#E8192C]" />
-            <h2 className="text-sm font-bold text-[#111827]">Report Issue or Abuse</h2>
+            <ShieldAlert className="w-5 h-5 text-[#C8102E]" />
+            <h2 className="text-sm font-bold text-[#15171C]">Report Issue or Abuse</h2>
           </div>
 
           <div>
@@ -168,7 +168,7 @@ export default function SupportAndPrivacyPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="w-full py-2.5 rounded-xl bg-[#111827] text-white text-xs font-bold hover:bg-black disabled:opacity-50 inline-flex items-center justify-center gap-2"
+            className="w-full py-2.5 rounded-xl bg-[#15171C] text-white text-xs font-bold hover:bg-black disabled:opacity-50 inline-flex items-center justify-center gap-2"
           >
             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>{submitting ? 'Submitting...' : 'Submit Support / Safety Ticket'}</span>
@@ -177,11 +177,11 @@ export default function SupportAndPrivacyPage() {
 
         <form
           onSubmit={submitDpdpRequest}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-4"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-4"
         >
           <div className="flex items-center gap-2">
             <Lock className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-sm font-bold text-[#111827]">
+            <h2 className="text-sm font-bold text-[#15171C]">
               Statutory DPDP Data & Account Rights
             </h2>
           </div>
@@ -225,8 +225,8 @@ export default function SupportAndPrivacyPage() {
       </div>
 
       {tickets.length > 0 && (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
-          <h2 className="text-sm font-bold text-[#111827] mb-3">Your Submitted Requests</h2>
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6">
+          <h2 className="text-sm font-bold text-[#15171C] mb-3">Your Submitted Requests</h2>
           <div className="divide-y divide-[#F3F4F6] text-xs">
             {tickets.map((t) => (
               <div key={t.id} className="py-3 flex items-center justify-between gap-3">

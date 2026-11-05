@@ -139,7 +139,7 @@ export default function AdminExecutiveDashboardPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827]">
+          <h1 className="text-2xl font-black tracking-tight text-[#15171C]">
             Superadmin Monitoring Dashboard
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -159,7 +159,7 @@ export default function AdminExecutiveDashboardPage() {
           </button>
           <a
             href="/api/admin/reports?format=csv"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             <Download className="w-3.5 h-3.5" /> Export CSV
           </a>
@@ -168,16 +168,16 @@ export default function AdminExecutiveDashboardPage() {
 
       {/* Superadmin Step 1: Two Separate Primary Database Sections */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex items-center justify-between gap-4 shadow-xs">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 flex items-center justify-between gap-4 shadow-xs">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#111827]">
-              <Building2 className="w-4 h-4 text-[#E8192C]" /> Client Database
+            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#15171C]">
+              <Building2 className="w-4 h-4 text-[#C8102E]" /> Client Database
             </div>
             <p className="text-xs text-[#6B7280]">
               Upload potential Clients&apos; Excel sheets (names, WhatsApp numbers, locations,
               business info) and send consented WhatsApp invitations.
             </p>
-            <div className="text-[11px] font-bold text-[#111827] pt-1">
+            <div className="text-[11px] font-bold text-[#15171C] pt-1">
               {loading
                 ? 'Loading...'
                 : `${ov?.clientDatabaseCount ?? 0} uploaded • ${ov?.clientOptedInCount ?? 0} opted-in • ${ov?.clientsCount ?? 0} registered`}
@@ -185,22 +185,22 @@ export default function AdminExecutiveDashboardPage() {
           </div>
           <Link
             href="/admin/clients"
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-bold"
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-bold"
           >
             Open Client DB <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex items-center justify-between gap-4 shadow-xs">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 flex items-center justify-between gap-4 shadow-xs">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#111827]">
-              <Briefcase className="w-4 h-4 text-[#E8192C]" /> Partner Database
+            <div className="inline-flex items-center gap-1.5 text-xs font-extrabold text-[#15171C]">
+              <Briefcase className="w-4 h-4 text-[#C8102E]" /> Partner Database
             </div>
             <p className="text-xs text-[#6B7280]">
               Upload potential Partners&apos; Excel sheets (names, WhatsApp numbers, locations,
               services, categories, subcategories) and dispatch invitations.
             </p>
-            <div className="text-[11px] font-bold text-[#111827] pt-1">
+            <div className="text-[11px] font-bold text-[#15171C] pt-1">
               {loading
                 ? 'Loading...'
                 : `${ov?.partnerDatabaseCount ?? 0} uploaded • ${ov?.partnerOptedInCount ?? 0} opted-in • ${ov?.partnersCount ?? 0} registered`}
@@ -208,7 +208,7 @@ export default function AdminExecutiveDashboardPage() {
           </div>
           <Link
             href="/admin/partners"
-            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white text-xs font-bold"
+            className="shrink-0 inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white text-xs font-bold"
           >
             Open Partner DB <ArrowRight className="w-3.5 h-3.5" />
           </Link>
@@ -222,13 +222,13 @@ export default function AdminExecutiveDashboardPage() {
           return (
             <div
               key={pillar.title}
-              className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs"
+              className="bg-white p-4 rounded-2xl border border-[#E4E5E9] shadow-xs"
             >
-              <div className="flex items-center justify-between text-xs font-bold text-[#111827]">
+              <div className="flex items-center justify-between text-xs font-bold text-[#15171C]">
                 <span>{pillar.title}</span>
                 <Icon className="w-4 h-4 text-[#6B7280]" />
               </div>
-              <div className="text-2xl font-black text-[#111827] mt-2">
+              <div className="text-2xl font-black text-[#15171C] mt-2">
                 {loading ? '—' : pillar.value}
               </div>
               <div className="text-[11px] text-[#6B7280] mt-1 leading-snug">{pillar.detail}</div>
@@ -240,7 +240,7 @@ export default function AdminExecutiveDashboardPage() {
       {/* Operational Efficiency KPIs */}
       <div>
         <div className="mb-3">
-          <h2 className="text-sm font-bold text-[#111827]">Operational & Conversion Health</h2>
+          <h2 className="text-sm font-bold text-[#15171C]">Operational & Conversion Health</h2>
           <p className="text-[11px] text-[#6B7280]">
             Live telemetry across matching, mutual consent connections, and two-sided
             subscriptions
@@ -251,11 +251,11 @@ export default function AdminExecutiveDashboardPage() {
           {kpiCards.map((c) => (
             <div
               key={c.title}
-              className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs"
+              className="bg-white p-4 rounded-2xl border border-[#E4E5E9] shadow-xs"
             >
-              <div className="text-xs font-bold text-[#111827]">{c.title}</div>
+              <div className="text-xs font-bold text-[#15171C]">{c.title}</div>
               <div className="text-[11px] text-[#6B7280] mt-0.5">{c.desc}</div>
-              <div className="text-2xl font-black text-[#111827] mt-2.5">
+              <div className="text-2xl font-black text-[#15171C] mt-2.5">
                 {loading ? '—' : c.value}
               </div>
             </div>
@@ -265,12 +265,12 @@ export default function AdminExecutiveDashboardPage() {
 
       {/* Recent Requirements & Subscription Payments */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-xs">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-[#111827]">Recent Client Requirements</h3>
+            <h3 className="text-sm font-bold text-[#15171C]">Recent Client Requirements</h3>
             <Link
               href="/admin/leads"
-              className="text-xs font-semibold text-[#111827] hover:underline"
+              className="text-xs font-semibold text-[#15171C] hover:underline"
             >
               View All Requirements →
             </Link>
@@ -293,12 +293,12 @@ export default function AdminExecutiveDashboardPage() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 shadow-xs">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 shadow-xs">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-bold text-[#111827]">Recent Subscription Payments</h3>
+            <h3 className="text-sm font-bold text-[#15171C]">Recent Subscription Payments</h3>
             <Link
               href="/admin/subscriptions"
-              className="text-xs font-semibold text-[#111827] hover:underline"
+              className="text-xs font-semibold text-[#15171C] hover:underline"
             >
               Manage Plans & Quotas →
             </Link>

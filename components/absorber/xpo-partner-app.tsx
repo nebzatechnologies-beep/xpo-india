@@ -555,7 +555,7 @@ export function XpoPartnerApp({
     >
       <div className="shell">
         {/* LEFT SIDEBAR */}
-        <aside className="side hidden md:flex">
+        <aside className="side">
           <div
             style={{
               padding: '4px 10px 18px',
@@ -577,7 +577,7 @@ export function XpoPartnerApp({
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <button
-              className={`nav ${S.screen === 'feed' || S.screen === 'opp' ? 'on' : ''}`}
+              className={`nav pn ${S.screen === 'feed' || S.screen === 'opp' ? 'on' : ''}`}
               onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -593,7 +593,7 @@ export function XpoPartnerApp({
             </button>
 
             <button
-              className={`nav ${S.screen === 'replies' ? 'on' : ''}`}
+              className={`nav pn ${S.screen === 'replies' ? 'on' : ''}`}
               onClick={() => setS((prev) => ({ ...prev, screen: 'replies' }))}
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -604,7 +604,7 @@ export function XpoPartnerApp({
             </button>
 
             <button
-              className={`nav ${S.screen === 'conn' ? 'on' : ''}`}
+              className={`nav pn ${S.screen === 'conn' ? 'on' : ''}`}
               onClick={() => setS((prev) => ({ ...prev, screen: 'conn' }))}
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -618,7 +618,7 @@ export function XpoPartnerApp({
             </button>
 
             <button
-              className={`nav ${S.screen === 'billing' ? 'on' : ''}`}
+              className={`nav pn ${S.screen === 'billing' ? 'on' : ''}`}
               onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -645,18 +645,18 @@ export function XpoPartnerApp({
         </aside>
 
         {/* MAIN COLUMN */}
-        <div className="col" style={{ paddingBottom: 68 }}>
+        <div className="col">
           {/* TOPBAR */}
           <header className="top" onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <img
                 src="/xpo-logo.png"
                 alt="XPO"
-                className="md:hidden"
+                className="only-sm"
                 style={{ height: 24, width: 'auto', objectFit: 'contain' }}
               />
               {S.screen === 'opp' && activeOpp ? (
-                <div className="crumb">
+                <div className="crumb fx">
                   <button
                     className="bl"
                     style={{ fontSize: 13 }}
@@ -668,7 +668,7 @@ export function XpoPartnerApp({
                   <b className="truncate max-w-[200px] sm:max-w-[360px]">{activeOpp.title}</b>
                 </div>
               ) : (
-                <div className="crumb">
+                <div className="crumb fx">
                   <b>
                     {S.screen === 'feed'
                       ? 'Matched client requests'
@@ -736,7 +736,7 @@ export function XpoPartnerApp({
               </button>
 
               {S.menuOpen === 'notif' && (
-                <div className="menu" style={{ width: 340 }}>
+                <div className="menu" style={{ width: 340, maxWidth: 'calc(100vw - 24px)' }}>
                   <div
                     style={{
                       padding: '8px 10px',
@@ -753,7 +753,7 @@ export function XpoPartnerApp({
                     <button
                       key={n.id}
                       className="mi"
-                      style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 3 }}
+                      style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4, padding: '10px 12px', borderTop: '1px solid var(--ln)', borderRadius: 8 }}
                       onClick={() =>
                         setS((prev) => ({
                           ...prev,
@@ -808,7 +808,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 1: MATCHED REQUESTS FEED */}
           {S.screen === 'feed' && (
-            <div style={{ maxWidth: 880, width: '100%', margin: '0 auto', padding: '28px 24px 64px' }}>
+            <div className="pg" style={{ maxWidth: 880 }}>
               {/* Incoming connection request highlight banner if any */}
               {incomingCount > 0 && (
                 <div
@@ -916,8 +916,8 @@ export function XpoPartnerApp({
 
                 <input
                   className="inp"
-                  style={{ maxWidth: 280 }}
-                  placeholder="Search by keyword, city, or XPO-REQ…"
+                  style={{ maxWidth: 280, width: '100%' }}
+                  placeholder="Search keyword, city or ID"
                   value={S.search}
                   onChange={(e) => setS((prev) => ({ ...prev, search: e.target.value }))}
                 />
@@ -1004,7 +1004,8 @@ export function XpoPartnerApp({
 
           {/* SCREEN 2: OPPORTUNITY DETAIL */}
           {S.screen === 'opp' && activeOpp && (
-            <div style={{ maxWidth: 820, width: '100%', margin: '0 auto', padding: '28px 24px 64px' }}>
+            <div className="pg" style={{ maxWidth: 820 }}>
+              <button type="button" className="bl only-sm" style={{ marginBottom: 6, paddingLeft: 0 }} onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}>← Matched requests</button>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
                   <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
@@ -1185,7 +1186,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 3: MY REPLIES */}
           {S.screen === 'replies' && (
-            <div style={{ maxWidth: 860, width: '100%', margin: '0 auto', padding: '28px 24px 64px' }}>
+            <div className="pg" style={{ maxWidth: 860 }}>
               <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>My replies</h1>
               <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
                 Every client request Klo Tech has replied to.
@@ -1226,7 +1227,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 4: CONNECTED CLIENTS */}
           {S.screen === 'conn' && (
-            <div style={{ maxWidth: 860, width: '100%', margin: '0 auto', padding: '28px 24px 64px' }}>
+            <div className="pg" style={{ maxWidth: 860 }}>
               <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>Connected clients</h1>
               <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
                 Direct client contacts you&apos;ve unlocked. Reach out on WhatsApp or phone — zero commission.
@@ -1281,7 +1282,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 5: ACCOUNT & PARTNER PLAN */}
           {S.screen === 'billing' && (
-            <div style={{ maxWidth: 820, width: '100%', margin: '0 auto', padding: '28px 24px 64px' }}>
+            <div className="pg" style={{ maxWidth: 820 }}>
               <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>Account &amp; Partner Plan</h1>
               <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 22px' }}>
                 Manage your partner replies, billing country, and matched categories.
@@ -1365,7 +1366,7 @@ export function XpoPartnerApp({
       </div>
 
       {/* MOBILE BOTTOM TAB BAR */}
-      <nav className="tabbar md:hidden">
+      <nav className="tabbar">
         <button
           className={`tb ${S.screen === 'feed' || S.screen === 'opp' ? 'on' : ''}`}
           onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}
@@ -1423,14 +1424,14 @@ export function XpoPartnerApp({
                   Short note on your relevant work (2–3 lines)
                 </label>
                 <textarea
-                  className="fld"
+                  className="inp ta"
                   rows={3}
                   placeholder="E.g. We supply 3-ply printed mailer boxes to 40+ D2C brands in Hyderabad from our Jeedimetla unit. Can deliver 10,000 boxes in 9 days."
                   value={S.pitchDraft}
                   onChange={(e) => setS((prev) => ({ ...prev, pitchDraft: e.target.value }))}
                 />
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                 <div>
                   <label className="lbl" style={{ display: 'block', marginBottom: 6 }}>
                     Delivery timeline

@@ -55,7 +55,7 @@ export default function AdminTaxonomyTagsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-extrabold text-[#111827]">
+      <h1 className="text-2xl font-extrabold text-[#15171C]">
         Tier 4 — Capability & Skill Tags ({tags.length})
       </h1>
       {msg && (
@@ -67,7 +67,7 @@ export default function AdminTaxonomyTagsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <form
           onSubmit={addTag}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex gap-2"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-5 flex gap-2"
         >
           <input
             type="text"
@@ -79,7 +79,7 @@ export default function AdminTaxonomyTagsPage() {
           />
           <button
             type="submit"
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+            className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             <Plus className="w-4 h-4" /> Add Tag
           </button>
@@ -87,7 +87,7 @@ export default function AdminTaxonomyTagsPage() {
 
         <form
           onSubmit={mergeTags}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-wrap gap-2"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-5 flex flex-wrap gap-2"
         >
           <select
             value={sourceId}
@@ -115,18 +115,18 @@ export default function AdminTaxonomyTagsPage() {
           </select>
           <button
             type="submit"
-            className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#111827] text-white text-xs font-bold"
+            className="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-[#15171C] text-white text-xs font-bold"
           >
             <GitMerge className="w-4 h-4" /> Merge
           </button>
         </form>
       </div>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-wrap gap-2">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 flex flex-wrap gap-2">
         {tags.map((t) => (
           <span
             key={t.id}
-            className="px-3 py-1 rounded-full bg-[#F9FAFB] border border-[#E5E7EB] text-xs font-semibold"
+            className="px-3 py-1 rounded-full bg-[#F9FAFB] border border-[#E4E5E9] text-xs font-semibold"
           >
             {t.name}
           </span>

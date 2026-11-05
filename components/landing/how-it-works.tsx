@@ -71,13 +71,13 @@ export function HowItWorks() {
   ];
 
   return (
-    <section className="py-20 sm:py-24 bg-[#F8F9FA]" id="how-it-works">
+    <section className="py-20 sm:py-24 bg-[#F6F6F4]" id="how-it-works">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-[#E8192C]">
+          <span className="text-xs font-bold uppercase tracking-wider text-[#C8102E]">
             Simple, Fast & Mutual-Consent Protected
           </span>
-          <h2 className="text-3xl sm:text-4xl font-black text-[#111827] tracking-tight">
+          <h2 className="text-3xl sm:text-4xl font-black text-[#15171C] tracking-tight">
             How XPO Works for Clients & Partners
           </h2>
           <p className="text-[#4B5563] text-sm sm:text-base leading-relaxed">
@@ -87,13 +87,13 @@ export function HowItWorks() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Clients Column */}
-          <div className="bg-white border border-[#E5E7EB] rounded-3xl p-7 sm:p-8 shadow-2xs">
+          <div className="bg-white border border-[#E4E5E9] rounded-3xl p-7 sm:p-8 shadow-2xs">
             <div className="flex items-center gap-3 pb-5 border-b border-[#F3F4F6]">
               <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-extrabold text-[#111827]">
+                <h3 className="text-lg font-extrabold text-[#15171C]">
                   For Clients — Find the Right Partner
                 </h3>
                 <p className="text-xs text-[#6B7280]">
@@ -105,11 +105,11 @@ export function HowItWorks() {
             <div className="mt-6 space-y-4">
               {clientSteps.map((s) => (
                 <div key={s.num} className="flex items-start gap-3.5">
-                  <span className="w-6 h-6 rounded-full bg-[#111827] text-white text-xs font-extrabold flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-6 h-6 rounded-full bg-[#15171C] text-white text-xs font-extrabold flex items-center justify-center shrink-0 mt-0.5">
                     {s.num}
                   </span>
                   <div>
-                    <div className="text-sm font-bold text-[#111827]">{s.title}</div>
+                    <div className="text-sm font-bold text-[#15171C]">{s.title}</div>
                     <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed">{s.desc}</p>
                   </div>
                 </div>
@@ -118,13 +118,13 @@ export function HowItWorks() {
           </div>
 
           {/* Partners Column */}
-          <div className="bg-white border border-[#E5E7EB] rounded-3xl p-7 sm:p-8 shadow-2xs">
+          <div className="bg-white border border-[#E4E5E9] rounded-3xl p-7 sm:p-8 shadow-2xs">
             <div className="flex items-center gap-3 pb-5 border-b border-[#F3F4F6]">
-              <div className="w-10 h-10 rounded-xl bg-red-50 text-[#E8192C] flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-red-50 text-[#C8102E] flex items-center justify-center">
                 <Handshake className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="text-lg font-extrabold text-[#111827]">
+                <h3 className="text-lg font-extrabold text-[#15171C]">
                   For Partners — Find New Clients
                 </h3>
                 <p className="text-xs text-[#6B7280]">
@@ -136,11 +136,11 @@ export function HowItWorks() {
             <div className="mt-6 space-y-4">
               {partnerSteps.map((s) => (
                 <div key={s.num} className="flex items-start gap-3.5">
-                  <span className="w-6 h-6 rounded-full bg-[#E8192C] text-white text-xs font-extrabold flex items-center justify-center shrink-0 mt-0.5">
+                  <span className="w-6 h-6 rounded-full bg-[#C8102E] text-white text-xs font-extrabold flex items-center justify-center shrink-0 mt-0.5">
                     {s.num}
                   </span>
                   <div>
-                    <div className="text-sm font-bold text-[#111827]">{s.title}</div>
+                    <div className="text-sm font-bold text-[#15171C]">{s.title}</div>
                     <p className="text-xs text-[#6B7280] mt-0.5 leading-relaxed">{s.desc}</p>
                   </div>
                 </div>

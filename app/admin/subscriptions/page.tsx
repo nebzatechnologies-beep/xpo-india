@@ -67,8 +67,8 @@ export default function AdminSubscriptionsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-[#E8192C]" />
+          <h1 className="text-2xl font-black tracking-tight text-[#15171C] flex items-center gap-2">
+            <CreditCard className="w-6 h-6 text-[#C8102E]" />
             Plans & Quota Control
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -79,7 +79,7 @@ export default function AdminSubscriptionsPage() {
         <div className="flex items-center gap-2">
           <Link
             href="/admin/settings/gateways"
-            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#111827] text-white text-xs font-semibold hover:bg-black shadow-xs"
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#15171C] text-white text-xs font-semibold hover:bg-black shadow-xs"
           >
             Payment Gateways
           </Link>
@@ -105,20 +105,20 @@ export default function AdminSubscriptionsPage() {
       )}
 
       {loading || !settings ? (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
-          <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading subscription rules...
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#15171C]" /> Loading subscription rules...
         </div>
       ) : (
         <form
           onSubmit={handleSave}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-6 text-xs"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-6 text-xs"
         >
           <div className="grid md:grid-cols-2 gap-6">
             {/* Client Plan Rules */}
-            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-5 space-y-4">
+            <div className="rounded-2xl border border-[#E4E5E9] bg-[#F9FAFB] p-5 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-sm font-extrabold text-[#111827]">
+                  <h2 className="text-sm font-extrabold text-[#15171C]">
                     Client Plan (Partner Profile Views)
                   </h2>
                   <p className="text-[11px] text-[#6B7280] mt-0.5">
@@ -126,7 +126,7 @@ export default function AdminSubscriptionsPage() {
                     Partners.
                   </p>
                 </div>
-                <span className="px-2.5 py-1 rounded-full bg-red-50 text-[#E8192C] font-bold text-[10px] shrink-0">
+                <span className="px-2.5 py-1 rounded-full bg-red-50 text-[#C8102E] font-bold text-[10px] shrink-0">
                   Client Quota
                 </span>
               </div>
@@ -212,17 +212,17 @@ export default function AdminSubscriptionsPage() {
                   onChange={(e) =>
                     setSettings({ ...settings, clientPlanUnlimited: e.target.checked })
                   }
-                  className="w-4 h-4 rounded accent-[#111827]"
+                  className="w-4 h-4 rounded accent-[#15171C]"
                 />
                 Grant Unlimited Partner Views while Client Plan is active
               </label>
             </div>
 
             {/* Partner Plan Rules */}
-            <div className="rounded-2xl border border-[#E5E7EB] bg-[#F9FAFB] p-5 space-y-4">
+            <div className="rounded-2xl border border-[#E4E5E9] bg-[#F9FAFB] p-5 space-y-4">
               <div className="flex items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-sm font-extrabold text-[#111827]">
+                  <h2 className="text-sm font-extrabold text-[#15171C]">
                     Partner Plan (Valid Lead Applications)
                   </h2>
                   <p className="text-[11px] text-[#6B7280] mt-0.5">
@@ -313,7 +313,7 @@ export default function AdminSubscriptionsPage() {
                   onChange={(e) =>
                     setSettings({ ...settings, partnerPlanUnlimited: e.target.checked })
                   }
-                  className="w-4 h-4 rounded accent-[#111827]"
+                  className="w-4 h-4 rounded accent-[#15171C]"
                 />
                 Grant Unlimited Lead Applications while Partner Plan is active
               </label>
@@ -321,7 +321,7 @@ export default function AdminSubscriptionsPage() {
           </div>
 
           {/* Shared Commercial Policies */}
-          <div className="grid md:grid-cols-3 gap-4 pt-2 border-t border-[#E5E7EB]">
+          <div className="grid md:grid-cols-3 gap-4 pt-2 border-t border-[#E4E5E9]">
             <div>
               <label className="block font-bold text-[#374151] mb-1">India GST Rate (%)</label>
               <input
@@ -364,7 +364,7 @@ export default function AdminSubscriptionsPage() {
                       unusedPaidAllowanceRollover: e.target.checked,
                     })
                   }
-                  className="w-4 h-4 rounded accent-[#111827]"
+                  className="w-4 h-4 rounded accent-[#15171C]"
                 />
                 Roll over unused monthly paid allowances
               </label>
@@ -393,7 +393,7 @@ export default function AdminSubscriptionsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#E8192C] hover:bg-[#c81324] text-white font-bold shadow-xs disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#C8102E] hover:bg-[#c81324] text-white font-bold shadow-xs disabled:opacity-60"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Saving...' : 'Save Quota & Plan Rules'}
@@ -403,10 +403,10 @@ export default function AdminSubscriptionsPage() {
       )}
 
       {/* Live AutoPay Mandates Table */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] overflow-hidden">
-        <div className="p-4 border-b border-[#E5E7EB] flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] overflow-hidden">
+        <div className="p-4 border-b border-[#E4E5E9] flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h2 className="text-sm font-extrabold text-[#111827]">
+            <h2 className="text-sm font-extrabold text-[#15171C]">
               Active & Historical Subscriptions ({filteredSubs.length})
             </h2>
             <p className="text-[11px] text-[#6B7280]">
@@ -421,7 +421,7 @@ export default function AdminSubscriptionsPage() {
                 onClick={() => setRoleFilter(r)}
                 className={`px-3 py-1.5 rounded-lg font-semibold capitalize ${
                   roleFilter === r
-                    ? 'bg-[#111827] text-white shadow-xs'
+                    ? 'bg-[#15171C] text-white shadow-xs'
                     : 'bg-gray-100 text-[#4B5563] hover:bg-gray-200'
                 }`}
               >
@@ -444,7 +444,7 @@ export default function AdminSubscriptionsPage() {
                 <th className="px-4 py-3">Current Period End</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#E5E7EB]">
+            <tbody className="divide-y divide-[#E4E5E9]">
               {filteredSubs.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="px-4 py-10 text-center text-[#6B7280]">
@@ -454,15 +454,15 @@ export default function AdminSubscriptionsPage() {
               ) : (
                 filteredSubs.map((sub) => (
                   <tr key={sub.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-mono font-semibold text-[#111827]">
+                    <td className="px-4 py-3 font-mono font-semibold text-[#15171C]">
                       {sub.gatewaySubscriptionId || sub.id}
                     </td>
                     <td className="px-4 py-3 font-mono text-[#4B5563]">{sub.uid}</td>
-                    <td className="px-4 py-3 capitalize font-bold text-[#111827]">{sub.role}</td>
+                    <td className="px-4 py-3 capitalize font-bold text-[#15171C]">{sub.role}</td>
                     <td className="px-4 py-3 uppercase font-semibold text-[#4B5563]">
                       {sub.gateway}
                     </td>
-                    <td className="px-4 py-3 font-bold text-[#111827]">
+                    <td className="px-4 py-3 font-bold text-[#15171C]">
                       {sub.currency === 'INR' ? `₹${sub.amountMonthly}` : `$${sub.amountMonthly}`}/mo
                     </td>
                     <td className="px-4 py-3 text-[#374151]">

@@ -90,7 +90,7 @@ export default function AdminServiceLeadsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">
+        <h1 className="text-2xl font-extrabold text-[#15171C]">
           Leads & Distribution Rounds
         </h1>
         <p className="text-xs text-[#6B7280] mt-1">
@@ -107,15 +107,15 @@ export default function AdminServiceLeadsPage() {
       )}
 
       {selectedReqId && (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-3 shadow-xs">
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 space-y-3 shadow-xs">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-[#111827]">
+            <h2 className="text-sm font-bold text-[#15171C]">
               Matched Partners Pool ({candidates.length} Ranked)
             </h2>
             <button
               type="button"
               onClick={() => setSelectedReqId(null)}
-              className="text-xs font-semibold text-[#6B7280] hover:text-[#111827]"
+              className="text-xs font-semibold text-[#6B7280] hover:text-[#15171C]"
             >
               Close
             </button>
@@ -126,7 +126,7 @@ export default function AdminServiceLeadsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#E5E7EB] text-[#6B7280]">
+                  <tr className="border-b border-[#E4E5E9] text-[#6B7280]">
                     <th className="py-2">Partner</th>
                     <th className="py-2">Phone</th>
                     <th className="py-2">Relevance</th>
@@ -142,7 +142,7 @@ export default function AdminServiceLeadsPage() {
                       <td className="py-2 font-mono">{c.phoneE164}</td>
                       <td className="py-2">{c.relevanceScore}</td>
                       <td className="py-2 text-amber-700">-{c.fairnessPenalty}</td>
-                      <td className="py-2 font-extrabold text-[#111827]">{c.finalScore}</td>
+                      <td className="py-2 font-extrabold text-[#15171C]">{c.finalScore}</td>
                       <td className="py-2">
                         R{c.offeredRound || '-'} • {c.offerStatus}
                       </td>
@@ -155,7 +155,7 @@ export default function AdminServiceLeadsPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-6">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-6">
         {loading ? (
           <p className="text-xs text-[#6B7280]">Loading requirements...</p>
         ) : requirements.length === 0 ? (
@@ -165,7 +165,7 @@ export default function AdminServiceLeadsPage() {
             {requirements.map((req) => (
               <div
                 key={req.id}
-                className="p-4 rounded-xl border border-[#E5E7EB] flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                className="p-4 rounded-xl border border-[#E4E5E9] flex flex-col lg:flex-row lg:items-center justify-between gap-4"
               >
                 <div className="space-y-1">
                   <div className="flex flex-wrap items-center gap-2">
@@ -177,7 +177,7 @@ export default function AdminServiceLeadsPage() {
                       Dist: {req.distributionStatus.replace(/_/g, ' ')} (Round {req.currentRound})
                     </span>
                   </div>
-                  <div className="font-bold text-sm text-[#111827]">{req.title}</div>
+                  <div className="font-bold text-sm text-[#15171C]">{req.title}</div>
                   <div className="text-xs text-[#6B7280]">
                     {req.clientBusinessName} • {req.categoryName} • {req.workLocation} •{' '}
                     {req.interestedCount}/{req.targetInterestedCount} Claims
@@ -261,7 +261,7 @@ export default function AdminServiceLeadsPage() {
                           type="button"
                           disabled={busyId === req.id}
                           onClick={() => void forceNextRound(req.id)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-bold disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-bold disabled:opacity-50"
                         >
                           {busyId === req.id ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />

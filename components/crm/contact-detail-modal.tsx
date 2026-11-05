@@ -115,15 +115,15 @@ export function ContactDetailDrawer({
   };
 
   return (
-    <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 space-y-4 shadow-xs">
-      <div className="flex items-start justify-between pb-3 border-b border-[#E5E7EB] gap-3">
+    <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 space-y-4 shadow-xs">
+      <div className="flex items-start justify-between pb-3 border-b border-[#E4E5E9] gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-10 h-10 rounded-xl bg-red-50 text-[#E8192C] flex items-center justify-center font-bold text-sm shrink-0">
+          <div className="w-10 h-10 rounded-xl bg-red-50 text-[#C8102E] flex items-center justify-center font-bold text-sm shrink-0">
             {(contact.companyName || contact.contactName || 'X').charAt(0).toUpperCase()}
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-sm font-black text-[#111827] truncate">
+              <h3 className="text-sm font-black text-[#15171C] truncate">
                 {contact.companyName || contact.contactName}
               </h3>
               <Badge
@@ -147,14 +147,14 @@ export function ContactDetailDrawer({
         <button
           type="button"
           onClick={onClose}
-          className="text-[#6B7280] hover:text-[#111827] p-1 rounded-lg hover:bg-gray-100"
+          className="text-[#6B7280] hover:text-[#15171C] p-1 rounded-lg hover:bg-gray-100"
           aria-label="Close contact panel"
         >
           <X className="w-4 h-4" />
         </button>
       </div>
 
-      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-[#E5E7EB] text-xs">
+      <div className="flex items-center gap-1 overflow-x-auto pb-1 border-b border-[#E4E5E9] text-xs">
         {[
           { id: 'overview', label: 'Overview' },
           {
@@ -170,8 +170,8 @@ export function ContactDetailDrawer({
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
             className={`px-3 py-1.5 rounded-xl font-semibold whitespace-nowrap transition-colors ${
               activeTab === tab.id
-                ? 'bg-[#111827] text-white'
-                : 'text-[#6B7280] hover:text-[#111827] hover:bg-gray-100'
+                ? 'bg-[#15171C] text-white'
+                : 'text-[#6B7280] hover:text-[#15171C] hover:bg-gray-100'
             }`}
           >
             {tab.label}
@@ -183,11 +183,11 @@ export function ContactDetailDrawer({
         {activeTab === 'overview' && (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9] space-y-1.5">
                 <div className="text-[10px] text-[#6B7280] uppercase font-bold">
                   WhatsApp & Contact
                 </div>
-                <div className="font-bold text-[#111827]">{contact.contactName}</div>
+                <div className="font-bold text-[#15171C]">{contact.contactName}</div>
                 <div className="text-[11px] text-[#374151] flex items-center gap-1.5 font-mono">
                   <Phone className="w-3.5 h-3.5 text-[#6B7280]" /> {contact.phoneE164} (
                   {contact.countryIso2})
@@ -198,17 +198,17 @@ export function ContactDetailDrawer({
                   </div>
                 )}
                 {contact.website && (
-                  <div className="text-[11px] text-[#E8192C] flex items-center gap-1.5">
+                  <div className="text-[11px] text-[#C8102E] flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5" /> {contact.website}
                   </div>
                 )}
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-1.5">
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9] space-y-1.5">
                 <div className="text-[10px] text-[#6B7280] uppercase font-bold">
                   Invitation & Consent
                 </div>
-                <div className="font-bold text-[#111827]">{contact.source}</div>
+                <div className="font-bold text-[#15171C]">{contact.source}</div>
                 <div className="text-[11px] text-[#374151] flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-[#6B7280]" /> Invitation:{' '}
                   <strong className="capitalize">
@@ -222,8 +222,8 @@ export function ContactDetailDrawer({
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB] flex flex-wrap gap-2 items-center justify-between">
-              <div className="font-bold text-[#111827]">Direct Outreach</div>
+            <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9] flex flex-wrap gap-2 items-center justify-between">
+              <div className="font-bold text-[#15171C]">Direct Outreach</div>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" onClick={handleCopyInvite} className="text-xs rounded-xl">
                   {copied ? (
@@ -256,8 +256,8 @@ export function ContactDetailDrawer({
                     onClick={() => void handleStateChange(st)}
                     className={`px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border transition-all ${
                       crmState === st
-                        ? 'border-[#111827] bg-[#111827] text-white'
-                        : 'border-[#E5E7EB] hover:bg-gray-50 text-[#4B5563]'
+                        ? 'border-[#15171C] bg-[#15171C] text-white'
+                        : 'border-[#E4E5E9] hover:bg-gray-50 text-[#4B5563]'
                     }`}
                   >
                     {st.replace(/_/g, ' ')}
@@ -271,16 +271,16 @@ export function ContactDetailDrawer({
         {activeTab === 'details' && (
           <div className="space-y-3">
             {contact.businessInfo && (
-              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9]">
                 <div className="text-[10px] text-[#6B7280] uppercase font-bold">
                   Business Information
                 </div>
-                <p className="text-xs text-[#111827] mt-1">{contact.businessInfo}</p>
+                <p className="text-xs text-[#15171C] mt-1">{contact.businessInfo}</p>
               </div>
             )}
 
             {contact.servicesOffered && contact.servicesOffered.length > 0 && (
-              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E5E7EB]">
+              <div className="p-3.5 rounded-xl bg-[#F9FAFB] border border-[#E4E5E9]">
                 <div className="text-[10px] text-[#6B7280] uppercase font-bold mb-1.5">
                   Services Offered
                 </div>
@@ -295,23 +295,23 @@ export function ContactDetailDrawer({
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-3 rounded-xl border border-[#E5E7EB]">
+              <div className="p-3 rounded-xl border border-[#E4E5E9]">
                 <div className="text-[10px] text-[#6B7280] uppercase font-bold">Sector</div>
-                <div className="font-bold text-[#111827] mt-1">{contact.sectorName || '—'}</div>
+                <div className="font-bold text-[#15171C] mt-1">{contact.sectorName || '—'}</div>
               </div>
-              <div className="p-3 rounded-xl border border-[#E5E7EB]">
+              <div className="p-3 rounded-xl border border-[#E4E5E9]">
                 <div className="text-[10px] text-[#6B7280] uppercase font-bold">Category</div>
-                <div className="font-bold text-[#111827] mt-1">{contact.categoryName || '—'}</div>
+                <div className="font-bold text-[#15171C] mt-1">{contact.categoryName || '—'}</div>
               </div>
-              <div className="p-3 rounded-xl border border-[#E5E7EB]">
+              <div className="p-3 rounded-xl border border-[#E4E5E9]">
                 <div className="text-[10px] text-[#6B7280] uppercase font-bold">Subcategory</div>
-                <div className="font-bold text-[#111827] mt-1">
+                <div className="font-bold text-[#15171C] mt-1">
                   {contact.subcategoryName || '—'}
                 </div>
               </div>
             </div>
 
-            <div className="p-3 rounded-xl border border-[#E5E7EB]">
+            <div className="p-3 rounded-xl border border-[#E4E5E9]">
               <div className="text-[10px] text-[#6B7280] uppercase font-bold mb-1.5">
                 Database Role & Expertise Tags
               </div>
@@ -330,10 +330,10 @@ export function ContactDetailDrawer({
         )}
 
         {activeTab === 'consent' && (
-          <div className="p-4 rounded-2xl bg-[#F9FAFB] border border-[#E5E7EB] space-y-3">
-            <div className="font-bold text-[#111827] flex items-center gap-1.5">
+          <div className="p-4 rounded-2xl bg-[#F9FAFB] border border-[#E4E5E9] space-y-3">
+            <div className="font-bold text-[#15171C] flex items-center gap-1.5">
               <ShieldCheck className="w-4 h-4 text-emerald-600" /> WhatsApp Consent Status:{' '}
-              <span className="uppercase text-[#E8192C]">
+              <span className="uppercase text-[#C8102E]">
                 {(consentStatus || 'none').replace(/_/g, ' ')}
               </span>
             </div>
@@ -369,9 +369,9 @@ export function ContactDetailDrawer({
         )}
 
         {activeTab === 'account' && (
-          <div className="p-4 rounded-2xl border border-[#E5E7EB] space-y-2">
-            <div className="font-bold text-[#111827] flex items-center gap-1.5">
-              <UserCheck className="w-4 h-4 text-[#E8192C]" /> Linked XPO Account
+          <div className="p-4 rounded-2xl border border-[#E4E5E9] space-y-2">
+            <div className="font-bold text-[#15171C] flex items-center gap-1.5">
+              <UserCheck className="w-4 h-4 text-[#C8102E]" /> Linked XPO Account
             </div>
             <p className="text-xs text-[#6B7280]">
               {contact.linkedUid

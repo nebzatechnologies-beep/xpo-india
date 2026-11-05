@@ -47,7 +47,7 @@ export default function AdminTaxonomySubcategoriesPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-extrabold text-[#111827]">Tier 3 — Subcategories</h1>
+      <h1 className="text-2xl font-extrabold text-[#15171C]">Tier 3 — Subcategories</h1>
       {msg && (
         <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800">
           {msg}
@@ -56,7 +56,7 @@ export default function AdminTaxonomySubcategoriesPage() {
 
       <form
         onSubmit={handleCreate}
-        className="bg-white rounded-2xl border border-[#E5E7EB] p-5 flex flex-col sm:flex-row gap-3"
+        className="bg-white rounded-2xl border border-[#E4E5E9] p-5 flex flex-col sm:flex-row gap-3"
       >
         <select
           required
@@ -80,13 +80,13 @@ export default function AdminTaxonomySubcategoriesPage() {
         />
         <button
           type="submit"
-          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
         >
           <Plus className="w-4 h-4" /> Add Subcategory
         </button>
       </form>
 
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] p-5 divide-y divide-[#F3F4F6] text-xs">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] p-5 divide-y divide-[#F3F4F6] text-xs">
         {subcategories.map((sc) => (
           <div key={sc.id} className="py-2.5 flex items-center justify-between">
             <div>

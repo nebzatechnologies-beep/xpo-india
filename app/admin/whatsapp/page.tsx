@@ -44,7 +44,7 @@ export default function AdminWhatsAppOverviewPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-[#111827]">
+          <h1 className="text-2xl font-extrabold text-[#15171C]">
             Official Meta WhatsApp Cloud API (v21.0) Control Suite
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -62,7 +62,7 @@ export default function AdminWhatsAppOverviewPage() {
           </Link>
           <Link
             href="/admin/whatsapp/connect"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             <PlugZap className="w-4 h-4" /> API Settings
           </Link>
@@ -70,27 +70,27 @@ export default function AdminWhatsAppOverviewPage() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div className="bg-white p-4 rounded-2xl border border-[#E4E5E9] shadow-xs">
           <div className="text-[11px] text-[#6B7280]">Meta WABA Status</div>
           <div className="text-base font-extrabold mt-1">
             {hasToken && phoneNumberId ? 'Connected' : 'Credentials Pending'}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div className="bg-white p-4 rounded-2xl border border-[#E4E5E9] shadow-xs">
           <div className="text-[11px] text-[#6B7280]">Live Sessions</div>
           <div className="text-2xl font-black mt-1">{activeSessions}</div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div className="bg-white p-4 rounded-2xl border border-[#E4E5E9] shadow-xs">
           <div className="text-[11px] text-[#6B7280]">Active 5-Min Offers</div>
-          <div className="text-2xl font-black text-[#E8192C] mt-1">
+          <div className="text-2xl font-black text-[#C8102E] mt-1">
             {summary?.activeOffers ?? 0}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div className="bg-white p-4 rounded-2xl border border-[#E4E5E9] shadow-xs">
           <div className="text-[11px] text-[#6B7280]">Failed Deliveries</div>
           <div className="text-2xl font-black mt-1">{summary?.failedMessages ?? 0}</div>
         </div>
-        <div className="bg-white p-4 rounded-2xl border border-[#E5E7EB] shadow-xs">
+        <div className="bg-white p-4 rounded-2xl border border-[#E4E5E9] shadow-xs">
           <div className="text-[11px] text-[#6B7280]">Estimated Meta Cost</div>
           <div className="text-xl font-black text-emerald-700 mt-1">
             ₹{summary?.totalEstimatedCostInr ?? 0}
@@ -101,9 +101,9 @@ export default function AdminWhatsAppOverviewPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Link
           href="/admin/whatsapp/builder"
-          className="bg-white p-5 rounded-2xl border border-[#E5E7EB] hover:border-gray-400 transition-colors shadow-xs"
+          className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
-          <Workflow className="w-5 h-5 text-[#111827] mb-2" />
+          <Workflow className="w-5 h-5 text-[#15171C] mb-2" />
           <div className="font-bold text-sm">Conversation Builder</div>
           <p className="text-xs text-[#6B7280] mt-1">
             Edit Welcome, Client, and Partner WhatsApp conversation flows.
@@ -111,7 +111,7 @@ export default function AdminWhatsAppOverviewPage() {
         </Link>
         <Link
           href="/admin/whatsapp/inbox"
-          className="bg-white p-5 rounded-2xl border border-[#E5E7EB] hover:border-gray-400 transition-colors shadow-xs"
+          className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <Inbox className="w-5 h-5 text-blue-600 mb-2" />
           <div className="font-bold text-sm">Support Takeover Inbox</div>
@@ -121,7 +121,7 @@ export default function AdminWhatsAppOverviewPage() {
         </Link>
         <Link
           href="/admin/whatsapp/templates"
-          className="bg-white p-5 rounded-2xl border border-[#E5E7EB] hover:border-gray-400 transition-colors shadow-xs"
+          className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <MessageCircle className="w-5 h-5 text-emerald-600 mb-2" />
           <div className="font-bold text-sm">Templates & Meta Sync</div>
@@ -131,7 +131,7 @@ export default function AdminWhatsAppOverviewPage() {
         </Link>
         <Link
           href="/admin/whatsapp/logs"
-          className="bg-white p-5 rounded-2xl border border-[#E5E7EB] hover:border-gray-400 transition-colors shadow-xs"
+          className="bg-white p-5 rounded-2xl border border-[#E4E5E9] hover:border-gray-400 transition-colors shadow-xs"
         >
           <ScrollText className="w-5 h-5 text-amber-600 mb-2" />
           <div className="font-bold text-sm">Webhook & Delivery Logs</div>

@@ -66,8 +66,8 @@ export default function AdminMatchingSettingsPage() {
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Settings
           </Link>
-          <h1 className="text-2xl font-black tracking-tight text-[#111827] flex items-center gap-2">
-            <Clock className="w-6 h-6 text-[#111827]" />
+          <h1 className="text-2xl font-black tracking-tight text-[#15171C] flex items-center gap-2">
+            <Clock className="w-6 h-6 text-[#15171C]" />
             Lead Distribution & Matching Rules
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
@@ -88,13 +88,13 @@ export default function AdminMatchingSettingsPage() {
       )}
 
       {loading || !dist ? (
-        <div className="bg-white rounded-2xl border border-[#E5E7EB] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
-          <Loader2 className="w-4 h-4 animate-spin text-[#111827]" /> Loading matching rules...
+        <div className="bg-white rounded-2xl border border-[#E4E5E9] p-12 flex items-center justify-center gap-2 text-xs text-[#6B7280]">
+          <Loader2 className="w-4 h-4 animate-spin text-[#15171C]" /> Loading matching rules...
         </div>
       ) : (
         <form
           onSubmit={handleSave}
-          className="bg-white rounded-2xl border border-[#E5E7EB] p-6 space-y-5 text-xs"
+          className="bg-white rounded-2xl border border-[#E4E5E9] p-6 space-y-5 text-xs"
         >
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
@@ -145,7 +145,7 @@ export default function AdminMatchingSettingsPage() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-3 gap-4 pt-3 border-t border-[#E5E7EB]">
+          <div className="grid sm:grid-cols-3 gap-4 pt-3 border-t border-[#E4E5E9]">
             <div className="sm:col-span-2">
               <label className="block font-bold text-[#374151] mb-1">
                 Clock Start Policy
@@ -183,7 +183,7 @@ export default function AdminMatchingSettingsPage() {
             </div>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-[#E5E7EB]">
+          <div className="grid sm:grid-cols-2 gap-4 pt-3 border-t border-[#E4E5E9]">
             <div>
               <label className="block font-bold text-[#374151] mb-1">
                 Quota Units Deducted on Valid Claim
@@ -214,9 +214,9 @@ export default function AdminMatchingSettingsPage() {
             </div>
           </div>
 
-          <div className="space-y-2.5 pt-3 border-t border-[#E5E7EB]">
-            <label className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] cursor-pointer">
-              <span className="font-bold text-[#111827]">
+          <div className="space-y-2.5 pt-3 border-t border-[#E4E5E9]">
+            <label className="flex items-center justify-between p-3 rounded-xl border border-[#E4E5E9] cursor-pointer">
+              <span className="font-bold text-[#15171C]">
                 Permit duplicate offers to the same Partner for the same requirement
               </span>
               <input
@@ -225,29 +225,29 @@ export default function AdminMatchingSettingsPage() {
                 onChange={(e) =>
                   setDist({ ...dist, duplicateOffersPermitted: e.target.checked })
                 }
-                className="w-4 h-4 accent-[#111827]"
+                className="w-4 h-4 accent-[#15171C]"
               />
             </label>
-            <label className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] cursor-pointer">
-              <span className="font-bold text-[#111827]">
+            <label className="flex items-center justify-between p-3 rounded-xl border border-[#E4E5E9] cursor-pointer">
+              <span className="font-bold text-[#15171C]">
                 Deduct Partner quota on expired offers (Recommended: Off)
               </span>
               <input
                 type="checkbox"
                 checked={dist.deductOnExpired}
                 onChange={(e) => setDist({ ...dist, deductOnExpired: e.target.checked })}
-                className="w-4 h-4 accent-[#111827]"
+                className="w-4 h-4 accent-[#15171C]"
               />
             </label>
-            <label className="flex items-center justify-between p-3 rounded-xl border border-[#E5E7EB] cursor-pointer">
-              <span className="font-bold text-[#111827]">
+            <label className="flex items-center justify-between p-3 rounded-xl border border-[#E4E5E9] cursor-pointer">
+              <span className="font-bold text-[#15171C]">
                 Deduct Partner quota on declined offers (Recommended: Off)
               </span>
               <input
                 type="checkbox"
                 checked={dist.deductOnDeclined}
                 onChange={(e) => setDist({ ...dist, deductOnDeclined: e.target.checked })}
-                className="w-4 h-4 accent-[#111827]"
+                className="w-4 h-4 accent-[#15171C]"
               />
             </label>
           </div>
@@ -256,7 +256,7 @@ export default function AdminMatchingSettingsPage() {
             <button
               type="submit"
               disabled={saving}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#111827] hover:bg-black text-white font-semibold shadow-xs disabled:opacity-60"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#15171C] hover:bg-black text-white font-semibold shadow-xs disabled:opacity-60"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
               {saving ? 'Saving...' : 'Save Rules'}

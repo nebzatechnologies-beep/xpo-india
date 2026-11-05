@@ -5,17 +5,12 @@ import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="bg-[#111827] text-white pt-16 pb-12 border-t border-white/10">
+    <footer className="bg-[#15171C] text-white pt-16 pb-12 border-t border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
           <div className="md:col-span-2">
             <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-[#E8192C] flex items-center justify-center text-white font-extrabold text-lg">
-                X
-              </div>
-              <span className="text-xl font-bold tracking-tight text-white">
-                XPO <span className="text-[#E8192C]">MARKETPLACE</span>
-              </span>
+              <span className="inline-flex rounded-lg bg-white px-3 py-2"><img src="/xpo-logo.png" alt="XPO India" className="h-7 w-auto object-contain" /></span>
             </Link>
             <p className="mt-4 text-xs text-gray-400 leading-relaxed max-w-md">
               WhatsApp-first B2B marketplace connecting Clients and verified Partners with AI-guided
@@ -66,7 +61,7 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/admin/login" className="hover:text-[#E8192C] font-semibold">
+                <Link href="/admin/login" className="hover:text-[#C8102E] font-semibold">
                   Superadmin Portal
                 </Link>
               </li>

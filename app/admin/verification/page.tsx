@@ -108,7 +108,7 @@ export default function AdminVerificationAndPrivacyPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-extrabold text-[#111827]">
+        <h1 className="text-2xl font-extrabold text-[#15171C]">
           KYC Verification, Fraud Moderation & DPDP Privacy Queue
         </h1>
         <p className="text-xs text-[#6B7280] mt-1">
@@ -124,9 +124,9 @@ export default function AdminVerificationAndPrivacyPage() {
       )}
 
       {/* Unified Queue Card with Dropdown and Sub-tabs */}
-      <div className="bg-white rounded-2xl border border-[#E5E7EB] shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-[#E4E5E9] shadow-sm overflow-hidden">
         {/* Header Bar */}
-        <div className="p-5 border-b border-[#E5E7EB] bg-[#F9FAFB]/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="p-5 border-b border-[#E4E5E9] bg-[#F9FAFB]/50 flex flex-col md:flex-row md:items-center justify-between gap-4">
           {/* Dropdown Selector */}
           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <label htmlFor="queue-select" className="text-xs font-bold uppercase tracking-wider text-[#6B7280]">
@@ -137,7 +137,7 @@ export default function AdminVerificationAndPrivacyPage() {
                 id="queue-select"
                 value={queueType}
                 onChange={(e) => setQueueType(e.target.value as 'kyc' | 'tickets')}
-                className="appearance-none pl-3.5 pr-9 py-2 rounded-xl bg-white border border-[#D1D5DB] text-xs font-bold text-[#111827] shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#E8192C]/20 focus:border-[#E8192C] transition-all cursor-pointer"
+                className="appearance-none pl-3.5 pr-9 py-2 rounded-xl bg-white border border-[#D1D5DB] text-xs font-bold text-[#15171C] shadow-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-[#C8102E]/20 focus:border-[#C8102E] transition-all cursor-pointer"
               >
                 <option value="kyc">
                   KYC Verification Requests ({kycRequests.length})
@@ -157,8 +157,8 @@ export default function AdminVerificationAndPrivacyPage() {
               onClick={() => setActiveTab('pending')}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'pending'
-                  ? 'bg-white text-[#111827] shadow-sm'
-                  : 'text-[#6B7280] hover:text-[#111827]'
+                  ? 'bg-white text-[#15171C] shadow-sm'
+                  : 'text-[#6B7280] hover:text-[#15171C]'
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -169,8 +169,8 @@ export default function AdminVerificationAndPrivacyPage() {
               onClick={() => setActiveTab('signed')}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                 activeTab === 'signed'
-                  ? 'bg-white text-[#111827] shadow-sm'
-                  : 'text-[#6B7280] hover:text-[#111827]'
+                  ? 'bg-white text-[#15171C] shadow-sm'
+                  : 'text-[#6B7280] hover:text-[#15171C]'
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ export default function AdminVerificationAndPrivacyPage() {
         <div className="p-6">
           {loading ? (
             <div className="flex items-center gap-2 text-xs text-[#6B7280] py-6 justify-center">
-              <Loader2 className="w-4 h-4 animate-spin text-[#E8192C]" />
+              <Loader2 className="w-4 h-4 animate-spin text-[#C8102E]" />
               <span>Loading queue submissions...</span>
             </div>
           ) : queueType === 'kyc' ? (
@@ -198,7 +198,7 @@ export default function AdminVerificationAndPrivacyPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('signed')}
-                      className="mt-2 text-xs font-semibold text-[#E8192C] hover:underline"
+                      className="mt-2 text-xs font-semibold text-[#C8102E] hover:underline"
                     >
                       View {signedKyc.length} verified record{signedKyc.length === 1 ? '' : 's'} →
                     </button>
@@ -209,10 +209,10 @@ export default function AdminVerificationAndPrivacyPage() {
                   {pendingKyc.map((r) => (
                     <div
                       key={r.id}
-                      className="p-4 rounded-xl border border-[#E5E7EB] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
+                      className="p-4 rounded-xl border border-[#E4E5E9] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
                     >
                       <div className="text-xs space-y-1">
-                        <div className="font-bold text-sm text-[#111827]">
+                        <div className="font-bold text-sm text-[#15171C]">
                           {r.applicantName} {r.companyName ? `— ${r.companyName}` : ''}
                         </div>
                         <div className="text-[#6B7280]">
@@ -272,10 +272,10 @@ export default function AdminVerificationAndPrivacyPage() {
                   {signedKyc.map((r) => (
                     <div
                       key={r.id}
-                      className="p-4 rounded-xl border border-[#E5E7EB] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
+                      className="p-4 rounded-xl border border-[#E4E5E9] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
                     >
                       <div className="text-xs space-y-1">
-                        <div className="font-bold text-sm text-[#111827]">
+                        <div className="font-bold text-sm text-[#15171C]">
                           {r.applicantName} {r.companyName ? `— ${r.companyName}` : ''}
                         </div>
                         <div className="text-[#6B7280]">
@@ -348,7 +348,7 @@ export default function AdminVerificationAndPrivacyPage() {
                     <button
                       type="button"
                       onClick={() => setActiveTab('signed')}
-                      className="mt-2 text-xs font-semibold text-[#E8192C] hover:underline"
+                      className="mt-2 text-xs font-semibold text-[#C8102E] hover:underline"
                     >
                       View {signedTickets.length} resolved ticket{signedTickets.length === 1 ? '' : 's'} →
                     </button>
@@ -359,10 +359,10 @@ export default function AdminVerificationAndPrivacyPage() {
                   {pendingTickets.map((t) => (
                     <div
                       key={t.id}
-                      className="p-4 rounded-xl border border-[#E5E7EB] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
+                      className="p-4 rounded-xl border border-[#E4E5E9] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
                     >
                       <div className="text-xs space-y-1">
-                        <div className="font-bold text-sm text-[#111827]">{t.subject}</div>
+                        <div className="font-bold text-sm text-[#15171C]">{t.subject}</div>
                         <div className="text-[#6B7280]">
                           Type: <strong>{t.type.replace(/_/g, ' ')}</strong> • Reporter:{' '}
                           {t.reporterPhoneE164 || t.reporterUid} • Status:{' '}
@@ -395,7 +395,7 @@ export default function AdminVerificationAndPrivacyPage() {
                           type="button"
                           disabled={busyId === t.id}
                           onClick={() => void resolveTicket(t, { status: 'resolved' })}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#111827] hover:bg-black text-white text-xs font-bold disabled:opacity-50 transition-colors shadow-xs"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-bold disabled:opacity-50 transition-colors shadow-xs"
                         >
                           {busyId === t.id && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                           <span>{busyId === t.id ? 'Resolving...' : 'Mark Resolved'}</span>
@@ -425,10 +425,10 @@ export default function AdminVerificationAndPrivacyPage() {
                   {signedTickets.map((t) => (
                     <div
                       key={t.id}
-                      className="p-4 rounded-xl border border-[#E5E7EB] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
+                      className="p-4 rounded-xl border border-[#E4E5E9] bg-white flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs hover:border-gray-300 transition-all"
                     >
                       <div className="text-xs space-y-1">
-                        <div className="font-bold text-sm text-[#111827]">{t.subject}</div>
+                        <div className="font-bold text-sm text-[#15171C]">{t.subject}</div>
                         <div className="text-[#6B7280]">
                           Type: <strong>{t.type.replace(/_/g, ' ')}</strong> • Reporter:{' '}
                           {t.reporterPhoneE164 || t.reporterUid}

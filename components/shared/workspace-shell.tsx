@@ -81,7 +81,7 @@ export function WorkspaceShell({
         return {
           badgeText: 'Superadmin',
           badgeBg: 'bg-gray-100 text-gray-800 border-gray-200',
-          avatarBg: 'bg-[#111827] text-white',
+          avatarBg: 'bg-[#15171C] text-white',
           activeNavBg: 'bg-gray-900 text-white font-medium',
           activeIconColor: 'text-white',
           bottomActiveColor: 'text-gray-900',
@@ -91,22 +91,22 @@ export function WorkspaceShell({
         return {
           badgeText: 'Partner',
           badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
-          avatarBg: 'bg-[#111827] text-white',
-          activeNavBg: 'bg-red-50 text-[#E8192C] font-semibold',
-          activeIconColor: 'text-[#E8192C]',
-          bottomActiveColor: 'text-[#E8192C]',
-          bottomActiveBg: 'bg-red-50 text-[#E8192C]',
+          avatarBg: 'bg-[#15171C] text-white',
+          activeNavBg: 'bg-red-50 text-[#C8102E] font-semibold',
+          activeIconColor: 'text-[#C8102E]',
+          bottomActiveColor: 'text-[#C8102E]',
+          bottomActiveBg: 'bg-red-50 text-[#C8102E]',
         };
       case 'client':
       default:
         return {
           badgeText: 'Client',
           badgeBg: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-          avatarBg: 'bg-[#E8192C] text-white',
-          activeNavBg: 'bg-red-50 text-[#E8192C] font-semibold',
-          activeIconColor: 'text-[#E8192C]',
-          bottomActiveColor: 'text-[#E8192C]',
-          bottomActiveBg: 'bg-red-50 text-[#E8192C]',
+          avatarBg: 'bg-[#C8102E] text-white',
+          activeNavBg: 'bg-red-50 text-[#C8102E] font-semibold',
+          activeIconColor: 'text-[#C8102E]',
+          bottomActiveColor: 'text-[#C8102E]',
+          bottomActiveBg: 'bg-red-50 text-[#C8102E]',
         };
     }
   };
@@ -154,18 +154,18 @@ export function WorkspaceShell({
   const bottomNavItems = getBottomNavItems();
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] flex flex-col lg:flex-row antialiased">
+    <div className="min-h-screen bg-[#F6F6F4] flex flex-col lg:flex-row antialiased">
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-[#E5E7EB] shrink-0 hidden lg:flex flex-col justify-between h-screen sticky top-0 z-30 select-none shadow-[1px_0_4px_rgba(0,0,0,0.02)]">
+      <aside className="w-64 bg-white border-r border-[#E4E5E9] shrink-0 hidden lg:flex flex-col justify-between h-screen sticky top-0 z-30 select-none shadow-[1px_0_4px_rgba(0,0,0,0.02)]">
         <div className="flex flex-col h-full overflow-hidden">
-          <div className="h-16 px-5 border-b border-[#E5E7EB] flex items-center shrink-0">
+          <div className="h-16 px-5 border-b border-[#E4E5E9] flex items-center shrink-0">
             <Link href="/" className="inline-flex items-center gap-2.5 group">
-              <span className="w-8 h-8 rounded-xl bg-[#E8192C] flex items-center justify-center text-white font-extrabold text-base shadow-sm group-hover:scale-105 transition-transform">
+              <span className="w-8 h-8 rounded-xl bg-[#C8102E] flex items-center justify-center text-white font-extrabold text-base shadow-sm group-hover:scale-105 transition-transform">
                 X
               </span>
               <div>
-                <span className="text-sm font-black tracking-tight text-[#111827]">
-                  XPO <span className="text-[#E8192C]">{workspaceTitle}</span>
+                <span className="text-sm font-black tracking-tight text-[#15171C]">
+                  XPO <span className="text-[#C8102E]">{workspaceTitle}</span>
                 </span>
                 <span className="block text-[9px] text-[#6B7280] uppercase tracking-wider font-semibold">
                   {workspaceSubtitle}
@@ -178,7 +178,7 @@ export function WorkspaceShell({
             {navGroups.map((group, gIdx) => (
               <div key={gIdx} className="space-y-1">
                 {group.title && (
-                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold text-[#9CA3AF] uppercase tracking-wider">
+                  <div className="px-3 pt-2 pb-1 text-[10px] font-bold text-[#8A8E97] uppercase tracking-wider">
                     {group.title}
                   </div>
                 )}
@@ -194,8 +194,8 @@ export function WorkspaceShell({
                           isActive
                             ? theme.activeNavBg
                             : item.highlight
-                              ? 'text-[#E8192C] font-semibold hover:bg-red-50/50'
-                              : 'text-[#4B5563] hover:text-[#111827] hover:bg-[#F3F4F6]'
+                              ? 'text-[#C8102E] font-semibold hover:bg-red-50/50'
+                              : 'text-[#4B5563] hover:text-[#15171C] hover:bg-[#F3F4F6]'
                         }`}
                       >
                         <div className="flex items-center gap-2.5 truncate">
@@ -207,7 +207,7 @@ export function WorkspaceShell({
                           <span className="truncate">{item.label}</span>
                         </div>
                         {item.badge && (
-                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 bg-red-50 text-[#E8192C]">
+                          <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider shrink-0 bg-red-50 text-[#C8102E]">
                             {item.badge}
                           </span>
                         )}
@@ -220,32 +220,32 @@ export function WorkspaceShell({
           </nav>
         </div>
 
-        <div className="p-3 border-t border-[#E5E7EB] shrink-0">
+        <div className="p-3 border-t border-[#E4E5E9] shrink-0">
           <Link
             href="/"
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#6B7280] hover:text-[#111827] hover:bg-[#F9FAFB] transition-colors"
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium text-[#6B7280] hover:text-[#15171C] hover:bg-[#F9FAFB] transition-colors"
           >
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               Public Marketplace
             </span>
-            <ExternalLink className="w-3.5 h-3.5 text-[#9CA3AF]" />
+            <ExternalLink className="w-3.5 h-3.5 text-[#8A8E97]" />
           </Link>
         </div>
       </aside>
 
       {/* Main Column */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="h-16 bg-white border-b border-[#E5E7EB] px-3.5 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+        <header className="h-16 bg-white border-b border-[#E4E5E9] px-3.5 sm:px-6 flex items-center justify-between shrink-0 sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
           <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
             <Link href="/dashboard" className="inline-flex items-center gap-2 group">
-              <span className="w-8 h-8 rounded-xl bg-[#E8192C] flex items-center justify-center text-white font-extrabold text-sm shadow-xs shrink-0">
+              <span className="w-8 h-8 rounded-xl bg-[#C8102E] flex items-center justify-center text-white font-extrabold text-sm shadow-xs shrink-0">
                 X
               </span>
               <div className="flex flex-col">
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs font-black tracking-tight text-[#111827]">
-                    XPO <span className="text-[#E8192C]">{workspaceTitle}</span>
+                  <span className="text-xs font-black tracking-tight text-[#15171C]">
+                    XPO <span className="text-[#C8102E]">{workspaceTitle}</span>
                   </span>
                   <span
                     className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${theme.badgeBg}`}
@@ -267,9 +267,9 @@ export function WorkspaceShell({
               <button
                 type="button"
                 onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                className="flex items-center gap-2 pl-2 sm:pl-3 pr-2 py-1.5 rounded-full border border-[#E5E7EB] hover:border-[#D1D5DB] transition-all bg-white"
+                className="flex items-center gap-2 pl-2 sm:pl-3 pr-2 py-1.5 rounded-full border border-[#E4E5E9] hover:border-[#D1D5DB] transition-all bg-white"
               >
-                <span className="text-xs font-bold text-[#111827] max-w-[130px] truncate hidden sm:inline">
+                <span className="text-xs font-bold text-[#15171C] max-w-[130px] truncate hidden sm:inline">
                   {user.name}
                 </span>
                 <span
@@ -281,9 +281,9 @@ export function WorkspaceShell({
               </button>
 
               {profileDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-64 bg-white border border-[#E5E7EB] rounded-2xl shadow-xl py-2 z-50 select-none">
+                <div className="absolute right-0 mt-2 w-64 bg-white border border-[#E4E5E9] rounded-2xl shadow-xl py-2 z-50 select-none">
                   <div className="px-4 py-3 border-b border-[#F3F4F6]">
-                    <div className="text-xs font-bold text-[#111827] truncate">{user.name}</div>
+                    <div className="text-xs font-bold text-[#15171C] truncate">{user.name}</div>
                     <div className="text-[11px] text-[#6B7280] truncate">{user.email}</div>
                     <div className="mt-1.5 flex items-center gap-1.5">
                       <span
@@ -306,7 +306,7 @@ export function WorkspaceShell({
                         onClick={() => setProfileDropdownOpen(false)}
                         className="flex items-center gap-2 px-4 py-2 text-xs font-medium text-[#374151] hover:bg-[#F9FAFB]"
                       >
-                        <UserCog className="w-4 h-4 text-[#111827]" />
+                        <UserCog className="w-4 h-4 text-[#15171C]" />
                         Services & Profile
                       </Link>
                     )}
@@ -316,7 +316,7 @@ export function WorkspaceShell({
                       className="flex items-center justify-between px-4 py-2 text-xs font-medium text-[#374151] hover:bg-[#F9FAFB]"
                     >
                       <span className="flex items-center gap-2">
-                        <CreditCard className="w-4 h-4 text-[#E8192C]" />
+                        <CreditCard className="w-4 h-4 text-[#C8102E]" />
                         Subscription & Credits
                       </span>
                     </Link>
@@ -340,9 +340,9 @@ export function WorkspaceShell({
                       <Link
                         href="/admin/dashboard"
                         onClick={() => setProfileDropdownOpen(false)}
-                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#111827] hover:bg-gray-50"
+                        className="flex items-center gap-2 px-4 py-2 text-xs font-bold text-[#15171C] hover:bg-gray-50"
                       >
-                        <Shield className="w-4 h-4 text-[#E8192C]" />
+                        <Shield className="w-4 h-4 text-[#C8102E]" />
                         Superadmin Console
                       </Link>
                     )}
@@ -370,7 +370,7 @@ export function WorkspaceShell({
       {/* Mobile Bottom Navigation */}
       <nav
         aria-label="Mobile Navigation"
-        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E5E7EB] px-2 py-1.5 flex justify-around items-center shadow-[0_-2px_12px_rgba(0,0,0,0.05)]"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E4E5E9] px-2 py-1.5 flex justify-around items-center shadow-[0_-2px_12px_rgba(0,0,0,0.05)]"
       >
         {bottomNavItems.map((item) => {
           const Icon = item.icon;
