@@ -395,20 +395,7 @@ export function XpoPartnerApp({
     const opp = S.opportunities.find((o) => o.id === oppId);
     if (!opp) return;
 
-    try {
-      await fetch('/api/responses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          leadId: opp.ref,
-          pitchMessage: pitch,
-          estimatedTimeline: S.timelineDraft,
-          indicativeQuote: S.quoteDraft || 'Open to discuss',
-        }),
-      });
-    } catch {
-      // Prototype state continues cleanly
-    }
+    // Prototype state updated locally
 
     setS((prev) => ({
       ...prev,
@@ -701,7 +688,7 @@ export function XpoPartnerApp({
                 onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
                 title="Each reply to a client request uses 1 reply credit"
               >
-                <span className="dot" style={{ background: creditDot }} />
+                <span className="pdot" style={{ background: creditDot }} />
                 <span>{creditLabel}</span>
               </button>
 
@@ -906,7 +893,7 @@ export function XpoPartnerApp({
                   marginBottom: 18,
                 }}
               >
-                <div className="seg">
+                <div className="seg-group">
                   <button
                     className={S.filterTab === 'matched' ? 'on' : ''}
                     onClick={() => setS((prev) => ({ ...prev, filterTab: 'matched' }))}
@@ -966,7 +953,7 @@ export function XpoPartnerApp({
                       <div>
                         {o.myReplyStatus === 'client_requested' && (
                           <span className="chip r">
-                            <span className="dot" style={{ background: '#C8102E' }} />
+                            <span className="pdot" style={{ background: '#C8102E' }} />
                             Client requested your contact
                           </span>
                         )}
@@ -1604,7 +1591,7 @@ export function XpoPartnerApp({
                       <span>₹1,178.82 / month</span>
                     </div>
                   </div>
-                  <div className="seg">
+                  <div className="seg-group">
                     <button
                       className={S.payMethod === 'upi' ? 'on' : ''}
                       onClick={() => setS((prev) => ({ ...prev, payMethod: 'upi' }))}
@@ -1714,13 +1701,13 @@ export function XpoPartnerApp({
       )}
 
       {/* ALERTS / TOASTS */}
-      <div className="alw">
+      <div className="toastwrap">
         {S.alerts.map((a) => (
-          <div key={a.id} className="al">
-            <div className={`alic ${a.tone}`}>
+          <div key={a.id} className="toastitem">
+            <div className={`toasticon ${a.tone}`}>
               {a.tone === 'ok' ? '✓' : a.tone === 'warn' || a.tone === 'err' ? '!' : 'i'}
             </div>
-            <div className="alb">
+            <div className="toastbody">
               <div style={{ fontWeight: 700, fontSize: 13.5 }}>{a.title}</div>
               {a.msg && <div style={{ fontSize: 12.5, color: 'var(--tx2)', marginTop: 2 }}>{a.msg}</div>}
             </div>
@@ -1736,7 +1723,7 @@ export function XpoPartnerApp({
       </div>
 
       {/* PROTOTYPE CONTROLS DRAWER */}
-      <div className="ctl" onClick={(e) => e.stopPropagation()}>
+      <div className="ctlwrap" onClick={(e) => e.stopPropagation()}>
         {S.ctlOpen ? (
           <div className="ctlp">
             <div

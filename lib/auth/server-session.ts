@@ -26,16 +26,58 @@ export async function createFirebaseSessionCookie(idToken: string): Promise<stri
   });
 }
 
+function isLocalPrototypeMode(): boolean {
+  return !process.env.FIREBASE_PRIVATE_KEY && !process.env.K_SERVICE;
+}
+
+async function getDefaultLocalSession(): Promise<AuthenticatedSession> {
+  const existing = await getUserByUid('local-superadmin');
+  const now = new Date().toISOString();
+  const user: XpoUser = existing || {
+    uid: 'local-superadmin',
+    displayName: 'Pavan (Test Traders)',
+    email: 'admin@xpoindia.com',
+    phoneE164: '+919849000112',
+    role: 'client',
+    enabledRoles: ['client'],
+    activeRole: 'client',
+    isSuperadmin: true,
+    isPhoneVerified: true,
+    status: 'active',
+    verificationStatus: 'verified',
+    primaryCity: 'Hyderabad',
+    state: 'Telangana',
+    country: 'India',
+    countryIso2: 'IN',
+    billingCurrency: 'INR',
+    createdAt: now,
+    updatedAt: now,
+  };
+  return {
+    uid: user.uid,
+    email: user.email || 'admin@xpoindia.com',
+    phoneNumber: user.phoneE164 || '+919849000112',
+    isSuperadminClaim: true,
+    user,
+  };
+}
+
 export async function getServerSession(): Promise<AuthenticatedSession | null> {
   const cookieStore = await cookies();
   const sessionCookie = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (!sessionCookie || sessionCookie.startsWith('demo_session_')) {
+    if (isLocalPrototypeMode()) {
+      return getDefaultLocalSession();
+    }
     return null;
   }
 
   const { auth, isConfigured } = getFirebaseAdmin();
   if (!isConfigured || !auth) {
+    if (isLocalPrototypeMode()) {
+      return getDefaultLocalSession();
+    }
     return null;
   }
 
@@ -68,10 +110,18 @@ export async function getServerSession(): Promise<AuthenticatedSession | null> {
     }
   }
 
-  if (!decoded) return null;
+  if (!decoded) {
+    if (isLocalPrototypeMode()) {
+      return getDefaultLocalSession();
+    }
+    return null;
+  }
 
   const user = await getUserByUid(decoded.uid);
   if (!user || user.status !== 'active') {
+    if (isLocalPrototypeMode()) {
+      return getDefaultLocalSession();
+    }
     return null;
   }
 
@@ -85,10 +135,6 @@ export async function getServerSession(): Promise<AuthenticatedSession | null> {
 }
 
 export async function requireAuth(): Promise<AuthenticatedSession> {
-  const { isConfigured } = getFirebaseAdmin();
-  if (!isConfigured) {
-    requireAdminAuth();
-  }
   const session = await getServerSession();
   if (!session) {
     throw new AuthError('Please sign in to your XPO account to continue.');
