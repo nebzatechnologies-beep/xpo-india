@@ -84,7 +84,7 @@ export default function AdminWhatsAppConnectPage() {
           </span>
         </div>
         <Link
-          href="/admin/settings/gateways"
+          href="/superadmin/settings/gateways"
           className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#15171C] hover:bg-black text-white font-semibold shadow-xs"
         >
           Open Gateways Hub <ArrowRight className="w-3.5 h-3.5" />

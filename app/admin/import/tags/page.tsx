@@ -1,4 +1,4 @@
 import { redirect } from 'next/navigation';
 export default function RedirectPage() {
-  redirect('/admin/taxonomy/tags');
+  redirect('/superadmin/taxonomy/tags');
 }

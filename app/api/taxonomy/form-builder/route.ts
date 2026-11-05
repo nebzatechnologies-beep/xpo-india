@@ -2,7 +2,7 @@ import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireSuperadmin } from '@/lib/auth/server-session';
 import { getTaxonomyFormSchema, saveTaxonomyFormSchema } from '@/lib/services/taxonomy';
-import { handleApiError, jsonOk, ValidationError } from '@/lib/utils/api-handler';
+import { handleApiError, jsonOk } from '@/lib/utils/api-handler';
 
 const fieldSchema = z.object({
   id: z.string(),
@@ -35,7 +35,7 @@ const saveFormSchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const targetId = request.nextUrl.searchParams.get('targetId');
-    if (!targetId) throw new ValidationError('targetId query parameter is required');
+    if (!targetId) return jsonOk({ schema: null });
     const schema = await getTaxonomyFormSchema(targetId);
     return jsonOk({ schema });
   } catch (err) {

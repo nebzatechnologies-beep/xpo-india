@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import type { CustomerRole } from '@/lib/types/domain';
@@ -52,6 +53,7 @@ export function InlineSubscriptionPanel({
   reason,
   onDismiss,
 }: InlineSubscriptionPanelProps) {
+  const router = useRouter();
   const [gateway, setGateway] = useState<'razorpay' | 'paypal'>(
     billingCurrency === 'INR' ? 'razorpay' : 'paypal'
   );
@@ -144,7 +146,7 @@ export function InlineSubscriptionPanel({
                 });
                 const verifyData = await verifyRes.json();
                 if (verifyRes.ok && verifyData.ok) {
-                  window.location.href = `/dashboard/subscription?status=verified&gateway=razorpay&razorpay_subscription_id=${data.gatewaySubscriptionId}`;
+                  router.push(`/dashboard/subscription?status=verified&gateway=razorpay&razorpay_subscription_id=${data.gatewaySubscriptionId}`);
                 } else {
                   throw new Error(verifyData.error || 'Mandate verification failed');
                 }
@@ -169,7 +171,7 @@ export function InlineSubscriptionPanel({
         }
       }
 
-      window.location.href = '/dashboard/subscription';
+      router.push('/dashboard/subscription');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Subscription checkout failed');
     } finally {

@@ -380,7 +380,7 @@ export function ContactDetailDrawer({
             </p>
             <div className="pt-2">
               <Link
-                href={`/admin/users?search=${encodeURIComponent(contact.phoneE164)}`}
+                href={`/superadmin/users?search=${encodeURIComponent(contact.phoneE164)}`}
                 className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 hover:underline"
               >
                 {contact.linkedUid

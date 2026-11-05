@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshSession]);
 
   const signOut = useCallback(async () => {
-    const redirectTarget = user?.isSuperadmin ? '/admin/login' : '/login';
+    const redirectTarget = user?.isSuperadmin ? '/superadmin/login' : '/login';
     await fetch('/api/auth/session', { method: 'DELETE' });
     if (isFirebaseClientConfigured()) {
       try {

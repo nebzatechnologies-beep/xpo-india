@@ -251,7 +251,7 @@ export default function AdminGatewaysControlPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <Link
-            href="/admin/settings"
+            href="/superadmin/settings"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-[#15171C] hover:text-[#C8102E] mb-2"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Platform Settings

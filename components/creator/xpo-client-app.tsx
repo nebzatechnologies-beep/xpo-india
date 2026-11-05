@@ -174,7 +174,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
   const [ask, setAsk] = useState<string>('');
   const [askErr, setAskErr] = useState<boolean>(false);
   const [drafted, setDrafted] = useState<boolean>(false);
-  const [draft, setDraft] = useState<any>(null);
+  const [draft, setDraft] = useState<Pick<ClientReqItem, 'title' | 'sector' | 'cat' | 'sub' | 'loc' | 'timeline' | 'budget' | 'spec'> | null>(null);
   const [editing, setEditing] = useState<boolean>(false);
   const [closeDlg, setCloseDlg] = useState<boolean>(false);
   const [reason, setReason] = useState<number>(0);
@@ -401,7 +401,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
     }
   };
 
-  const handlePostDraft = async (customDraft?: any) => {
+  const handlePostDraft = async (customDraft?: Pick<ClientReqItem, 'title' | 'sector' | 'cat' | 'sub' | 'loc' | 'timeline' | 'budget' | 'spec'>) => {
     const d = customDraft || draft;
     if (!d) return;
     const id = 'n' + seq;

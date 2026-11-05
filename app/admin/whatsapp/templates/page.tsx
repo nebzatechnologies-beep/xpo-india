@@ -65,7 +65,7 @@ export default function AdminWhatsAppTemplatesPage() {
             <RefreshCw className="w-3.5 h-3.5" /> {syncing ? 'Syncing...' : 'Sync from Meta'}
           </button>
           <Link
-            href="/admin/whatsapp/templates/create"
+            href="/superadmin/whatsapp/templates/create"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#15171C] hover:bg-black text-white text-xs font-semibold shadow-xs transition"
           >
             <Plus className="w-3.5 h-3.5" /> Register Template

@@ -92,7 +92,9 @@ export async function createRazorpayAutoPaySubscription(params: {
     };
   }
 
-  const rzpSub = (await client.subscriptions.create(createPayload as any)) as {
+  const rzpSub = (await client.subscriptions.create(
+    createPayload as unknown as Parameters<typeof client.subscriptions.create>[0]
+  )) as {
     id: string;
     short_url?: string;
   };

@@ -40,7 +40,7 @@ export default function AdminCreateWhatsAppTemplatePage() {
       if (!res.ok) {
         throw new Error(data.error || 'Failed to create template');
       }
-      router.push('/admin/whatsapp/templates');
+      router.push('/superadmin/whatsapp/templates');
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Error creating template');
     } finally {
