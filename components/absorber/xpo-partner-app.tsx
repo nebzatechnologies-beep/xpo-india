@@ -3,7 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export type PartnerScreenId = 'feed' | 'opp' | 'replies' | 'conn' | 'billing';
+export type PartnerScreenId =
+  | 'feed'
+  | 'opp'
+  | 'replies'
+  | 'conn'
+  | 'billing'
+  | 'profile'
+  | 'verify'
+  | 'settings'
+  | 'help';
 
 export interface PartnerOpportunity {
   id: string;
@@ -616,17 +625,6 @@ export function XpoPartnerApp({
               Connected
               {connectedList.length > 0 && <span className="cnt muted">{connectedList.length}</span>}
             </button>
-
-            <button
-              className={`nav pn ${S.screen === 'billing' ? 'on' : ''}`}
-              onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
-            >
-              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <line x1="2" y1="10" x2="22" y2="10" />
-              </svg>
-              Account &amp; Plan
-            </button>
           </div>
 
           <div
@@ -666,6 +664,23 @@ export function XpoPartnerApp({
                   </button>
                   <span>/</span>
                   <b className="truncate max-w-[200px] sm:max-w-[360px]">{activeOpp.title}</b>
+                </div>
+              )}
+              {['profile', 'verify', 'billing', 'settings', 'help'].includes(S.screen) && (
+                <div className="crumb fx">
+                  <span>Account</span>
+                  <span>/</span>
+                  <b>
+                    {S.screen === 'profile'
+                      ? 'Profile'
+                      : S.screen === 'verify'
+                      ? 'Verification'
+                      : S.screen === 'billing'
+                      ? 'Account & Plan'
+                      : S.screen === 'settings'
+                      ? 'Settings & categories'
+                      : 'Help & privacy'}
+                  </b>
                 </div>
               )}
             </div>
@@ -763,37 +778,88 @@ export function XpoPartnerApp({
               )}
 
               {S.menuOpen === 'user' && (
-                <div className="menu">
-                  <div style={{ padding: '8px 10px', borderBottom: '1px solid var(--ln)', marginBottom: 4 }}>
-                    <div style={{ fontWeight: 800, fontSize: 13.5 }}>Klo Tech Pvt Ltd</div>
-                    <div style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                      Rohan Rao · {S.country === 'IN' ? 'Hyderabad, India' : 'Dubai, UAE'}
-                    </div>
+                <div className="menu" role="menu" aria-label="Account">
+                  <div
+                    style={{
+                      padding: '12px 12px 14px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 4,
+                      borderBottom: '1px solid var(--ln)',
+                      marginBottom: 6,
+                    }}
+                  >
+                    <b style={{ fontSize: 15 }}>Klo Tech</b>
+                    <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                      Rohan Rao · {S.country === 'IN' ? 'Mumbai, India' : 'Dubai, UAE'}
+                    </span>
                   </div>
+
                   <button
+                    type="button"
+                    role="menuitem"
+                    className="mi"
+                    onClick={() => setS((prev) => ({ ...prev, screen: 'profile', menuOpen: 'none' }))}
+                  >
+                    <span>Profile</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="mi"
+                    onClick={() => setS((prev) => ({ ...prev, screen: 'verify', menuOpen: 'none' }))}
+                  >
+                    <span>Verification</span>
+                    <span className="chip g">Verified</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="mi"
+                    onClick={() => setS((prev) => ({ ...prev, screen: 'billing', menuOpen: 'none' }))}
+                  >
+                    <span>Account &amp; Plan</span>
+                    <span className={`chip ${S.plan === 'active' ? 'g' : ''}`}>
+                      {S.plan === 'active' ? 'Plan active' : `${S.credits} free`}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="mi"
+                    onClick={() => setS((prev) => ({ ...prev, screen: 'settings', menuOpen: 'none' }))}
+                  >
+                    <span>Settings &amp; categories</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="mi"
+                    onClick={() => setS((prev) => ({ ...prev, screen: 'help', menuOpen: 'none' }))}
+                  >
+                    <span>Help &amp; privacy</span>
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
                     className="mi"
                     onClick={() =>
                       setS((prev) => ({ ...prev, dark: !prev.dark, menuOpen: 'none' }))
                     }
                   >
-                    <span>Appearance</span>
-                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{S.dark ? 'Dark' : 'Light'}</span>
+                    <span>{S.dark ? 'Light mode' : 'Dark mode'}</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{S.dark ? 'On' : 'Off'}</span>
                   </button>
                   <button
+                    type="button"
+                    role="menuitem"
                     className="mi"
-                    onClick={() => router.push('/dashboard/client')}
-                  >
-                    <span>Switch to Client app →</span>
-                  </button>
-                  <button
-                    className="mi"
-                    onClick={() => router.push('/superadmin')}
-                  >
-                    <span>Superadmin →</span>
-                  </button>
-                  <button
-                    className="mi"
-                    style={{ color: 'var(--rtx)', borderTop: '1px solid var(--ln)', marginTop: 4 }}
+                    style={{
+                      color: 'var(--rtx)',
+                      borderTop: '1px solid var(--ln)',
+                      borderRadius: '0 0 10px 10px',
+                      marginTop: 6,
+                    }}
                     onClick={() => router.push('/login')}
                   >
                     <span>Sign out</span>
@@ -1277,86 +1343,488 @@ export function XpoPartnerApp({
             </div>
           )}
 
-          {/* SCREEN 5: ACCOUNT & PARTNER PLAN */}
-          {S.screen === 'billing' && (
-            <div className="pg" style={{ maxWidth: 820 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>Account &amp; Partner Plan</h1>
-              <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 22px' }}>
-                Manage your partner replies, billing country, and matched categories.
-              </p>
+          {/* SCREEN 5: UNIFIED ACCOUNT (PROFILE, VERIFICATION, ACCOUNT & PLAN, SETTINGS, HELP) */}
+          {['profile', 'verify', 'billing', 'settings', 'help'].includes(S.screen) && (
+            <div className="pg" style={{ maxWidth: 840 }}>
+              <h1 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 14px' }}>Account</h1>
 
-              <div className="card" style={{ padding: 22, marginBottom: 18 }}>
-                <div
+              <div
+                role="tablist"
+                aria-label="Partner Account"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 4,
+                  padding: 4,
+                  background: 'var(--sf3)',
+                  borderRadius: 12,
+                  alignSelf: 'flex-start',
+                  width: 'fit-content',
+                  marginBottom: 22,
+                }}
+              >
+                {(
+                  [
+                    ['profile', 'Profile'],
+                    ['verify', 'Verification'],
+                    ['billing', 'Account & Plan'],
+                    ['settings', 'Settings & categories'],
+                    ['help', 'Help & privacy'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    className="seg"
+                    aria-selected={S.screen === key}
+                    onClick={() => setS((prev) => ({ ...prev, screen: key }))}
+                    style={
+                      S.screen === key
+                        ? {
+                            background: 'var(--sf)',
+                            color: 'var(--tx)',
+                            boxShadow: '0 1px 2px rgba(0,0,0,.08)',
+                          }
+                        : { background: 'transparent', color: 'var(--tx2)' }
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              {/* TAB 1: PROFILE */}
+              {S.screen === 'profile' && (
+                <section
+                  className="card"
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    maxWidth: 760,
+                    padding: 24,
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                     gap: 16,
-                    flexWrap: 'wrap',
                   }}
                 >
-                  <div>
-                    <div className="lbl" style={{ marginBottom: 4 }}>
-                      {S.plan === 'active' ? 'XPO Partner Plan · Active' : 'Starter Partner Grant'}
-                    </div>
-                    <div style={{ fontSize: 22, fontWeight: 800 }}>
-                      {S.credits} partner {S.credits === 1 ? 'reply' : 'replies'} remaining
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--tx2)', marginTop: 4 }}>
-                      {S.plan === 'active'
-                        ? S.country === 'IN'
-                          ? '50 replies / month · ₹999 + 18% GST (₹1,178.82/mo) · Renews 4 Dec 2026'
-                          : '50 replies / month · $19.99/mo · Renews 4 Dec 2026'
-                        : S.country === 'IN'
-                        ? 'Upgrade to XPO Partner Plan for 50 replies/month at ₹999 + 18% GST.'
-                        : 'Upgrade to XPO Partner Plan for 50 replies/month at $19.99/month.'}
-                    </div>
-                  </div>
-                  <div>
-                    {S.plan === 'active' ? (
+                  <label className="fld">
+                    Contact name
+                    <input className="inp" defaultValue="Rohan Rao" />
+                  </label>
+                  <label className="fld">
+                    WhatsApp / mobile number
+                    <input className="inp" value="+91 56794 24578" readOnly />
+                  </label>
+                  <label className="fld">
+                    Partner business name
+                    <input className="inp" defaultValue="Klo Tech" />
+                  </label>
+                  <label className="fld">
+                    Primary city
+                    <select className="inp" defaultValue="Mumbai">
+                      <option>Mumbai</option>
+                      <option>Hyderabad</option>
+                      <option>Bengaluru</option>
+                      <option>Pune</option>
+                      <option>Delhi NCR</option>
+                    </select>
+                  </label>
+                  <label className="fld">
+                    Website / portfolio URL
+                    <input className="inp" defaultValue="https://klotech.in" />
+                  </label>
+                  <label className="fld">
+                    Years in business
+                    <input className="inp" defaultValue="6 years · Pan-India delivery" />
+                  </label>
+                  <div className="fld" style={{ gridColumn: '1 / -1' }}>
+                    <span>Billing country</span>
+                    <div className="seg-group">
                       <button
-                        className="btn b2"
-                        onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'cancel' } }))}
+                        type="button"
+                        className={S.country === 'IN' ? 'on' : ''}
+                        onClick={() => setS((prev) => ({ ...prev, country: 'IN', payMethod: 'upi' }))}
                       >
-                        Cancel plan
+                        India (₹ + GST)
                       </button>
-                    ) : (
                       <button
-                        className="btn b1"
-                        onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }))}
+                        type="button"
+                        className={S.country === 'AE' ? 'on' : ''}
+                        onClick={() => setS((prev) => ({ ...prev, country: 'AE', payMethod: 'paypal' }))}
                       >
-                        {S.country === 'IN'
-                          ? 'Get Partner Plan · ₹999/mo + GST'
-                          : 'Get Partner Plan · $19.99/mo'}
+                        Outside India ($ USD)
                       </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="card" style={{ padding: 22 }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 15, fontWeight: 800 }}>Matched categories &amp; skills</div>
-                    <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                      You receive 5-minute Wave 1 alerts on WhatsApp for these categories.
                     </div>
                   </div>
-                  <button
-                    className="btn b2 sm"
-                    onClick={() => setS((prev) => ({ ...prev, capModalOpen: true }))}
+                  <div
+                    style={{
+                      gridColumn: '1 / -1',
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                    }}
                   >
-                    Edit categories
-                  </button>
+                    <button
+                      type="button"
+                      className="btn b3"
+                      onClick={() => toast('ok', 'Partner profile saved')}
+                    >
+                      Save changes
+                    </button>
+                  </div>
+                </section>
+              )}
+
+              {/* TAB 2: VERIFICATION */}
+              {S.screen === 'verify' && (
+                <section
+                  className="card"
+                  style={{
+                    maxWidth: 760,
+                    padding: 24,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                  }}
+                >
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 10,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <b style={{ fontSize: 17 }}>Verified Partner badge</b>
+                    <span className="chip g">Verified</span>
+                  </div>
+                  <span style={{ fontSize: 14, lineHeight: '21px', color: 'var(--tx2)' }}>
+                    GST certificate (27AABCK8821M1Z9) checked on 28 Oct. The Verified · GST checked badge shows on every reply you send to clients.
+                  </span>
+                  <div
+                    style={{
+                      padding: 16,
+                      borderRadius: 12,
+                      background: 'var(--sf2)',
+                      border: '1px solid var(--ln)',
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                      gap: 12,
+                      fontSize: 13.5,
+                    }}
+                  >
+                    <div>
+                      <div className="lbl" style={{ marginBottom: 2 }}>Legal entity</div>
+                      <b>Klo Tech Pvt Ltd</b>
+                    </div>
+                    <div>
+                      <div className="lbl" style={{ marginBottom: 2 }}>GSTIN / Reg ID</div>
+                      <span className="mono">27AABCK8821M1Z9</span>
+                    </div>
+                    <div>
+                      <div className="lbl" style={{ marginBottom: 2 }}>Service coverage</div>
+                      <b>Pan-India &amp; Overseas USD</b>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {/* TAB 3: ACCOUNT & PLAN */}
+              {S.screen === 'billing' && (
+                <>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                      gap: 16,
+                      marginBottom: 18,
+                    }}
+                  >
+                    <section
+                      className="card"
+                      style={{
+                        padding: 24,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 12,
+                      }}
+                    >
+                      <span className="lbl">Partner replies</span>
+                      <b style={{ fontSize: 30 }}>
+                        {S.plan === 'active'
+                          ? `${S.credits} of 50 plan replies left`
+                          : `${S.credits} of 3 free replies left`}
+                      </b>
+                      <span
+                        style={{
+                          height: 8,
+                          borderRadius: 99,
+                          background: 'var(--sf3)',
+                          overflow: 'hidden',
+                          display: 'block',
+                        }}
+                      >
+                        <span
+                          style={{
+                            display: 'block',
+                            height: '100%',
+                            background: 'var(--inv)',
+                            width: `${Math.min(100, (S.plan === 'active' ? S.credits / 50 : S.credits / 3) * 100)}%`,
+                          }}
+                        />
+                      </span>
+                      <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
+                        Used only when you send a pitch to a matched client request. Zero commission on deals.
+                      </span>
+                    </section>
+
+                    <section
+                      className="card"
+                      style={{
+                        padding: 24,
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 12,
+                        borderColor: 'var(--tx)',
+                      }}
+                    >
+                      <span className="lbl">XPO Partner Plan</span>
+                      {S.plan === 'active' ? (
+                        <>
+                          <b style={{ fontSize: 22 }}>Active · renews 4 Dec 2026</b>
+                          <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
+                            {S.country === 'IN'
+                              ? '₹999 + 18% GST (₹1,178.82) a month · 50 replies'
+                              : '$19.99 a month · 50 replies'}
+                          </span>
+                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto' }}>
+                            <button
+                              className="btn b2"
+                              onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }))}
+                            >
+                              Change payment method
+                            </button>
+                            <button
+                              className="btn bl"
+                              onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'cancel' } }))}
+                            >
+                              Cancel plan
+                            </button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <b style={{ fontSize: 30 }}>
+                            {S.country === 'IN' ? '₹999 / month + GST' : '$19.99 / month'}
+                          </b>
+                          <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
+                            50 partner replies a month · Priority Wave 1 alerts · cancel any time
+                          </span>
+                          <button
+                            className="btn b1"
+                            onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }))}
+                          >
+                            Get Partner Plan
+                          </button>
+                        </>
+                      )}
+                    </section>
+                  </div>
+
+                  <section className="card" style={{ overflowX: 'auto' }}>
+                    <div
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '2fr 1fr 1fr',
+                        minWidth: 540,
+                      }}
+                    >
+                      <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
+                        Activity
+                      </div>
+                      <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
+                        Change
+                      </div>
+                      <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
+                        Date
+                      </div>
+                      {[
+                        ...(S.plan === 'active'
+                          ? [{ a: 'Partner Plan started · Razorpay UPI AutoPay', c: '+50 plan replies', d: '4 Nov, 11:20' }]
+                          : []),
+                        { a: 'Replied to XPO-REQ-41299 (Shopify Plus migration)', c: '−1 reply', d: 'Today, 10:15' },
+                        { a: 'Replied to XPO-REQ-40971 (E-commerce website)', c: '−1 reply', d: 'Yesterday, 16:15' },
+                        { a: 'Starter partner grant', c: '+5 free replies', d: '28 Oct, 09:30' },
+                      ].map((row, idx) => (
+                        <React.Fragment key={idx}>
+                          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--ln)', fontSize: 13.5 }}>
+                            {row.a}
+                          </div>
+                          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--ln)', fontSize: 13.5 }}>
+                            {row.c}
+                          </div>
+                          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--ln)', fontSize: 13.5 }}>
+                            {row.d}
+                          </div>
+                        </React.Fragment>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
+
+              {/* TAB 4: SETTINGS & CATEGORIES */}
+              {S.screen === 'settings' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="card" style={{ padding: 22 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>
+                      <div>
+                        <div style={{ fontSize: 16, fontWeight: 800 }}>Matched categories &amp; skills</div>
+                        <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                          You receive 5-minute Wave 1 alerts on WhatsApp for these categories.
+                        </div>
+                      </div>
+                      <button
+                        className="btn b2 sm"
+                        onClick={() => setS((prev) => ({ ...prev, capModalOpen: true }))}
+                      >
+                        Edit categories ({S.capabilities.length})
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                      {S.capabilities.map((c) => (
+                        <span key={c} className="chip b">
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div style={{ fontSize: 16, fontWeight: 800 }}>WhatsApp &amp; notification preferences</div>
+                    <label
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: '1px solid var(--ln)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <div>
+                        <div>5-minute Wave 1 alerts on WhatsApp (+91 56794 24578)</div>
+                        <div style={{ fontSize: 12, color: 'var(--tx2)', fontWeight: 500 }}>
+                          Instant alert when a client posts in your matched categories
+                        </div>
+                      </div>
+                      <input type="checkbox" defaultChecked style={{ width: 20, height: 20, accentColor: '#C8102E' }} />
+                    </label>
+                    <label
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: '1px solid var(--ln)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <div>
+                        <div>Quiet hours · 21:00–08:00 IST</div>
+                        <div style={{ fontSize: 12, color: 'var(--tx2)', fontWeight: 500 }}>
+                          Pause non-urgent category alerts overnight
+                        </div>
+                      </div>
+                      <input type="checkbox" style={{ width: 20, height: 20, accentColor: '#C8102E' }} />
+                    </label>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {S.capabilities.map((c) => (
-                    <span key={c} className="chip b">
-                      {c}
+              )}
+
+              {/* TAB 5: HELP & PRIVACY */}
+              {S.screen === 'help' && (
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+                    gap: 16,
+                  }}
+                >
+                  <section
+                    className="card"
+                    style={{
+                      padding: 24,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 14,
+                    }}
+                  >
+                    <b style={{ fontSize: 17 }}>Report a problem</b>
+                    <label className="fld">
+                      What happened?
+                      <select className="inp">
+                        <option>Unclear or spam client requirement</option>
+                        <option>Reply credit used on invalid post</option>
+                        <option>Payment or GST invoice issue</option>
+                        <option>Something isn&apos;t working</option>
+                      </select>
+                    </label>
+                    <label className="fld">
+                      Details
+                      <textarea className="inp ta" rows={3} placeholder="Include the XPO-REQ code if applicable" />
+                    </label>
+                    <button
+                      type="button"
+                      className="btn b3"
+                      style={{ alignSelf: 'flex-start' }}
+                      onClick={() => toast('ok', 'Report sent to XPO Trust & Safety')}
+                    >
+                      Send to XPO
+                    </button>
+                  </section>
+
+                  <section
+                    className="card"
+                    style={{
+                      padding: 24,
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                    }}
+                  >
+                    <b style={{ fontSize: 17 }}>Your data &amp; privacy</b>
+                    <span style={{ fontSize: 13.5, lineHeight: '21px', color: 'var(--tx2)' }}>
+                      Your phone number is never shared with clients until you explicitly accept their connection request.
                     </span>
-                  ))}
+                    <button
+                      type="button"
+                      className="btn b2"
+                      onClick={() => toast('info', 'Preparing your DPDP partner data archive…')}
+                    >
+                      Download my data
+                    </button>
+                    <button
+                      type="button"
+                      className="btn b2"
+                      onClick={() => toast('info', 'GST / profile correction request opened')}
+                    >
+                      Ask for a correction
+                    </button>
+                    <button
+                      type="button"
+                      className="btn b2"
+                      style={{ color: 'var(--rtx)' }}
+                      onClick={() => toast('warn', 'Account deletion confirmation required')}
+                    >
+                      Delete my account…
+                    </button>
+                  </section>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </div>

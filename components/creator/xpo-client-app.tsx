@@ -13,6 +13,7 @@ export type ClientScreen =
   | 'billing'
   | 'profile'
   | 'verify'
+  | 'settings'
   | 'help'
   | 'account';
 
@@ -193,6 +194,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
   const [seq, setSeq] = useState<number>(41230);
   const [notifsRead, setNotifsRead] = useState<boolean>(false);
   const [alertFilter, setAlertFilter] = useState<'all' | 'act'>('all');
+  const [reqSearch, setReqSearch] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const [notifPrefsOpen, setNotifPrefsOpen] = useState<boolean>(false);
   const [reqs, setReqs] = useState<Record<string, ClientReqItem>>(getBaseReqs);
@@ -451,9 +453,23 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
   const curScreen = screen === 'req' ? 'requests' : screen;
 
   const isActiveReq = (id: string) => reqs[id] && reqs[id].status !== 'closed';
-  const listedIds = order.filter((id) =>
-    filter === 'all' ? true : filter === 'active' ? isActiveReq(id) : !isActiveReq(id)
-  );
+  const listedIds = order.filter((id) => {
+    const matchesTab =
+      filter === 'all' ? true : filter === 'active' ? isActiveReq(id) : !isActiveReq(id);
+    if (!matchesTab) return false;
+    if (reqSearch.trim()) {
+      const q = reqSearch.toLowerCase();
+      const item = reqs[id];
+      if (!item) return false;
+      return (
+        item.title.toLowerCase().includes(q) ||
+        item.cat.toLowerCase().includes(q) ||
+        item.loc.toLowerCase().includes(q) ||
+        item.code.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
 
   const r = reqs[rid];
   const reasons = ['Found a partner on XPO', 'Found someone elsewhere', 'No longer needed'];
@@ -529,9 +545,10 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
     req: `My requests  /  ${r ? r.code : ''}`,
     notifs: 'Notifications',
     conn: 'Connected partners',
-    billing: 'Account  /  Plan & billing',
+    billing: 'Account  /  Account & Plan',
     profile: 'Account  /  Profile',
     verify: 'Account  /  Verification',
+    settings: 'Account  /  Settings & notifications',
     help: 'Account  /  Help & privacy',
     account: 'Account',
   };
@@ -613,32 +630,41 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
           padding: 14,
           display: 'flex',
           flexDirection: 'column',
-          gap: 18,
+          gap: 16,
         }}
       >
-        <button
-          type="button"
-          onClick={() => go('home')}
-          aria-label="XPO home"
+        <div
           style={{
+            padding: '4px 10px 6px',
             display: 'flex',
             alignItems: 'center',
-            gap: 10,
-            minHeight: 44,
-            padding: '0 8px',
-            border: 0,
-            background: 'none',
-            cursor: 'pointer',
-            font: 'inherit',
-            color: 'inherit',
+            justifyContent: 'space-between',
           }}
         >
-          <img
-            src="/xpo-logo.png"
-            alt="XPO India"
-            style={{ height: 28, width: 'auto', display: 'block' }}
-          />
-        </button>
+          <button
+            type="button"
+            onClick={() => go('home')}
+            aria-label="XPO home"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              border: 0,
+              background: 'none',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <img
+              src="/xpo-logo.png"
+              alt="XPO India"
+              style={{ height: 28, width: 'auto', display: 'block' }}
+            />
+          </button>
+          <span className="chip b" style={{ fontSize: 10.5 }}>
+            CLIENT
+          </span>
+        </div>
 
         <button
           type="button"
@@ -649,60 +675,71 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
           }}
           style={{ width: '100%' }}
         >
-          New requirement
+          + New requirement
         </button>
 
         <nav aria-label="Client" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <button
             type="button"
-            className="nav"
+            className={`nav pn ${curScreen === 'home' ? 'on' : ''}`}
             aria-current={curScreen === 'home' ? 'page' : 'false'}
             onClick={() => go('home')}
-            style={
-              curScreen === 'home'
-                ? { background: 'var(--rbg)', color: 'var(--rtx)' }
-                : { background: 'transparent', color: 'var(--tx2)' }
-            }
           >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+            </svg>
             <span>Home</span>
           </button>
 
           <button
             type="button"
-            className="nav"
+            className={`nav pn ${curScreen === 'requests' ? 'on' : ''}`}
             aria-current={curScreen === 'requests' ? 'page' : 'false'}
             onClick={() => go('requests')}
-            style={
-              curScreen === 'requests'
-                ? { background: 'var(--rbg)', color: 'var(--rtx)' }
-                : { background: 'transparent', color: 'var(--tx2)' }
-            }
           >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+            </svg>
             <span>My requests</span>
-            {newCount > 0 && (
-              <span
-                className="chip"
-                style={{ minHeight: 22, padding: '0 8px', background: '#C8102E', color: '#fff' }}
-              >
-                {newCount} new
-              </span>
+            {newCount > 0 ? (
+              <span className="cnt">{newCount}</span>
+            ) : (
+              order.length > 0 && <span className="cnt muted">{order.length}</span>
             )}
           </button>
 
           <button
             type="button"
-            className="nav"
+            className={`nav pn ${curScreen === 'conn' ? 'on' : ''}`}
             aria-current={curScreen === 'conn' ? 'page' : 'false'}
             onClick={() => go('conn')}
-            style={
-              curScreen === 'conn'
-                ? { background: 'var(--rbg)', color: 'var(--rtx)' }
-                : { background: 'transparent', color: 'var(--tx2)' }
-            }
           >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+              <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+              <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+            </svg>
             <span>Connected</span>
+            {connectedPartners.length > 0 && (
+              <span className="cnt muted">{connectedPartners.length}</span>
+            )}
           </button>
         </nav>
+
+        <div
+          style={{
+            marginTop: 'auto',
+            padding: 12,
+            borderTop: '1px solid var(--ln)',
+            fontSize: 12,
+            color: 'var(--tx3)',
+            lineHeight: 1.5,
+          }}
+        >
+          <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 2 }}>Need a hand?</div>
+          WhatsApp us at <span className="mono">+91 40 4917 2200</span>
+        </div>
       </aside>
 
       {/* MAIN COLUMN */}
@@ -710,7 +747,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
         {/* TOP HEADER */}
         <header className="top">
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-            {['req', 'billing', 'profile', 'verify', 'help', 'account'].includes(screen) && (
+            {['req', 'billing', 'profile', 'verify', 'settings', 'help', 'account'].includes(screen) && (
               <button
                 type="button"
                 className="ib only-sm"
@@ -734,7 +771,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
             {screen !== 'billing' && (
               <button
                 type="button"
@@ -742,7 +779,13 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                 onClick={() => go('billing')}
                 aria-label={`Plan and credits: ${planOn ? `${plan} plan views` : `${free} free views`}`}
               >
-                {planOn ? `${plan} plan views` : `${free} free views`}
+                <span
+                  className="pdot"
+                  style={{ background: credits > 0 ? '#16A34A' : '#D97706' }}
+                />
+                <span>
+                  {planOn ? `${plan} plan views left` : `${free} free views left`}
+                </span>
               </button>
             )}
 
@@ -753,8 +796,8 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
               onClick={() => go('notifs')}
             >
               <svg
-                width="22"
-                height="22"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -811,12 +854,13 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                     </span>
                   </button>
                   <button type="button" role="menuitem" className="mi" onClick={() => go('billing')}>
-                    <span>Plan &amp; billing</span>
-                    {planOn && (
-                      <span className="chip" style={C.ok}>
-                        Plan active
-                      </span>
-                    )}
+                    <span>Account &amp; Plan</span>
+                    <span className="chip" style={planOn ? C.ok : C.grey}>
+                      {planOn ? 'Plan active' : `${free} free`}
+                    </span>
+                  </button>
+                  <button type="button" role="menuitem" className="mi" onClick={() => go('settings')}>
+                    <span>Settings &amp; notifications</span>
                   </button>
                   <button type="button" role="menuitem" className="mi" onClick={() => go('help')}>
                     <span>Help &amp; privacy</span>
@@ -831,6 +875,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                     }}
                   >
                     <span>{dark ? 'Light mode' : 'Dark mode'}</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{dark ? 'On' : 'Off'}</span>
                   </button>
                   <Link
                     href="/login"
@@ -1021,20 +1066,84 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
           {/* 2. HOME / NEW REQUIREMENT */}
           {screen === 'home' && (
             <>
-              <section style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <h1
+              {/* Action needed highlight banner (matches Partner App balance) */}
+              {reqs.r1 && reqs.r1.partners.some((p) => p.st === 'locked') && (
+                <div
+                  className="card"
                   style={{
-                    margin: 0,
-                    fontSize: 30,
-                    fontWeight: 800,
-                    letterSpacing: '-0.02em',
+                    padding: '16px 20px',
+                    borderLeft: '4px solid #C8102E',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 16,
+                    flexWrap: 'wrap',
                   }}
                 >
-                  {order.length ? 'What do you need, Pavan?' : 'Post your first requirement'}
-                </h1>
-                <span style={{ color: 'var(--tx2)', fontSize: 15 }}>
-                  One sentence is enough. Posting is free.
-                </span>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                      <span className="chip r">Action needed</span>
+                      <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                        {reqs.r1.code}
+                      </span>
+                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 800 }}>
+                      {reqs.r1.partners.length} verified partners replied to &ldquo;{reqs.r1.title}&rdquo;
+                    </div>
+                    <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                      Read their notes and timelines, then unlock a partner to share phone &amp; WhatsApp numbers.
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button
+                      type="button"
+                      className="btn b1 sm"
+                      onClick={() => go('req', 'r1')}
+                    >
+                      Review {reqs.r1.partners.length} replies
+                    </button>
+                    <button
+                      type="button"
+                      className="btn b2 sm"
+                      onClick={() => go('requests')}
+                    >
+                      All requests
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <section
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <h1
+                    style={{
+                      margin: 0,
+                      fontSize: 24,
+                      fontWeight: 800,
+                      letterSpacing: '-0.025em',
+                    }}
+                  >
+                    {order.length ? 'What do you need, Pavan?' : 'Post your first requirement'}
+                  </h1>
+                  <span style={{ color: 'var(--tx2)', fontSize: 13.5 }}>
+                    One sentence is enough. Sent in 5-minute waves to verified partners · Zero commission.
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  className="btn b2 sm hide-sm"
+                  onClick={() => go('requests')}
+                >
+                  My requests ({order.length})
+                </button>
               </section>
 
               {/* Mobile 1-tap composer bar (Board 2 — Client mobile core loop) */}
@@ -1345,38 +1454,83 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                     </span>
                   </div>
                 ) : (
-                  order.slice(0, 3).map((id) => {
-                    const item = reqs[id];
-                    const st = statusOf(item);
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        className="rowb"
-                        onClick={() => go('req', id)}
-                      >
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {order.slice(0, 3).map((id) => {
+                      const item = reqs[id];
+                      const st = statusOf(item);
+                      return (
                         <div
-                          style={{
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 4,
-                            minWidth: 0,
+                          key={id}
+                          role="button"
+                          tabIndex={0}
+                          className="rowb"
+                          style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 10 }}
+                          onClick={() => go('req', id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              go('req', id);
+                            }
                           }}
                         >
-                          <span className="mono" style={{ color: 'var(--tx2)' }}>
-                            {item.code}
-                          </span>
-                          <b style={{ fontSize: 16 }}>{item.title}</b>
-                          <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                            {item.loc} · {item.timeline} · {item.posted}
-                          </span>
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              gap: 8,
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                              <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                                {item.code}
+                              </span>
+                              <span className="chip">{item.cat}</span>
+                            </div>
+                            <span className="chip" style={st.cs}>
+                              {st.l}
+                            </span>
+                          </div>
+
+                          <div>
+                            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>
+                              {item.title}
+                            </div>
+                            <div style={{ fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55 }}>
+                              {item.spec}
+                            </div>
+                          </div>
+
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              width: '100%',
+                              paddingTop: 8,
+                              borderTop: '1px solid var(--ln)',
+                              fontSize: 12.5,
+                              color: 'var(--tx3)',
+                              flexWrap: 'wrap',
+                              gap: 8,
+                            }}
+                          >
+                            <div>
+                              📍 {item.loc} · ⏱ {item.timeline} · 💰{' '}
+                              <b style={{ color: 'var(--tx)' }}>{item.budget}</b> · {item.posted}
+                            </div>
+                            <span style={{ fontWeight: 700, color: 'var(--tx)' }}>
+                              {item.partners.length > 0
+                                ? `Review ${item.partners.length} replies →`
+                                : 'Open details →'}
+                            </span>
+                          </div>
                         </div>
-                        <span className="chip" style={st.cs}>
-                          {st.l}
-                        </span>
-                      </button>
-                    );
-                  })
+                      );
+                    })}
+                  </div>
                 )}
               </section>
             </>
@@ -1391,88 +1545,150 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                   flexWrap: 'wrap',
                   justifyContent: 'space-between',
                   alignItems: 'flex-end',
-                  gap: 12,
+                  gap: 16,
                 }}
               >
-                <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>My requests</h1>
-                <div
-                  role="tablist"
-                  aria-label="Filter"
-                  style={{
-                    display: 'inline-flex',
-                    gap: 4,
-                    padding: 4,
-                    background: 'var(--sf3)',
-                    borderRadius: 12,
+                <div>
+                  <h1 style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 800, letterSpacing: '-0.025em' }}>
+                    My requests
+                  </h1>
+                  <p style={{ margin: 0, fontSize: 13.5, color: 'var(--tx2)' }}>
+                    Track 5-minute partner waves, review pitches, and unlock verified contacts.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className="btn b1 sm"
+                  onClick={() => {
+                    go('home');
+                    setDrafted(false);
                   }}
                 >
+                  + New requirement
+                </button>
+              </div>
+
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                }}
+              >
+                <div className="seg-group" role="tablist" aria-label="Filter">
                   {(
                     [
-                      ['active', 'Active'],
-                      ['closed', 'Closed'],
-                      ['all', 'All'],
+                      ['active', `Active (${order.filter((id) => isActiveReq(id)).length})`],
+                      ['closed', `Closed (${order.filter((id) => !isActiveReq(id)).length})`],
+                      ['all', `All (${order.length})`],
                     ] as const
                   ).map(([key, label]) => (
                     <button
                       key={key}
                       type="button"
                       role="tab"
-                      className="seg"
+                      className={filter === key ? 'on' : ''}
                       aria-selected={filter === key}
                       onClick={() => setFilter(key)}
-                      style={
-                        filter === key
-                          ? {
-                              background: 'var(--sf)',
-                              color: 'var(--tx)',
-                              boxShadow: '0 1px 2px rgba(0,0,0,.08)',
-                            }
-                          : { background: 'transparent', color: 'var(--tx2)' }
-                      }
                     >
                       {label}
                     </button>
                   ))}
                 </div>
+
+                <input
+                  className="inp"
+                  style={{ maxWidth: 280, width: '100%' }}
+                  placeholder="Search keyword, city or ID"
+                  value={reqSearch}
+                  onChange={(e) => setReqSearch(e.target.value)}
+                />
               </div>
 
               {listedIds.length === 0 ? (
                 <div className="card" style={{ padding: 24, fontSize: 14.5, color: 'var(--tx2)' }}>
-                  Nothing here.
+                  Nothing matching your filter.
                 </div>
               ) : (
-                listedIds.map((id) => {
-                  const item = reqs[id];
-                  const st = statusOf(item);
-                  return (
-                    <button
-                      key={id}
-                      type="button"
-                      className="rowb"
-                      onClick={() => go('req', id)}
-                    >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {listedIds.map((id) => {
+                    const item = reqs[id];
+                    const st = statusOf(item);
+                    return (
                       <div
-                        style={{
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 4,
-                          minWidth: 0,
+                        key={id}
+                        role="button"
+                        tabIndex={0}
+                        className="rowb"
+                        style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 10 }}
+                        onClick={() => go('req', id)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            go('req', id);
+                          }
                         }}
                       >
-                        <span className="mono" style={{ color: 'var(--tx2)' }}>
-                          {item.code}
-                        </span>
-                        <b style={{ fontSize: 16 }}>{item.title}</b>
-                        <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                          {item.loc} · {item.timeline} · {item.posted}
-                        </span>
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            gap: 8,
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                            <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
+                              {item.code}
+                            </span>
+                            <span className="chip">{item.cat}</span>
+                          </div>
+                          <span className="chip" style={st.cs}>
+                            {st.l}
+                          </span>
+                        </div>
+
+                        <div>
+                          <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>
+                            {item.title}
+                          </div>
+                          <div style={{ fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55 }}>
+                            {item.spec}
+                          </div>
+                        </div>
+
+                        <div
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            paddingTop: 8,
+                            borderTop: '1px solid var(--ln)',
+                            fontSize: 12.5,
+                            color: 'var(--tx3)',
+                            flexWrap: 'wrap',
+                            gap: 8,
+                          }}
+                        >
+                          <div>
+                            📍 {item.loc} · ⏱ {item.timeline} · 💰{' '}
+                            <b style={{ color: 'var(--tx)' }}>{item.budget}</b> · {item.posted}
+                          </div>
+                          <span style={{ fontWeight: 700, color: 'var(--tx)' }}>
+                            {item.partners.length > 0
+                              ? `Review ${item.partners.length} replies →`
+                              : 'Open details →'}
+                          </span>
+                        </div>
                       </div>
-                      <span className="chip" style={st.cs}>
-                        {st.l}
-                      </span>
-                    </button>
-                  );
-                })
+                    );
+                  })}
+                </div>
               )}
             </>
           )}
@@ -2509,7 +2725,8 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                   [
                     ['profile', 'Profile'],
                     ['verify', 'Verification'],
-                    ['billing', 'Plan & billing'],
+                    ['billing', 'Account & Plan'],
+                    ['settings', 'Settings & notifications'],
                     ['help', 'Help & privacy'],
                   ] as const
                 ).map(([key, label]) => (
@@ -2752,7 +2969,8 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                   [
                     ['profile', 'Profile'],
                     ['verify', 'Verification'],
-                    ['billing', 'Plan & billing'],
+                    ['billing', 'Account & Plan'],
+                    ['settings', 'Settings & notifications'],
                     ['help', 'Help & privacy'],
                   ] as const
                 ).map(([key, label]) => (
@@ -2903,7 +3121,8 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                   [
                     ['profile', 'Profile'],
                     ['verify', 'Verification'],
-                    ['billing', 'Plan & billing'],
+                    ['billing', 'Account & Plan'],
+                    ['settings', 'Settings & notifications'],
                     ['help', 'Help & privacy'],
                   ] as const
                 ).map(([key, label]) => (
@@ -3011,7 +3230,216 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
             </>
           )}
 
-          {/* 10. ACCOUNT — HELP & PRIVACY */}
+          {/* 10. ACCOUNT — SETTINGS & NOTIFICATIONS */}
+          {screen === 'settings' && (
+            <>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>Account</h1>
+              <div
+                role="tablist"
+                aria-label="Account"
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: 4,
+                  padding: 4,
+                  background: 'var(--sf3)',
+                  borderRadius: 12,
+                  alignSelf: 'flex-start',
+                }}
+              >
+                {(
+                  [
+                    ['profile', 'Profile'],
+                    ['verify', 'Verification'],
+                    ['billing', 'Account & Plan'],
+                    ['settings', 'Settings & notifications'],
+                    ['help', 'Help & privacy'],
+                  ] as const
+                ).map(([key, label]) => (
+                  <button
+                    key={key}
+                    type="button"
+                    role="tab"
+                    className="seg"
+                    aria-selected={screen === key}
+                    onClick={() => go(key)}
+                    style={
+                      screen === key
+                        ? {
+                            background: 'var(--sf)',
+                            color: 'var(--tx)',
+                            boxShadow: '0 1px 2px rgba(0,0,0,.08)',
+                          }
+                        : { background: 'transparent', color: 'var(--tx2)' }
+                    }
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+                  gap: 16,
+                }}
+              >
+                <section
+                  className="card"
+                  style={{
+                    padding: 24,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                  }}
+                >
+                  <b style={{ fontSize: 17 }}>Notification channels</b>
+                  <span style={{ fontSize: 14, lineHeight: '21px', color: 'var(--tx2)' }}>
+                    Choose how XPO notifies you when verified partners reply in 5-minute waves.
+                  </span>
+                  <div
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 12,
+                      paddingTop: 4,
+                    }}
+                  >
+                    <label
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: '1px solid var(--ln)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <div>
+                        <div>WhatsApp alerts (+91 63015 94552)</div>
+                        <div style={{ fontSize: 12, color: 'var(--tx2)', fontWeight: 500 }}>
+                          Instant alerts when a partner replies or accepts your connection
+                        </div>
+                      </div>
+                      <input type="checkbox" defaultChecked style={{ width: 20, height: 20, accentColor: '#C8102E' }} />
+                    </label>
+                    <label
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: '1px solid var(--ln)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <div>
+                        <div>In-app &amp; browser alerts</div>
+                        <div style={{ fontSize: 12, color: 'var(--tx2)', fontWeight: 500 }}>
+                          Show unread badge in top header when waves progress
+                        </div>
+                      </div>
+                      <input type="checkbox" defaultChecked style={{ width: 20, height: 20, accentColor: '#C8102E' }} />
+                    </label>
+                    <label
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        padding: '12px 14px',
+                        borderRadius: 12,
+                        border: '1px solid var(--ln)',
+                        fontSize: 14,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <div>
+                        <div>Quiet hours · 21:00–08:00 IST</div>
+                        <div style={{ fontSize: 12, color: 'var(--tx2)', fontWeight: 500 }}>
+                          Hold non-urgent WhatsApp updates overnight
+                        </div>
+                      </div>
+                      <input type="checkbox" style={{ width: 20, height: 20, accentColor: '#C8102E' }} />
+                    </label>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn b3"
+                    style={{ alignSelf: 'flex-start', marginTop: 4 }}
+                    onClick={() => setToast('Notification settings saved')}
+                  >
+                    Save preferences
+                  </button>
+                </section>
+
+                <section
+                  className="card"
+                  style={{
+                    padding: 24,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 14,
+                  }}
+                >
+                  <b style={{ fontSize: 17 }}>Workspace &amp; display settings</b>
+                  <span style={{ fontSize: 14, lineHeight: '21px', color: 'var(--tx2)' }}>
+                    Customize appearance, currency region, and default matching scope.
+                  </span>
+                  <div className="fld">
+                    <span>Appearance</span>
+                    <div className="seg-group">
+                      <button
+                        type="button"
+                        className={!dark ? 'on' : ''}
+                        onClick={() => setDark(false)}
+                      >
+                        Light mode
+                      </button>
+                      <button
+                        type="button"
+                        className={dark ? 'on' : ''}
+                        onClick={() => setDark(true)}
+                      >
+                        Dark mode
+                      </button>
+                    </div>
+                  </div>
+                  <div className="fld">
+                    <span>Billing region &amp; currency</span>
+                    <div className="seg-group">
+                      <button
+                        type="button"
+                        className={india ? 'on' : ''}
+                        onClick={() => {
+                          setCountry('IN');
+                          setMethod('upi');
+                        }}
+                      >
+                        India (₹ INR + GST)
+                      </button>
+                      <button
+                        type="button"
+                        className={!india ? 'on' : ''}
+                        onClick={() => {
+                          setCountry('INTL');
+                          setMethod('paypal');
+                        }}
+                      >
+                        Outside India ($ USD)
+                      </button>
+                    </div>
+                  </div>
+                </section>
+              </div>
+            </>
+          )}
+
+          {/* 11. ACCOUNT — HELP & PRIVACY */}
           {screen === 'help' && (
             <>
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>Account</h1>
@@ -3032,7 +3460,8 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                   [
                     ['profile', 'Profile'],
                     ['verify', 'Verification'],
-                    ['billing', 'Plan & billing'],
+                    ['billing', 'Account & Plan'],
+                    ['settings', 'Settings & notifications'],
                     ['help', 'Help & privacy'],
                   ] as const
                 ).map(([key, label]) => (
