@@ -1,8 +1,7 @@
-import { getFirebaseAdmin, requireFirestore } from '../lib/firebase/admin';
+import { getFirebaseAdmin } from '../lib/firebase/admin';
 import { getPlatformSettings } from '../lib/services/platform-settings';
 import { ensureInitialTaxonomySeeded } from '../lib/services/taxonomy';
 import { ensureTemplatesInitialized } from '../lib/whatsapp/meta-client';
-import { ensureAuthenticatedUser } from '../lib/services/users';
 
 async function main() {
   console.log('--- Initializing XPO India Platform Baseline Data ---');

@@ -2274,7 +2274,7 @@ export function XpoPartnerApp({
               <button
                 className="btn b2 sm"
                 style={{ flex: 1 }}
-                onClick={() => router.push('/creator/dashboard')}
+                onClick={() => router.push('/dashboard/client')}
               >
                 Client app →
               </button>

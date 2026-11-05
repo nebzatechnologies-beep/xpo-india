@@ -12,11 +12,7 @@ import { DEFAULT_META_TEMPLATES } from '../lib/whatsapp/meta-client';
 import { DEFAULT_WHATSAPP_WORKFLOWS } from '../lib/whatsapp/workflows';
 import { CANONICAL_CRM_FIELDS, CANONICAL_TAXONOMY_FIELDS } from '../lib/services/imports';
 import { getFirebaseAdmin } from '../lib/firebase/admin';
-import type {
-  ConversationState,
-  CustomerRole,
-  PartnerClassification,
-} from '../lib/types/domain';
+import type { ConversationState } from '../lib/types/domain';
 
 interface TestContext {
   passed: number;
@@ -260,10 +256,10 @@ async function runTestSuite() {
   console.log('\n--- Suite 6: Subscription & Monetization Rules ---');
 
   const { subscriptions } = DEFAULT_PLATFORM_SETTINGS;
-  assert(subscriptions.partnerFreeClaims === 5, 'Subscriptions: Partner receives 5 free lead applications');
+  assert(subscriptions.partnerFreeClaims === 3, 'Subscriptions: Partner receives 3 free lead replies');
   assert(subscriptions.clientFreePartnerViews === 5, 'Subscriptions: Client receives 5 free Partner views');
-  assert(subscriptions.partnerInrMonthlyPrice === 299, 'Subscriptions: Partner subscription is ₹299/month');
-  assert(subscriptions.clientInrMonthlyPrice === 299, 'Subscriptions: Client subscription is ₹299/month');
+  assert(subscriptions.partnerInrMonthlyPrice === 999, 'Subscriptions: Partner Pro subscription is ₹999/month');
+  assert(subscriptions.clientInrMonthlyPrice === 299, 'Subscriptions: Client Plus subscription is ₹299/month');
   assert(subscriptions.unusedPaidAllowanceRollover === false, 'Subscriptions: Unused monthly allowances do not roll over (configurable)');
 
   // Quota depletion evaluation

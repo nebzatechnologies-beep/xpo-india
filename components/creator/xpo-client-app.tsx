@@ -4495,7 +4495,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
               <Link
-                href="/absorber/opportunities"
+                href="/dashboard/partner"
                 style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
               >
                 Partner app →
