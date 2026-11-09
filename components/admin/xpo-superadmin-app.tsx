@@ -20,7 +20,8 @@ export type SuperadminScreen =
   | 'cats'
   | 'auto'
   | 'site'
-  | 'settings';
+  | 'settings'
+  | 'account';
 
 export interface ReqItem {
   id: string;
@@ -4254,7 +4255,7 @@ export function XpoSuperadminApp() {
             <span style={{ color: 'var(--tx2)', cursor: 'pointer' }} onClick={() => setScreen('home')}>Superadmin</span>
             <span style={{ color: 'var(--tx3)' }}>/</span>
             <b style={{ color: 'var(--tx)', textTransform: 'capitalize' }}>
-              {screen === 'home' ? 'Today' : (screen === 'reqs' ? 'Requirements' : (screen === 'cats' ? 'Categories' : (screen === 'auto' ? 'Automation' : (screen === 'site' ? 'Website CMS' : screen))))}
+              {screen === 'home' ? 'Today' : (screen === 'reqs' ? 'Requirements' : (screen === 'cats' ? 'Categories' : (screen === 'auto' ? 'Automation' : (screen === 'site' ? 'Website CMS' : (screen === 'account' ? 'More' : screen)))))}
             </b>
           </div>
 
@@ -6321,8 +6322,112 @@ export function XpoSuperadminApp() {
               )}
             </div>
           )}
+
+          {/* ==================== 11. SCREEN: MORE (MOBILE ACCOUNT) ==================== */}
+          {screen === 'account' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>More</h1>
+              <section className="card" style={{ padding: 8, display: 'flex', flexDirection: 'column' }}>
+                {[
+                  { id: 'members', l: 'Members' },
+                  { id: 'money', l: 'Money & Payments' },
+                  { id: 'plans', l: 'Plans & Subscriptions' },
+                  { id: 'cats', l: 'Categories' },
+                  { id: 'auto', l: 'Automation & WhatsApp' },
+                  { id: 'site', l: 'Website CMS' },
+                  { id: 'settings', l: 'Settings' },
+                ].map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    className="mi"
+                    style={{ minHeight: 52, fontSize: 15 }}
+                    onClick={() => setScreen(m.id as SuperadminScreen)}
+                  >
+                    <span>{m.l}</span>
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  className="mi"
+                  style={{
+                    color: 'var(--rtx)',
+                    borderTop: '1px solid var(--ln)',
+                    borderRadius: '0 0 10px 10px',
+                    marginTop: 6,
+                    minHeight: 52,
+                    fontSize: 15,
+                  }}
+                  onClick={() => signOut()}
+                >
+                  <span>Sign out</span>
+                </button>
+              </section>
+            </div>
+          )}
         </main>
       </div>
+
+      {/* MOBILE BOTTOM TAB BAR */}
+      <nav className="tabbar" aria-label="Main">
+        <button
+          type="button"
+          className={`tb ${screen === 'home' ? 'on' : ''}`}
+          aria-current={screen === 'home' ? 'page' : undefined}
+          onClick={() => setScreen('home')}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" />
+          </svg>
+          <span>Today</span>
+          {heldCount + kycCount + failedPayCount > 0 && (
+            <span className="dot" style={{ top: 4, right: 'calc(50% - 22px)' }}>
+              {heldCount + kycCount + failedPayCount}
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className={`tb ${screen === 'reqs' ? 'on' : ''}`}
+          aria-current={screen === 'reqs' ? 'page' : undefined}
+          onClick={() => setScreen('reqs')}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+          </svg>
+          <span>Requirements</span>
+        </button>
+
+        <button
+          type="button"
+          className={`tb ${screen === 'contacts' ? 'on' : ''}`}
+          aria-current={screen === 'contacts' ? 'page' : undefined}
+          onClick={() => setScreen('contacts')}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1.5" />
+            <rect x="14" y="3" width="7" height="7" rx="1.5" />
+            <rect x="3" y="14" width="7" height="7" rx="1.5" />
+            <rect x="14" y="14" width="7" height="7" rx="1.5" />
+          </svg>
+          <span>Contacts</span>
+        </button>
+
+        <button
+          type="button"
+          className={`tb ${['account', 'members', 'money', 'plans', 'cats', 'auto', 'site', 'settings'].includes(screen) ? 'on' : ''}`}
+          aria-current={['account', 'members', 'money', 'plans', 'cats', 'auto', 'site', 'settings'].includes(screen) ? 'page' : undefined}
+          onClick={() => setScreen('account')}
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="5" cy="12" r="1.6" />
+            <circle cx="12" cy="12" r="1.6" />
+            <circle cx="19" cy="12" r="1.6" />
+          </svg>
+          <span>More</span>
+        </button>
+      </nav>
 
       {/* ===================== SLIDE-OVER DRAWER ===================== */}
       {dr && (
