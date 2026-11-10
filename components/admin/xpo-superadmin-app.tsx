@@ -15,6 +15,7 @@ import {
   subscribeMarketplaceSync,
   type MarketplaceLiveState,
 } from '@/lib/marketplace/sync-client';
+import { XpoWhatsAppAutomationLab } from '@/components/simulator/xpo-whatsapp-automation-lab';
 
 export type SuperadminScreen =
   | 'home'
@@ -4321,9 +4322,10 @@ export function XpoSuperadminApp() {
         {/* Workspace switch footer */}
         <div style={{ marginTop: 'auto', paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.1)', display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12 }}>
           <span style={{ color: '#8A8E97', fontWeight: 700, textTransform: 'uppercase', fontSize: 10.5, letterSpacing: '0.08em' }}>Switch Workspace</span>
-          <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link href="/dashboard/client" style={{ color: '#9FC1FF', textDecoration: 'none', fontWeight: 700 }}>Client app →</Link>
             <Link href="/dashboard/partner" style={{ color: '#9FC1FF', textDecoration: 'none', fontWeight: 700 }}>Partner app →</Link>
+            <Link href="/simulator" style={{ color: '#86EFAC', textDecoration: 'none', fontWeight: 700 }}>📱 Mobile &amp; WA Sim →</Link>
           </div>
         </div>
       </aside>
@@ -4341,6 +4343,26 @@ export function XpoSuperadminApp() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
+            <button
+              type="button"
+              className="pill hide-sm"
+              onClick={() => {
+                setScreen('auto');
+                setViewTab((prev) => ({ ...prev, auto: 'journey' }));
+              }}
+              title="Open Live WhatsApp Automation & 18-State Simulator"
+            >
+              <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
+              <span>WhatsApp Bot Lab</span>
+            </button>
+            <Link
+              href="/simulator"
+              className="pill hide-sm"
+              style={{ textDecoration: 'none', color: 'var(--tx)' }}
+              title="Open Tri-Screen Mobile App & WhatsApp Simulator Studio"
+            >
+              <span>📱 Mobile App Sim</span>
+            </Link>
             {/* Quick action buttons depending on screen */}
             {screen === 'contacts' && (
               <button type="button" className="btn b2" onClick={() => setUp(1)}>
@@ -5579,6 +5601,49 @@ export function XpoSuperadminApp() {
               {/* Tab 1: Overview */}
               {(viewTab.auto || 'over') === 'over' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {/* Quick Launch Banner for Interactive WhatsApp & Mobile Simulator */}
+                  <section
+                    className="card"
+                    style={{
+                      padding: '16px 20px',
+                      borderLeft: '4px solid #16A34A',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      gap: 14,
+                      flexWrap: 'wrap',
+                    }}
+                  >
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span className="chip g">Interactive Live Lab</span>
+                        <b style={{ fontSize: 16 }}>
+                          Test the 18-State WhatsApp Bot &amp; 5-Minute Wave Engine Live
+                        </b>
+                      </div>
+                      <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                        Simulate Client requirements, Hinglish/voice notes, 5-minute Partner Wave 1 offers, and mutual contact unlocks across WhatsApp and Mobile Apps.
+                      </span>
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        className="btn b1"
+                        style={{ minHeight: 38, fontSize: 13.5 }}
+                        onClick={() => setViewTab((prev) => ({ ...prev, auto: 'journey' }))}
+                      >
+                        ▶ Open Live WhatsApp Bot Simulator
+                      </button>
+                      <Link
+                        href="/simulator"
+                        className="btn b2"
+                        style={{ minHeight: 38, fontSize: 13.5, textDecoration: 'none' }}
+                      >
+                        📱 Open Tri-Screen Mobile Studio →
+                      </Link>
+                    </div>
+                  </section>
+
                   {/* 4 KPIs */}
                   <div className="g4" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12 }}>
                     <div className="card" style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -5737,11 +5802,14 @@ export function XpoSuperadminApp() {
 
               {/* Tab 3: Try It Simulator */}
               {viewTab.auto === 'journey' && (
-                <section className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  <b style={{ fontSize: 18 }}>Interactive WhatsApp Message Parser</b>
-                  <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                    Type any realistic B2B requirement, supplier pitch, or Hindi/English voice transcript to test intent parsing.
-                  </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+                  <XpoWhatsAppAutomationLab />
+
+                  <section className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+                    <b style={{ fontSize: 18 }}>Quick Natural-Language &amp; Hinglish Intent Classifier</b>
+                    <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
+                      Type any realistic B2B requirement, supplier pitch, or Hindi/English voice transcript to test standalone taxonomy classification.
+                    </span>
 
                   <div style={{ display: 'flex', gap: 10 }}>
                     <input
@@ -5799,7 +5867,8 @@ export function XpoSuperadminApp() {
                       </div>
                     </div>
                   )}
-                </section>
+                  </section>
+                </div>
               )}
 
               {/* Tab 5: Smart Features */}

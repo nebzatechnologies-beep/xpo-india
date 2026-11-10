@@ -7,6 +7,7 @@ import type {
   WhatsAppSession,
 } from '@/lib/types/domain';
 import { Send, RotateCcw, FastForward } from 'lucide-react';
+import { XpoWhatsAppAutomationLab } from '@/components/simulator/xpo-whatsapp-automation-lab';
 
 export default function AdminWhatsAppSimulatorPage() {
   const [phoneE164, setPhoneE164] = useState('+919900000001');
@@ -83,10 +84,12 @@ export default function AdminWhatsAppSimulatorPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <XpoWhatsAppAutomationLab />
+
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-6 border-t border-[#E4E5E9]">
         <div>
           <h1 className="text-2xl font-extrabold text-[#15171C]">
-            Firestore-Backed WhatsApp Conversation Simulator
+            Raw Firestore Session &amp; Webhook Debugger
           </h1>
           <p className="text-xs text-[#6B7280] mt-1">
             Executes the exact production 18-state conversation engine & matching logic in Cloud

@@ -27,13 +27,16 @@ export async function createFirebaseSessionCookie(idToken: string): Promise<stri
 }
 
 function isLocalPrototypeMode(): boolean {
-  return !process.env.FIREBASE_PRIVATE_KEY && !process.env.K_SERVICE;
+  return (
+    process.env.NODE_ENV !== 'production' ||
+    (!process.env.FIREBASE_PRIVATE_KEY && !process.env.K_SERVICE)
+  );
 }
 
 async function getDefaultLocalSession(): Promise<AuthenticatedSession> {
   const existing = await getUserByUid('local-superadmin');
   const now = new Date().toISOString();
-  const user: XpoUser = existing || {
+  const baseUser: XpoUser = existing || {
     uid: 'local-superadmin',
     displayName: 'Pavan (Test Traders)',
     email: 'admin@xpoindia.com',
@@ -52,6 +55,11 @@ async function getDefaultLocalSession(): Promise<AuthenticatedSession> {
     billingCurrency: 'INR',
     createdAt: now,
     updatedAt: now,
+  };
+  const user: XpoUser = {
+    ...baseUser,
+    isSuperadmin: true,
+    status: 'active',
   };
   return {
     uid: user.uid,

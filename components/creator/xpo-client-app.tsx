@@ -173,8 +173,17 @@ function getBaseReqs(): Record<string, ClientReqItem> {
   };
 }
 
-export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: ClientScreen }) {
+export function XpoClientApp({
+  initialScreen = 'home',
+  forceMobileSim = false,
+  hideSimToolbar = false,
+}: {
+  initialScreen?: ClientScreen;
+  forceMobileSim?: boolean;
+  hideSimToolbar?: boolean;
+}) {
   const [dark, setDark] = useState(false);
+  const [mobileSim, setMobileSim] = useState<boolean>(forceMobileSim);
   const [screen, setScreen] = useState<ClientScreen>(initialScreen);
   const [rid, setRid] = useState<string>('r1');
   const [ask, setAsk] = useState<string>('');
@@ -649,17 +658,152 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
 
   // Dynamic simulation events for Prototype Controls
   const waitingPartner = r?.partners.find((p) => p.st === 'waiting');
+  const isSim = forceMobileSim || mobileSim;
 
   return (
     <div
-      className={`xt ${dark ? 'dark' : ''} shell`}
-      style={{
-        fontFamily: "var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif",
-        color: 'var(--tx)',
-        background: 'var(--bg)',
-        position: 'relative',
-      }}
+      style={
+        isSim && !hideSimToolbar
+          ? {
+              minHeight: '100vh',
+              background: '#111318',
+              padding: '16px 12px 32px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 14,
+            }
+          : undefined
+      }
     >
+      {isSim && !hideSimToolbar && (
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 960,
+            background: '#1C1F26',
+            border: '1px solid #2E323D',
+            borderRadius: 14,
+            padding: '10px 16px',
+            color: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span
+              style={{
+                background: '#C8102E',
+                color: '#fff',
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '3px 9px',
+                borderRadius: 99,
+              }}
+            >
+              📱 CLIENT MOBILE APP SIMULATOR (390×844)
+            </span>
+            <span style={{ fontSize: 12.5, color: '#A9ADB6' }}>
+              Touch-friendly mobile experience · Bottom tab bar &amp; 1-tap sheets active
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => setSheet('compose')}
+              style={{
+                minHeight: 34,
+                padding: '0 12px',
+                borderRadius: 9,
+                border: '1px solid #3D4250',
+                background: '#C8102E',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: 'pointer',
+              }}
+            >
+              + Open Mobile Post Sheet
+            </button>
+            <Link
+              href="/simulator"
+              style={{
+                minHeight: 34,
+                padding: '0 12px',
+                borderRadius: 9,
+                border: '1px solid #3D4250',
+                background: '#262A34',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 12.5,
+                display: 'inline-flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+              }}
+            >
+              💬 Tri-Screen Mobile + WhatsApp Studio →
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMobileSim(false)}
+              style={{
+                minHeight: 34,
+                padding: '0 12px',
+                borderRadius: 9,
+                border: '1px solid #3D4250',
+                background: '#262A34',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: 'pointer',
+              }}
+            >
+              🖥 Return to Desktop View
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`xt ${dark ? 'dark' : ''} shell ${isSim ? 'mobile-sim' : ''}`}
+        style={{
+          fontFamily: "var(--font-jakarta), 'Plus Jakarta Sans', system-ui, sans-serif",
+          color: 'var(--tx)',
+          background: 'var(--bg)',
+          position: 'relative',
+        }}
+      >
+        {isSim && (
+          <div
+            style={{
+              background: 'var(--sf)',
+              borderBottom: '1px solid var(--ln)',
+              padding: '6px 18px 4px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: 11.5,
+              fontWeight: 800,
+              color: 'var(--tx)',
+              flexShrink: 0,
+            }}
+          >
+            <span>9:41</span>
+            <span
+              style={{
+                width: 76,
+                height: 16,
+                borderRadius: 99,
+                background: '#15171C',
+                display: 'inline-block',
+              }}
+            />
+            <span>5G · 100%</span>
+          </div>
+        )}
       {/* LEFT SIDEBAR (Desktop) */}
       <aside
         className="side"
@@ -844,6 +988,27 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+            {!hideSimToolbar && (
+              <>
+                <button
+                  type="button"
+                  className="pill hide-sm"
+                  onClick={() => setMobileSim((m) => !m)}
+                  title="Toggle 390×844 Mobile Application Simulator"
+                >
+                  <span>📱 {mobileSim ? 'Desktop View' : 'Mobile App'}</span>
+                </button>
+                <Link
+                  href="/simulator"
+                  className="pill hide-sm"
+                  style={{ textDecoration: 'none', color: 'var(--tx)' }}
+                  title="Open Live Mobile & WhatsApp Automation Studio"
+                >
+                  <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
+                  <span>WhatsApp &amp; Mobile Sim</span>
+                </Link>
+              </>
+            )}
             {screen !== 'billing' && (
               <button
                 type="button"
@@ -4668,6 +4833,27 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
             </div>
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setMobileSim((m) => !m)}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  padding: 0,
+                  color: '#86EFAC',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontSize: 12.5,
+                }}
+              >
+                📱 {mobileSim ? 'Desktop View' : 'Mobile App Sim'}
+              </button>
+              <Link
+                href="/simulator"
+                style={{ color: '#86EFAC', fontWeight: 700, textDecoration: 'none' }}
+              >
+                WhatsApp Sim →
+              </Link>
               <Link
                 href="/dashboard/partner"
                 style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
@@ -4684,6 +4870,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
           </>
         )}
       </section>
+      </div>
     </div>
   );
 }

@@ -220,11 +220,16 @@ function createInitialOpportunities(): PartnerOpportunity[] {
 export function XpoPartnerApp({
   initialScreen = 'feed',
   initialOppId,
+  forceMobileSim = false,
+  hideSimToolbar = false,
 }: {
   initialScreen?: PartnerScreenId;
   initialOppId?: string;
+  forceMobileSim?: boolean;
+  hideSimToolbar?: boolean;
 }) {
   const router = useRouter();
+  const [mobileSim, setMobileSim] = useState<boolean>(forceMobileSim);
   const [S, setS] = useState<PartnerAppState>(() => ({
     dark: false,
     scene: 'active',
@@ -611,15 +616,150 @@ export function XpoPartnerApp({
   });
 
   const activeOpp = S.opportunities.find((o) => o.id === S.oppId) || S.opportunities[0];
+  const isSim = forceMobileSim || mobileSim;
 
   return (
     <div
-      className={`xt ${S.dark ? 'dark' : ''}`}
-      onClick={() => {
-        if (S.menuOpen !== 'none') setS((prev) => ({ ...prev, menuOpen: 'none' }));
-      }}
+      style={
+        isSim && !hideSimToolbar
+          ? {
+              minHeight: '100vh',
+              background: '#111318',
+              padding: '16px 12px 32px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: 14,
+            }
+          : undefined
+      }
     >
-      <div className="shell">
+      {isSim && !hideSimToolbar && (
+        <div
+          style={{
+            width: '100%',
+            maxWidth: 960,
+            background: '#1C1F26',
+            border: '1px solid #2E323D',
+            borderRadius: 14,
+            padding: '10px 16px',
+            color: '#fff',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span
+              style={{
+                background: '#1E3A8A',
+                color: '#fff',
+                fontSize: 11,
+                fontWeight: 800,
+                padding: '3px 9px',
+                borderRadius: 99,
+              }}
+            >
+              📱 PARTNER MOBILE APP SIMULATOR (390×844)
+            </span>
+            <span style={{ fontSize: 12.5, color: '#A9ADB6' }}>
+              Wave 1 5-min lead feed · 1-tap quote composer &amp; mutual contact handshake
+            </span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button
+              type="button"
+              onClick={() => openReplySheet('req-2')}
+              style={{
+                minHeight: 34,
+                padding: '0 12px',
+                borderRadius: 9,
+                border: '1px solid #3D4250',
+                background: '#C8102E',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: 'pointer',
+              }}
+            >
+              + Open Mobile Reply Sheet
+            </button>
+            <Link
+              href="/simulator"
+              style={{
+                minHeight: 34,
+                padding: '0 12px',
+                borderRadius: 9,
+                border: '1px solid #3D4250',
+                background: '#262A34',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 12.5,
+                display: 'inline-flex',
+                alignItems: 'center',
+                textDecoration: 'none',
+              }}
+            >
+              💬 Tri-Screen Mobile + WhatsApp Studio →
+            </Link>
+            <button
+              type="button"
+              onClick={() => setMobileSim(false)}
+              style={{
+                minHeight: 34,
+                padding: '0 12px',
+                borderRadius: 9,
+                border: '1px solid #3D4250',
+                background: '#262A34',
+                color: '#fff',
+                fontWeight: 700,
+                fontSize: 12.5,
+                cursor: 'pointer',
+              }}
+            >
+              🖥 Return to Desktop View
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`xt ${S.dark ? 'dark' : ''} ${isSim ? 'mobile-sim' : ''}`}
+        onClick={() => {
+          if (S.menuOpen !== 'none') setS((prev) => ({ ...prev, menuOpen: 'none' }));
+        }}
+      >
+        {isSim && (
+          <div
+            style={{
+              background: 'var(--sf)',
+              borderBottom: '1px solid var(--ln)',
+              padding: '6px 18px 4px',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: 11.5,
+              fontWeight: 800,
+              color: 'var(--tx)',
+              flexShrink: 0,
+            }}
+          >
+            <span>9:41</span>
+            <span
+              style={{
+                width: 76,
+                height: 16,
+                borderRadius: 99,
+                background: '#15171C',
+                display: 'inline-block',
+              }}
+            />
+            <span>5G · 100%</span>
+          </div>
+        )}
+        <div className="shell">
         {/* LEFT SIDEBAR */}
         <aside
           className="side"
@@ -802,6 +942,27 @@ export function XpoPartnerApp({
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+              {!hideSimToolbar && (
+                <>
+                  <button
+                    type="button"
+                    className="pill hide-sm"
+                    onClick={() => setMobileSim((m) => !m)}
+                    title="Toggle 390×844 Mobile Application Simulator"
+                  >
+                    <span>📱 {mobileSim ? 'Desktop View' : 'Mobile App'}</span>
+                  </button>
+                  <Link
+                    href="/simulator"
+                    className="pill hide-sm"
+                    style={{ textDecoration: 'none', color: 'var(--tx)' }}
+                    title="Open Live Mobile & WhatsApp Automation Studio"
+                  >
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
+                    <span>WhatsApp &amp; Mobile Sim</span>
+                  </Link>
+                </>
+              )}
               {S.screen !== 'billing' && (
                 <button
                   className="pill"
@@ -2789,6 +2950,27 @@ export function XpoPartnerApp({
             </div>
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+              <button
+                type="button"
+                onClick={() => setMobileSim((m) => !m)}
+                style={{
+                  background: 'none',
+                  border: 0,
+                  padding: 0,
+                  color: '#86EFAC',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  fontSize: 12.5,
+                }}
+              >
+                📱 {mobileSim ? 'Desktop View' : 'Mobile App Sim'}
+              </button>
+              <Link
+                href="/simulator"
+                style={{ color: '#86EFAC', fontWeight: 700, textDecoration: 'none' }}
+              >
+                WhatsApp Sim →
+              </Link>
               <Link
                 href="/dashboard/client"
                 style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
@@ -2805,6 +2987,7 @@ export function XpoPartnerApp({
           </>
         )}
       </section>
+      </div>
     </div>
   );
 }
