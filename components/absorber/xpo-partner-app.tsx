@@ -1,13 +1,20 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import {
+  fetchMarketplaceState,
+  postMarketplaceAction,
+  subscribeMarketplaceSync,
+} from '@/lib/marketplace/sync-client';
 
 export type PartnerScreenId =
   | 'feed'
   | 'opp'
   | 'replies'
   | 'conn'
+  | 'notifs'
   | 'billing'
   | 'profile'
   | 'verify'
@@ -63,6 +70,7 @@ interface PartnerAppState {
     | null
     | { type: 'checkout' }
     | { type: 'processing'; label: string }
+    | { type: 'paysuccess' }
     | { type: 'payfail' }
     | { type: 'cancel' }
     | { type: 'reply'; oppId: string };
@@ -281,6 +289,34 @@ export function XpoPartnerApp({
     }));
   }, [initialScreen, initialOppId]);
 
+  // Live Firebase Firestore & Cross-Workspace Sync (Partner <-> Client <-> Superadmin)
+  useEffect(() => {
+    const applyServerState = (st: any) => {
+      if (!st?.partner) return;
+      setS((prev) => ({
+        ...prev,
+        credits: typeof st.partner.credits === 'number' ? st.partner.credits : prev.credits,
+        plan: st.partner.plan === 'active' || st.partner.plan === 'free' ? st.partner.plan : prev.plan,
+        capabilities: Array.isArray(st.partner.capabilities) ? st.partner.capabilities : prev.capabilities,
+        opportunities: Array.isArray(st.partner.opportunities) && st.partner.opportunities.length > 0
+          ? st.partner.opportunities
+          : prev.opportunities,
+        notifs: Array.isArray(st.partner.notifs) && st.partner.notifs.length > 0
+          ? st.partner.notifs
+          : prev.notifs,
+      }));
+    };
+
+    fetchMarketplaceState().then((st) => {
+      if (st) applyServerState(st);
+    });
+
+    const unsub = subscribeMarketplaceSync((st) => {
+      applyServerState(st);
+    });
+    return unsub;
+  }, []);
+
   const toast = (tone: string, title: string, msg?: string) => {
     const id = Date.now() + Math.floor(Math.random() * 1000);
     setS((prev) => ({
@@ -367,6 +403,11 @@ export function XpoPartnerApp({
       `Connected with ${opp.clientCompany}`,
       `${opp.clientName}'s phone (${opp.clientPhone}) and WhatsApp are now unlocked.`
     );
+    postMarketplaceAction('partner.respond_connection', {
+      oppId,
+      ref: opp.ref,
+      decision: 'accepted',
+    }).catch(() => {});
   };
 
   const declineClientRequest = (oppId: string) => {
@@ -379,6 +420,11 @@ export function XpoPartnerApp({
       ),
     }));
     toast('info', 'Request declined', `We let ${opp.clientName} know and refunded their view.`);
+    postMarketplaceAction('partner.respond_connection', {
+      oppId,
+      ref: opp.ref,
+      decision: 'declined',
+    }).catch(() => {});
   };
 
   const openReplySheet = (oppId: string) => {
@@ -404,11 +450,11 @@ export function XpoPartnerApp({
     const opp = S.opportunities.find((o) => o.id === oppId);
     if (!opp) return;
 
-    // Prototype state updated locally
+    const nextCredits = Math.max(0, S.credits - 1);
 
     setS((prev) => ({
       ...prev,
-      credits: Math.max(0, prev.credits - 1),
+      credits: nextCredits,
       sheet: null,
       opportunities: prev.opportunities.map((o) =>
         o.id === oppId
@@ -429,6 +475,14 @@ export function XpoPartnerApp({
       'Reply sent to client (1 reply used)',
       `We notified ${opp.clientCompany} on WhatsApp. You'll be alerted if they unlock your contact.`
     );
+    postMarketplaceAction('partner.submit_reply', {
+      oppId,
+      ref: opp.ref,
+      pitch,
+      timeline: S.timelineDraft,
+      quote: S.quoteDraft || 'As per scope',
+      credits: nextCredits,
+    }).catch(() => {});
   };
 
   const startPayment = () => {
@@ -446,22 +500,25 @@ export function XpoPartnerApp({
         if (prev.payFail) {
           return { ...prev, payFail: false, sheet: { type: 'payfail' } };
         }
+        const nextCreds = prev.credits + 50;
+        postMarketplaceAction('partner.update_account', {
+          plan: 'active',
+          credits: nextCreds,
+        }).catch(() => {});
         return {
           ...prev,
           plan: 'active',
-          credits: prev.credits + 50,
-          sheet: null,
+          credits: nextCreds,
+          sheet: { type: 'paysuccess' },
         };
       });
-      if (!S.payFail) {
-        toast('ok', 'Partner Plan active — 50 replies added', 'Your receipt has been emailed.');
-      }
-    }, 1100);
+    }, 900);
   };
 
   const confirmCancelPlan = () => {
     setS((prev) => ({ ...prev, plan: 'free', sheet: null }));
     toast('info', 'Partner Plan cancelled', 'You keep your remaining replies until 4 Dec 2026.');
+    postMarketplaceAction('partner.update_account', { plan: 'free' }).catch(() => {});
   };
 
   // Prototype triggers
@@ -564,10 +621,20 @@ export function XpoPartnerApp({
     >
       <div className="shell">
         {/* LEFT SIDEBAR */}
-        <aside className="side">
+        <aside
+          className="side"
+          style={{
+            background: 'var(--sf)',
+            borderRight: '1px solid var(--ln)',
+            padding: 14,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
+        >
           <div
             style={{
-              padding: '4px 10px 18px',
+              padding: '4px 10px 6px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
@@ -584,8 +651,18 @@ export function XpoPartnerApp({
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <button
+            type="button"
+            className="btn b1"
+            onClick={() => setS((prev) => ({ ...prev, capModalOpen: true }))}
+            style={{ width: '100%' }}
+          >
+            + My categories ({S.capabilities.length})
+          </button>
+
+          <nav aria-label="Partner" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <button
+              type="button"
               className={`nav pn ${S.screen === 'feed' || S.screen === 'opp' ? 'on' : ''}`}
               onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}
             >
@@ -593,7 +670,7 @@ export function XpoPartnerApp({
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
-              Matched requests
+              <span>Matched requests</span>
               {incomingCount > 0 ? (
                 <span className="cnt">{incomingCount}</span>
               ) : (
@@ -602,17 +679,19 @@ export function XpoPartnerApp({
             </button>
 
             <button
+              type="button"
               className={`nav pn ${S.screen === 'replies' ? 'on' : ''}`}
               onClick={() => setS((prev) => ({ ...prev, screen: 'replies' }))}
             >
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
               </svg>
-              My replies
+              <span>My replies</span>
               <span className="cnt muted">{repliesList.length}</span>
             </button>
 
             <button
+              type="button"
               className={`nav pn ${S.screen === 'conn' ? 'on' : ''}`}
               onClick={() => setS((prev) => ({ ...prev, screen: 'conn' }))}
             >
@@ -622,10 +701,23 @@ export function XpoPartnerApp({
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
                 <path d="M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-              Connected
+              <span>Connected</span>
               {connectedList.length > 0 && <span className="cnt muted">{connectedList.length}</span>}
             </button>
-          </div>
+
+            <button
+              type="button"
+              className={`nav pn ${S.screen === 'notifs' ? 'on' : ''}`}
+              onClick={() => setS((prev) => ({ ...prev, screen: 'notifs' }))}
+            >
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+              </svg>
+              <span>Notifications</span>
+              {unreadCount > 0 && <span className="cnt">{unreadCount}</span>}
+            </button>
+          </nav>
 
           <div
             style={{
@@ -635,10 +727,29 @@ export function XpoPartnerApp({
               fontSize: 12,
               color: 'var(--tx3)',
               lineHeight: 1.5,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
             }}
           >
-            <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 2 }}>Need a hand?</div>
-            WhatsApp us at <span className="mono">+91 40 4917 2200</span>
+            <div>
+              <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 2 }}>Need a hand?</div>
+              WhatsApp us at <span className="mono">+91 40 4917 2200</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10, paddingTop: 6, borderTop: '1px solid var(--ln)' }}>
+              <Link
+                href="/dashboard/client"
+                style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
+              >
+                Client view →
+              </Link>
+              <Link
+                href="/superadmin"
+                style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
+              >
+                Superadmin →
+              </Link>
+            </div>
           </div>
         </aside>
 
@@ -666,6 +777,11 @@ export function XpoPartnerApp({
                   <b className="truncate max-w-[200px] sm:max-w-[360px]">{activeOpp.title}</b>
                 </div>
               )}
+              {S.screen === 'notifs' && (
+                <div className="crumb fx">
+                  <span>Notifications &amp; Alerts</span>
+                </div>
+              )}
               {['profile', 'verify', 'billing', 'settings', 'help'].includes(S.screen) && (
                 <div className="crumb fx">
                   <span>Account</span>
@@ -685,7 +801,7 @@ export function XpoPartnerApp({
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
               {S.screen !== 'billing' && (
                 <button
                   className="pill"
@@ -704,27 +820,14 @@ export function XpoPartnerApp({
                   setS((prev) => ({
                     ...prev,
                     menuOpen: prev.menuOpen === 'notif' ? 'none' : 'notif',
-                    notifs: prev.notifs.map((n) => ({ ...n, unread: false })),
                   }))
                 }
               >
-                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                  <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+                  <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
                 </svg>
-                {unreadCount > 0 && (
-                  <span
-                    style={{
-                      position: 'absolute',
-                      top: 6,
-                      right: 6,
-                      width: 8,
-                      height: 8,
-                      borderRadius: 99,
-                      background: '#C8102E',
-                    }}
-                  />
-                )}
+                {unreadCount > 0 && <span className="dot">{unreadCount}</span>}
               </button>
 
               <button
@@ -741,39 +844,79 @@ export function XpoPartnerApp({
               </button>
 
               {S.menuOpen === 'notif' && (
-                <div className="menu" style={{ width: 340, maxWidth: 'calc(100vw - 24px)' }}>
+                <div className="menu" style={{ width: 340, right: 44, maxWidth: 'calc(100vw - 24px)' }}>
                   <div
                     style={{
-                      padding: '8px 10px',
-                      fontSize: 12,
-                      fontWeight: 800,
-                      color: 'var(--tx3)',
-                      textTransform: 'uppercase',
-                      letterSpacing: '.06em',
+                      padding: '10px 12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderBottom: '1px solid var(--ln)',
+                      marginBottom: 4,
                     }}
                   >
-                    Updates
+                    <b style={{ fontSize: 13.5 }}>Notifications</b>
+                    {unreadCount > 0 && (
+                      <button
+                        type="button"
+                        className="btn bl"
+                        style={{ minHeight: 0, padding: 0, fontSize: 12 }}
+                        onClick={() =>
+                          setS((prev) => ({
+                            ...prev,
+                            notifs: prev.notifs.map((n) => ({ ...n, unread: false })),
+                          }))
+                        }
+                      >
+                        Mark all read
+                      </button>
+                    )}
                   </div>
-                  {S.notifs.map((n) => (
+                  {S.notifs.slice(0, 4).map((n) => (
                     <button
                       key={n.id}
                       className="mi"
-                      style={{ flexDirection: 'column', alignItems: 'flex-start', gap: 4, padding: '10px 12px', borderTop: '1px solid var(--ln)', borderRadius: 8 }}
+                      style={{
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: 4,
+                        padding: '10px 12px',
+                        borderRadius: 8,
+                        background: n.unread ? 'var(--rbg2)' : 'transparent',
+                        marginBottom: 2,
+                      }}
                       onClick={() =>
                         setS((prev) => ({
                           ...prev,
                           menuOpen: 'none',
+                          notifs: prev.notifs.map((x) =>
+                            x.id === n.id ? { ...x, unread: false } : x
+                          ),
                           screen: n.targetScreen,
                           oppId: n.oppId || prev.oppId,
                         }))
                       }
                     >
-                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--tx)', textAlign: 'left' }}>
+                      <div style={{ fontSize: 13, fontWeight: n.unread ? 700 : 500, color: 'var(--tx)', textAlign: 'left' }}>
                         {n.text}
                       </div>
                       <div style={{ fontSize: 11.5, color: 'var(--tx3)' }}>{n.time}</div>
                     </button>
                   ))}
+                  <button
+                    type="button"
+                    className="mi"
+                    onClick={() => setS((prev) => ({ ...prev, menuOpen: 'none', screen: 'notifs' }))}
+                    style={{
+                      borderTop: '1px solid var(--ln)',
+                      marginTop: 4,
+                      justifyContent: 'center',
+                      color: '#C8102E',
+                      fontWeight: 700,
+                    }}
+                  >
+                    <span>View all notifications →</span>
+                  </button>
                 </div>
               )}
 
@@ -791,7 +934,7 @@ export function XpoPartnerApp({
                   >
                     <b style={{ fontSize: 15 }}>Klo Tech</b>
                     <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                      Rohan Rao · {S.country === 'IN' ? 'Mumbai, India' : 'Dubai, UAE'}
+                      Rohan Rao · {S.country === 'IN' ? 'Hyderabad, India' : 'Dubai, UAE'}
                     </span>
                   </div>
 
@@ -850,6 +993,15 @@ export function XpoPartnerApp({
                     <span>{S.dark ? 'Light mode' : 'Dark mode'}</span>
                     <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{S.dark ? 'On' : 'Off'}</span>
                   </button>
+                  <div style={{ borderTop: '1px solid var(--ln)', margin: '6px 0' }} />
+                  <Link href="/dashboard/client" role="menuitem" className="mi">
+                    <span>Switch to Client view</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>→</span>
+                  </Link>
+                  <Link href="/superadmin" role="menuitem" className="mi">
+                    <span>Superadmin Console</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>→</span>
+                  </Link>
                   <button
                     type="button"
                     role="menuitem"
@@ -860,7 +1012,10 @@ export function XpoPartnerApp({
                       borderRadius: '0 0 10px 10px',
                       marginTop: 6,
                     }}
-                    onClick={() => router.push('/login')}
+                    onClick={() => {
+                      fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+                      router.push('/login');
+                    }}
                   >
                     <span>Sign out</span>
                   </button>
@@ -871,7 +1026,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 1: MATCHED REQUESTS FEED */}
           {S.screen === 'feed' && (
-            <div className="pg" style={{ maxWidth: 880 }}>
+            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
               {/* Incoming connection request highlight banner if any */}
               {incomingCount > 0 && (
                 <div
@@ -1067,7 +1222,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 2: OPPORTUNITY DETAIL */}
           {S.screen === 'opp' && activeOpp && (
-            <div className="pg" style={{ maxWidth: 820 }}>
+            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
               <button type="button" className="bl only-sm" style={{ marginBottom: 6, paddingLeft: 0 }} onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}>← Matched requests</button>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
@@ -1092,6 +1247,77 @@ export function XpoPartnerApp({
                   📍 {activeOpp.loc} · Needed: <b>{activeOpp.when}</b> · Budget: <b>{activeOpp.budget}</b> · Posted{' '}
                   {activeOpp.posted}
                 </div>
+              </div>
+
+              {/* 4-Stage Opportunity Progress Bar (Mirrors Client Request Detail) */}
+              <div className="card" style={{ padding: 20, marginBottom: 18 }}>
+                {(() => {
+                  const stageIdx =
+                    activeOpp.myReplyStatus === 'connected'
+                      ? 3
+                      : activeOpp.myReplyStatus === 'client_requested'
+                      ? 2
+                      : activeOpp.myReplyStatus === 'sent_waiting'
+                      ? 1
+                      : 0;
+                  const stages = [
+                    '1. Wave 1 Offer',
+                    '2. Reply Sent',
+                    '3. Client Unlocked',
+                    '4. Connected',
+                  ];
+                  return (
+                    <>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(4, 1fr)',
+                          gap: 8,
+                          marginBottom: 10,
+                        }}
+                      >
+                        {stages.map((label, idx) => {
+                          const active = idx <= stageIdx;
+                          return (
+                            <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                              <span
+                                style={{
+                                  height: 6,
+                                  borderRadius: 99,
+                                  background:
+                                    idx === 3 && stageIdx === 3
+                                      ? '#16A34A'
+                                      : active
+                                      ? 'var(--inv)'
+                                      : 'var(--sf3)',
+                                }}
+                              />
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  fontWeight: idx === stageIdx ? 800 : 600,
+                                  color: active ? 'var(--tx)' : 'var(--tx3)',
+                                }}
+                              >
+                                {label}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                        {stageIdx === 0 &&
+                          'Matched to Klo Tech in Wave 1. Send your 2-line pitch and timeline to claim a slot.'}
+                        {stageIdx === 1 &&
+                          'Your pitch is with the client. You will be alerted on WhatsApp the moment they unlock your reply.'}
+                        {stageIdx === 2 &&
+                          'Client spent 1 view to unlock your reply! Accept below to exchange direct phone & WhatsApp numbers.'}
+                        {stageIdx === 3 &&
+                          'Both sides agreed — direct phone, WhatsApp, and email are unlocked with zero commission.'}
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Client specification card */}
@@ -1249,8 +1475,8 @@ export function XpoPartnerApp({
 
           {/* SCREEN 3: MY REPLIES */}
           {S.screen === 'replies' && (
-            <div className="pg" style={{ maxWidth: 860 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>My replies</h1>
+            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+              <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>My replies</h1>
               <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
                 Every client request Klo Tech has replied to.
               </p>
@@ -1290,8 +1516,8 @@ export function XpoPartnerApp({
 
           {/* SCREEN 4: CONNECTED CLIENTS */}
           {S.screen === 'conn' && (
-            <div className="pg" style={{ maxWidth: 860 }}>
-              <h1 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 4px' }}>Connected clients</h1>
+            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+              <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>Connected clients</h1>
               <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
                 Direct client contacts you&apos;ve unlocked. Reach out on WhatsApp or phone — zero commission.
               </p>
@@ -1343,9 +1569,107 @@ export function XpoPartnerApp({
             </div>
           )}
 
+          {/* SCREEN 4B: NOTIFICATIONS & ALERTS (Unified with Client App) */}
+          {S.screen === 'notifs' && (
+            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-end',
+                  gap: 12,
+                  marginBottom: 20,
+                }}
+              >
+                <div>
+                  <h1 style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 800 }}>
+                    Notifications &amp; Alerts
+                  </h1>
+                  <p style={{ margin: 0, fontSize: 13.5, color: 'var(--tx2)' }}>
+                    Wave 1 matches, client unlock requests, and connection updates.
+                  </p>
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    className="btn bl"
+                    onClick={() =>
+                      setS((prev) => ({
+                        ...prev,
+                        notifs: prev.notifs.map((n) => ({ ...n, unread: false })),
+                      }))
+                    }
+                  >
+                    Mark all read
+                  </button>
+                )}
+              </div>
+
+              <div className="alw">
+                {S.notifs.map((n) => (
+                  <div
+                    key={n.id}
+                    className="al"
+                    onClick={() =>
+                      setS((prev) => ({
+                        ...prev,
+                        notifs: prev.notifs.map((x) =>
+                          x.id === n.id ? { ...x, unread: false } : x
+                        ),
+                        screen: n.targetScreen,
+                        oppId: n.oppId || prev.oppId,
+                      }))
+                    }
+                    style={{
+                      background: n.unread ? 'var(--rbg2)' : 'var(--sf)',
+                    }}
+                  >
+                    <span
+                      className="alic"
+                      style={
+                        n.unread
+                          ? { background: 'var(--rbg)', color: '#C8102E' }
+                          : { background: 'var(--gbg)', color: 'var(--gtx)' }
+                      }
+                    >
+                      {n.unread ? '!' : '✓'}
+                    </span>
+                    <span
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: 4,
+                        flex: 1,
+                        minWidth: 0,
+                      }}
+                    >
+                      <span
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          gap: 8,
+                          alignItems: 'baseline',
+                        }}
+                      >
+                        <b style={{ fontSize: 14.5, fontWeight: n.unread ? 800 : 600 }}>
+                          {n.text}
+                        </b>
+                        <span style={{ fontSize: 12, color: 'var(--tx2)', whiteSpace: 'nowrap' }}>
+                          {n.time}
+                        </span>
+                      </span>
+                    </span>
+                    {n.unread && <span className="udot" aria-label="Unread" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* SCREEN 5: UNIFIED ACCOUNT (PROFILE, VERIFICATION, ACCOUNT & PLAN, SETTINGS, HELP) */}
           {['profile', 'verify', 'billing', 'settings', 'help'].includes(S.screen) && (
-            <div className="pg" style={{ maxWidth: 840 }}>
+            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
               <h1 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 14px' }}>Account</h1>
 
               <div
@@ -1420,9 +1744,9 @@ export function XpoPartnerApp({
                   </label>
                   <label className="fld">
                     Primary city
-                    <select className="inp" defaultValue="Mumbai">
-                      <option>Mumbai</option>
+                    <select className="inp" defaultValue="Hyderabad">
                       <option>Hyderabad</option>
+                      <option>Mumbai</option>
                       <option>Bengaluru</option>
                       <option>Pune</option>
                       <option>Delhi NCR</option>
@@ -1630,7 +1954,7 @@ export function XpoPartnerApp({
                     </section>
                   </div>
 
-                  <section className="card" style={{ overflowX: 'auto' }}>
+                  <section className="card" style={{ overflowX: 'auto', marginBottom: 18 }}>
                     <div
                       style={{
                         display: 'grid',
@@ -1669,6 +1993,36 @@ export function XpoPartnerApp({
                       ))}
                     </div>
                   </section>
+
+                  {S.plan === 'active' && (
+                    <section
+                      className="card"
+                      style={{
+                        padding: '18px 20px',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        justifyContent: 'space-between',
+                        gap: 10,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <b>Invoice XPO-INV-2611-0118</b>
+                        <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                          {S.country === 'IN'
+                            ? '₹1,178.82 incl. GST ₹179.82 · 4 Nov 2026 · Razorpay'
+                            : '$19.99 · 4 Nov 2026 · PayPal'}
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn b2"
+                        onClick={() => toast('ok', 'Invoice XPO-INV-2611-0118 downloaded')}
+                      >
+                        Download PDF
+                      </button>
+                    </section>
+                  )}
                 </>
               )}
 
@@ -1830,45 +2184,111 @@ export function XpoPartnerApp({
         </div>
       </div>
 
-      {/* MOBILE BOTTOM TAB BAR */}
-      <nav className="tabbar">
+      {/* MOBILE BOTTOM TAB BAR (Unified .tpill design matching Client App) */}
+      <nav aria-label="Partner Main" className="tabbar">
         <button
-          className={`tb ${S.screen === 'feed' || S.screen === 'opp' ? 'on' : ''}`}
+          type="button"
+          className="tb"
           onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}
+          style={{ color: ['feed', 'opp'].includes(S.screen) ? '#C8102E' : 'var(--tx2)' }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
+          <span
+            className="tpill"
+            style={
+              ['feed', 'opp'].includes(S.screen)
+                ? { background: 'var(--rbg)', color: '#C8102E' }
+                : undefined
+            }
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+          </span>
           <span>Matched</span>
         </button>
+
         <button
-          className={`tb ${S.screen === 'replies' ? 'on' : ''}`}
+          type="button"
+          className="tb"
           onClick={() => setS((prev) => ({ ...prev, screen: 'replies' }))}
+          style={{ color: S.screen === 'replies' ? '#C8102E' : 'var(--tx2)' }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-          </svg>
+          <span
+            className="tpill"
+            style={
+              S.screen === 'replies' ? { background: 'var(--rbg)', color: '#C8102E' } : undefined
+            }
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+            </svg>
+          </span>
           <span>Replies ({repliesList.length})</span>
         </button>
+
         <button
-          className={`tb ${S.screen === 'conn' ? 'on' : ''}`}
+          type="button"
+          className="tb"
           onClick={() => setS((prev) => ({ ...prev, screen: 'conn' }))}
+          style={{ color: S.screen === 'conn' ? '#C8102E' : 'var(--tx2)' }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-            <circle cx="9" cy="7" r="4" />
-          </svg>
+          <span
+            className="tpill"
+            style={
+              S.screen === 'conn' ? { background: 'var(--rbg)', color: '#C8102E' } : undefined
+            }
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+              <circle cx="9" cy="7" r="4" />
+            </svg>
+          </span>
           <span>Connected</span>
         </button>
+
         <button
-          className={`tb ${S.screen === 'billing' ? 'on' : ''}`}
-          onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
+          type="button"
+          className="tb"
+          onClick={() => setS((prev) => ({ ...prev, screen: 'notifs' }))}
+          style={{ color: S.screen === 'notifs' ? '#C8102E' : 'var(--tx2)' }}
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <rect x="2" y="5" width="20" height="14" rx="2" />
-            <line x1="2" y1="10" x2="22" y2="10" />
-          </svg>
+          <span
+            className="tpill"
+            style={
+              S.screen === 'notifs' ? { background: 'var(--rbg)', color: '#C8102E' } : undefined
+            }
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+              <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+            </svg>
+            {unreadCount > 0 && (
+              <span className="dot" style={{ top: -4, right: 4 }}>
+                {unreadCount}
+              </span>
+            )}
+          </span>
+          <span>Alerts</span>
+        </button>
+
+        <button
+          type="button"
+          className="tb"
+          onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
+          style={{ color: S.screen === 'billing' ? '#C8102E' : 'var(--tx2)' }}
+        >
+          <span
+            className="tpill"
+            style={
+              S.screen === 'billing' ? { background: 'var(--rbg)', color: '#C8102E' } : undefined
+            }
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <rect x="2" y="5" width="20" height="14" rx="2" />
+              <line x1="2" y1="10" x2="22" y2="10" />
+            </svg>
+          </span>
           <span>Plan</span>
         </button>
       </nav>
@@ -2004,6 +2424,9 @@ export function XpoPartnerApp({
                 onClick={() => {
                   setS((prev) => ({ ...prev, capModalOpen: false }));
                   toast('ok', 'Categories updated', 'Your matched feed and WhatsApp alerts are updated.');
+                  postMarketplaceAction('partner.update_account', {
+                    capabilities: S.capabilities,
+                  }).catch(() => {});
                 }}
               >
                 Save categories
@@ -2013,114 +2436,195 @@ export function XpoPartnerApp({
         </div>
       )}
 
-      {/* CHECKOUT SHEET */}
+      {/* UNIFIED 4-STATE CHECKOUT MODAL (Matches Client App .opt radio cards) */}
       {S.sheet?.type === 'checkout' && (
         <div className="scrim" onClick={() => setS((prev) => ({ ...prev, sheet: null }))}>
-          <div className="dialog" onClick={(e) => e.stopPropagation()}>
-            <div style={{ padding: '20px 22px', borderBottom: '1px solid var(--ln)' }}>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>XPO Partner Plan — 50 replies / month</div>
-              <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                Priority Wave 1 matching · Verified Partner badge · Zero commission on deals
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label="Get Partner Plan"
+            className="card"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100%',
+              maxWidth: 480,
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 16,
+              maxHeight: '92vh',
+              overflowY: 'auto',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <b style={{ fontSize: 20 }}>XPO Partner Plan</b>
+              <button
+                type="button"
+                className="btn bl"
+                onClick={() => setS((prev) => ({ ...prev, sheet: null }))}
+              >
+                Close
+              </button>
+            </div>
+            <span style={{ fontSize: 14, color: 'var(--tx2)' }}>
+              50 replies a month · Priority Wave 1 matching · Cancel any time.
+            </span>
+
+            <div className="fld">
+              <span>Billing country</span>
+              <div
+                role="radiogroup"
+                aria-label="Billing country"
+                style={{
+                  display: 'inline-flex',
+                  gap: 4,
+                  padding: 4,
+                  background: 'var(--sf3)',
+                  borderRadius: 12,
+                  alignSelf: 'flex-start',
+                }}
+              >
+                <button
+                  type="button"
+                  role="radio"
+                  className="seg"
+                  aria-checked={S.country === 'IN'}
+                  onClick={() => setS((prev) => ({ ...prev, country: 'IN', payMethod: 'upi' }))}
+                  style={
+                    S.country === 'IN'
+                      ? { background: 'var(--inv)', color: '#fff' }
+                      : { background: 'transparent', color: 'var(--tx2)' }
+                  }
+                >
+                  India
+                </button>
+                <button
+                  type="button"
+                  role="radio"
+                  className="seg"
+                  aria-checked={S.country === 'AE'}
+                  onClick={() => setS((prev) => ({ ...prev, country: 'AE', payMethod: 'paypal' }))}
+                  style={
+                    S.country === 'AE'
+                      ? { background: 'var(--inv)', color: '#fff' }
+                      : { background: 'transparent', color: 'var(--tx2)' }
+                  }
+                >
+                  Outside India
+                </button>
               </div>
             </div>
-            <div style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 14 }}>
-              {S.country === 'IN' ? (
-                <>
-                  <div
-                    style={{
-                      padding: 14,
-                      borderRadius: 10,
-                      background: 'var(--sf2)',
-                      border: '1px solid var(--ln)',
-                      fontSize: 13.5,
-                    }}
-                  >
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                      <span>XPO Partner Plan (50 replies / month)</span>
-                      <b>₹999.00</b>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--tx2)' }}>
-                      <span>GST (18%)</span>
-                      <span>₹179.82</span>
-                    </div>
-                    <div
-                      style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        marginTop: 8,
-                        paddingTop: 8,
-                        borderTop: '1px solid var(--ln)',
-                        fontWeight: 800,
-                      }}
-                    >
-                      <span>Total today</span>
-                      <span>₹1,178.82 / month</span>
-                    </div>
-                  </div>
-                  <div className="seg-group">
-                    <button
-                      className={S.payMethod === 'upi' ? 'on' : ''}
-                      onClick={() => setS((prev) => ({ ...prev, payMethod: 'upi' }))}
-                    >
-                      UPI AutoPay
-                    </button>
-                    <button
-                      className={S.payMethod === 'card' ? 'on' : ''}
-                      onClick={() => setS((prev) => ({ ...prev, payMethod: 'card' }))}
-                    >
-                      Card
-                    </button>
-                    <button
-                      className={S.payMethod === 'paypal' ? 'on' : ''}
-                      onClick={() => setS((prev) => ({ ...prev, payMethod: 'paypal' }))}
-                    >
-                      PayPal
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div
-                  style={{
-                    padding: 14,
-                    borderRadius: 10,
-                    background: 'var(--sf2)',
-                    border: '1px solid var(--ln)',
-                    fontSize: 14,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    fontWeight: 800,
-                  }}
+
+            <div
+              role="radiogroup"
+              aria-label="Payment method"
+              style={{ display: 'flex', flexDirection: 'column', gap: 8 }}
+            >
+              {(S.country === 'IN'
+                ? ([
+                    ['upi', 'UPI AutoPay', 'Razorpay · GPay, PhonePe, Paytm, any UPI app'],
+                    ['card', 'Debit or credit card', 'Razorpay · Visa, Mastercard, RuPay'],
+                    ['paypal', 'PayPal', 'Pay in ₹ with your PayPal account'],
+                  ] as const)
+                : ([
+                    ['paypal', 'PayPal', 'Billed in US$ · cards accepted through PayPal'],
+                  ] as const)
+              ).map(([mKey, mLabel, mSub]) => (
+                <button
+                  key={mKey}
+                  type="button"
+                  role="radio"
+                  className="opt"
+                  aria-checked={S.payMethod === mKey}
+                  onClick={() => setS((prev) => ({ ...prev, payMethod: mKey }))}
+                  style={
+                    S.payMethod === mKey
+                      ? { background: 'var(--sf)', border: '2px solid var(--tx)' }
+                      : { background: 'var(--sf)', border: '1.5px solid var(--ln2)' }
+                  }
                 >
-                  <span>XPO Partner Plan (50 replies / month)</span>
-                  <span>$19.99 / month via PayPal</span>
-                </div>
-              )}
+                  <span style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <b style={{ fontSize: 15 }}>{mLabel}</b>
+                    <span style={{ fontSize: 12.5, color: 'var(--tx2)' }}>{mSub}</span>
+                  </span>
+                  <span aria-hidden="true" style={{ fontWeight: 800 }}>
+                    {S.payMethod === mKey ? '●' : '○'}
+                  </span>
+                </button>
+              ))}
             </div>
+
             <div
               style={{
-                padding: '14px 22px',
                 borderTop: '1px solid var(--ln)',
+                paddingTop: 12,
                 display: 'flex',
-                justifyContent: 'flex-end',
-                gap: 10,
+                flexDirection: 'column',
+                gap: 6,
+                fontSize: 14,
               }}
             >
-              <button className="btn b2" onClick={() => setS((prev) => ({ ...prev, sheet: null }))}>
-                Not now
-              </button>
-              <button className="btn b1" onClick={startPayment}>
-                {S.country === 'IN' ? 'Pay ₹1,178.82 & start plan' : 'Pay $19.99 & start plan'}
-              </button>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Partner Plan, monthly (50 replies)</span>
+                <span>{S.country === 'IN' ? '₹999.00' : '$19.99'}</span>
+              </div>
+              {S.country === 'IN' && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>GST 18%</span>
+                  <span>₹179.82</span>
+                </div>
+              )}
+              <div
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontWeight: 800,
+                  fontSize: 16,
+                }}
+              >
+                <span>Due today</span>
+                <span>{S.country === 'IN' ? '₹1,178.82' : '$19.99'}</span>
+              </div>
             </div>
-          </div>
+
+            <button type="button" className="btn b1" onClick={startPayment}>
+              Pay {S.country === 'IN' ? '₹1,178.82' : '$19.99'} with{' '}
+              {{ upi: 'UPI', card: 'card', paypal: 'PayPal' }[S.payMethod]}
+            </button>
+          </section>
         </div>
       )}
 
       {S.sheet?.type === 'processing' && (
         <div className="scrim">
           <div className="dialog" style={{ padding: 28, textAlign: 'center' }}>
-            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 6 }}>Confirming payment…</div>
-            <div style={{ fontSize: 13.5, color: 'var(--tx2)' }}>{S.sheet.label}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>Confirming your payment…</div>
+            <div style={{ fontSize: 14, color: 'var(--tx2)' }}>{S.sheet.label}</div>
+          </div>
+        </div>
+      )}
+
+      {S.sheet?.type === 'paysuccess' && (
+        <div className="scrim" onClick={() => setS((prev) => ({ ...prev, sheet: null }))}>
+          <div
+            className="dialog"
+            style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 14 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="chip g" style={{ alignSelf: 'flex-start' }}>
+              Payment confirmed
+            </span>
+            <b style={{ fontSize: 22 }}>Partner Plan is active</b>
+            <span style={{ fontSize: 14.5, lineHeight: '22px', color: 'var(--tx2)' }}>
+              50 replies added until 4 Dec 2026. GST invoice emailed.
+            </span>
+            <button
+              type="button"
+              className="btn b1"
+              onClick={() => setS((prev) => ({ ...prev, sheet: null }))}
+            >
+              Done
+            </button>
           </div>
         </div>
       )}
@@ -2128,18 +2632,24 @@ export function XpoPartnerApp({
       {S.sheet?.type === 'payfail' && (
         <div className="scrim" onClick={() => setS((prev) => ({ ...prev, sheet: null }))}>
           <div className="dialog" style={{ padding: 24 }} onClick={(e) => e.stopPropagation()}>
-            <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 6 }}>Payment didn&apos;t go through</div>
+            <span className="chip r" style={{ marginBottom: 10 }}>
+              Payment didn&apos;t go through
+            </span>
+            <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 6 }}>
+              {S.payMethod === 'upi'
+                ? 'Your bank declined the UPI mandate'
+                : S.payMethod === 'paypal'
+                ? "PayPal couldn't complete the payment"
+                : 'Your card was declined'}
+            </div>
             <div style={{ fontSize: 13.5, color: 'var(--tx2)', marginBottom: 18 }}>
-              No money was deducted. You can retry with UPI AutoPay or another method.
+              Nothing was charged. You can retry or choose another payment method.
             </div>
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button className="btn b2" onClick={() => setS((prev) => ({ ...prev, sheet: null }))}>
-                Close
+              <button className="btn b2" onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }))}>
+                Use another method
               </button>
-              <button
-                className="btn b1"
-                onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }))}
-              >
+              <button className="btn b1" onClick={startPayment}>
                 Try again
               </button>
             </div>
@@ -2188,45 +2698,66 @@ export function XpoPartnerApp({
         ))}
       </div>
 
-      {/* PROTOTYPE CONTROLS DRAWER */}
-      <div className="ctlwrap" onClick={(e) => e.stopPropagation()}>
-        {S.ctlOpen ? (
-          <div className="ctlp">
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                marginBottom: 8,
-              }}
-            >
-              <b style={{ fontSize: 12.5 }}>Prototype controls (Partner)</b>
-              <button
-                className="bl"
-                style={{ fontSize: 12 }}
-                onClick={() => setS((prev) => ({ ...prev, ctlOpen: false }))}
-              >
-                Close
-              </button>
-            </div>
+      {/* PROTOTYPE CONTROLS DRAWER (Unified .proto design matching Client & Superadmin) */}
+      <section
+        aria-label="Prototype controls"
+        className="proto"
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'fixed',
+          right: 16,
+          bottom: 16,
+          zIndex: 30,
+          width: 280,
+          background: 'var(--inv)',
+          color: '#fff',
+          borderRadius: 16,
+          padding: 14,
+          boxShadow: '0 18px 40px -18px rgba(0,0,0,.5)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          fontSize: 12.5,
+        }}
+      >
+        <button
+          type="button"
+          onClick={() => setS((prev) => ({ ...prev, ctlOpen: !prev.ctlOpen }))}
+          style={{
+            background: 'none',
+            border: 0,
+            color: '#fff',
+            font: "800 13px 'Plus Jakarta Sans', sans-serif",
+            display: 'flex',
+            justifyContent: 'space-between',
+            cursor: 'pointer',
+            padding: 0,
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ width: 7, height: 7, borderRadius: 99, background: '#C8102E' }} />
+            Prototype controls
+          </span>
+          <span style={{ marginLeft: 10 }}>{S.ctlOpen ? '−' : '+'}</span>
+        </button>
 
-            <div className="lbl" style={{ margin: '6px 0 4px' }}>
-              Jump to a situation
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 10 }}>
+        {S.ctlOpen && (
+          <>
+            <span style={{ color: '#B9BCC4' }}>Jump to a situation</span>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
               {(
                 [
                   ['active', 'Active partner'],
-                  ['incoming', 'Client requests contact'],
-                  ['zero', 'Out of free replies'],
-                  ['paid', 'Partner Plan active'],
-                  ['overseas', 'Overseas partner (USD)'],
+                  ['incoming', 'Client requests'],
+                  ['zero', 'Out of replies'],
+                  ['paid', 'Plan active'],
+                  ['overseas', 'Overseas (USD)'],
                 ] as const
               ).map(([id, label]) => (
                 <button
                   key={id}
-                  className={`chipb ${S.scene === id ? 'on' : ''}`}
-                  style={{ height: 26, padding: '0 9px', fontSize: 11.5 }}
+                  type="button"
+                  className="ctl"
                   onClick={() => applyScene(id)}
                 >
                   {label}
@@ -2234,27 +2765,17 @@ export function XpoPartnerApp({
               ))}
             </div>
 
-            <div className="lbl" style={{ margin: '8px 0 4px' }}>
-              Trigger events from the client side
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <button
-                className="btn b2 sm"
-                style={{ justifyContent: 'flex-start' }}
-                onClick={trigNewMatch}
-              >
+            <span style={{ color: '#B9BCC4' }}>Act as the client side</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              <button type="button" className="ctl" onClick={trigNewMatch}>
                 New Wave 1 matched request arrives
               </button>
-              <button
-                className="btn b2 sm"
-                style={{ justifyContent: 'flex-start' }}
-                onClick={trigClientUnlocks}
-              >
-                Client unlocks your reply (requests contact)
+              <button type="button" className="ctl" onClick={trigClientUnlocks}>
+                Client unlocks your reply
               </button>
               <button
-                className="btn b2 sm"
-                style={{ justifyContent: 'flex-start' }}
+                type="button"
+                className="ctl"
                 onClick={() => {
                   setS((prev) => ({ ...prev, payFail: !prev.payFail }));
                   toast(
@@ -2263,47 +2784,27 @@ export function XpoPartnerApp({
                   );
                 }}
               >
-                Make next payment fail: {S.payFail ? 'ON' : 'off'}
+                {S.payFail ? 'Next payment: will fail ✓' : 'Make next payment fail'}
               </button>
             </div>
 
-            <div className="lbl" style={{ margin: '10px 0 4px' }}>
-              Other apps in this prototype
-            </div>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                className="btn b2 sm"
-                style={{ flex: 1 }}
-                onClick={() => router.push('/dashboard/client')}
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+              <Link
+                href="/dashboard/client"
+                style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
               >
                 Client app →
-              </button>
-              <button
-                className="btn b2 sm"
-                style={{ flex: 1 }}
-                onClick={() => router.push('/superadmin')}
+              </Link>
+              <Link
+                href="/superadmin"
+                style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
               >
                 Superadmin →
-              </button>
+              </Link>
             </div>
-          </div>
-        ) : (
-          <button
-            className="ctlt"
-            onClick={() => setS((prev) => ({ ...prev, ctlOpen: true }))}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: 99,
-                background: '#C8102E',
-              }}
-            />
-            Prototype controls
-          </button>
+          </>
         )}
-      </div>
+      </section>
     </div>
   );
 }

@@ -5,10 +5,16 @@
 
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/auth-context';
+import {
+  fetchMarketplaceState,
+  postMarketplaceAction,
+  subscribeMarketplaceSync,
+  type MarketplaceLiveState,
+} from '@/lib/marketplace/sync-client';
 
 export type SuperadminScreen =
   | 'home'
@@ -4056,6 +4062,81 @@ export function XpoSuperadminApp() {
     setAuditLog((prev) => [{ ts: 'Just now', op: 'Pavan (Superadmin)', act, cat }, ...prev]);
   };
 
+  useEffect(() => {
+    const applyLiveState = (st: MarketplaceLiveState | null) => {
+      if (!st || !st.admin) return;
+      setDb((prev) => {
+        const mapAdminStatusToReqSt = (
+          s?: string,
+          fallback: ReqItem['st'] = 'live'
+        ): ReqItem['st'] => {
+          if (s === 'held' || s === 'pending_review') return 'held';
+          if (s === 'rejected') return 'changes';
+          if (s === 'paused') return 'closed';
+          if (s === 'approved' || s === 'wave1' || s === 'active_matching') return 'live';
+          return fallback;
+        };
+
+        const customMapped: ReqItem[] = (st.admin.customReqs || []).map((cr) => {
+          const override = st.admin.reqStatuses?.[cr.id];
+          return {
+            id: cr.id,
+            code: cr.id,
+            client: `${cr.clientCompany} · ${cr.clientName}`,
+            title: cr.title,
+            cat: cr.cat,
+            city: cr.city,
+            country: 'India',
+            tl: cr.timeline,
+            budget: cr.budget,
+            budgetN: 200000,
+            st: mapAdminStatusToReqSt(override || cr.status, 'live'),
+            d: 0,
+            wave: 1,
+            interested: 0,
+            offered: 3,
+            _s: `${cr.id} ${cr.title} ${cr.clientCompany} ${cr.city}`.toLowerCase(),
+          };
+        });
+        const mergedReqs: ReqItem[] = [
+          ...customMapped.filter((cr) => !prev.reqs.some((r) => r.code === cr.code)),
+          ...prev.reqs.map((r) => {
+            const customOverride = customMapped.find((cr) => cr.code === r.code);
+            const base = customOverride || r;
+            const statusOverride = st.admin.reqStatuses?.[r.code];
+            if (r.code === 'XPO-REQ-41190') {
+              const heldSt: ReqItem['st'] =
+                st.admin.heldAction === 'approved'
+                  ? 'live'
+                  : st.admin.heldAction === 'rejected'
+                  ? 'changes'
+                  : 'held';
+              return { ...base, st: statusOverride ? mapAdminStatusToReqSt(statusOverride, heldSt) : heldSt };
+            }
+            return statusOverride ? { ...base, st: mapAdminStatusToReqSt(statusOverride, base.st) } : base;
+          }),
+        ];
+        const partnerKyc = st.admin.kycDecisions?.partner;
+        const mergedMembers = prev.members.map((m, idx) => {
+          if (idx === 0 && partnerKyc) {
+            return {
+              ...m,
+              kyc: (partnerKyc === 'verified' ? 'Verified' : partnerKyc === 'rejected' ? 'Pending' : 'In review') as typeof m.kyc,
+            };
+          }
+          return m;
+        });
+        return {
+          ...prev,
+          reqs: mergedReqs,
+          members: mergedMembers,
+        };
+      });
+    };
+    fetchMarketplaceState().then(applyLiveState);
+    return subscribeMarketplaceSync(applyLiveState);
+  }, []);
+
   // Close menus on outside click
   const handleWrapperClick = () => {
     if (menuOpen) setMenuOpen(false);
@@ -6516,6 +6597,10 @@ export function XpoSuperadminApp() {
                           r.code === code ? { ...r, st: 'live', wave: 1 } : r
                         ),
                       }));
+                      postMarketplaceAction('admin.moderate_requirement', {
+                        reqId: code,
+                        decision: 'approved',
+                      });
                       toast(`Approved ${code} · Wave 1 dispatched to 3 partners`);
                       logAudit(`Approved ${code}`, 'Moderation');
                       setDr(null);
@@ -6534,6 +6619,10 @@ export function XpoSuperadminApp() {
                           r.code === code ? { ...r, st: 'changes' } : r
                         ),
                       }));
+                      postMarketplaceAction('admin.moderate_requirement', {
+                        reqId: code,
+                        decision: 'rejected',
+                      });
                       toast(`Changes requested on ${code}`);
                       logAudit(`Requested changes on ${code}`, 'Moderation');
                       setDr(null);
@@ -6558,6 +6647,10 @@ export function XpoSuperadminApp() {
                           m.id === id ? { ...m, kyc: 'Verified' as const } : m
                         ),
                       }));
+                      postMarketplaceAction('admin.verify_kyc', {
+                        role: dr.item.role === 'Client' ? 'client' : 'partner',
+                        decision: 'verified',
+                      });
                       toast(`${name} verified · Verified badge added`);
                       logAudit(`Verified KYC for ${name}`, 'Members');
                       setDr(null);
@@ -6577,6 +6670,10 @@ export function XpoSuperadminApp() {
                           m.id === id ? { ...m, kyc: 'Pending' as const } : m
                         ),
                       }));
+                      postMarketplaceAction('admin.verify_kyc', {
+                        role: dr.item.role === 'Client' ? 'client' : 'partner',
+                        decision: 'rejected',
+                      });
                       toast(`KYC rejected for ${name}`);
                       setDr(null);
                     }}
@@ -6854,6 +6951,17 @@ export function XpoSuperadminApp() {
               }}
             >
               Trigger partner KYC pending
+            </button>
+            <button
+              type="button"
+              className="ctl"
+              onClick={() => {
+                postMarketplaceAction('reset', {});
+                setDb(generateBaselineData(0.01));
+                toast('Reset all workspaces to initial state');
+              }}
+            >
+              Reset all workspaces
             </button>
             <div style={{ display: 'flex', gap: 8, borderTop: '1px solid var(--ln)', paddingTop: 6 }}>
               <button type="button" className="btn b2 sm" style={{ flex: 1 }} onClick={() => router.push('/dashboard/client')}>

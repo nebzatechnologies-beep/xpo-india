@@ -1,7 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import {
+  fetchMarketplaceState,
+  postMarketplaceAction,
+  subscribeMarketplaceSync,
+} from '@/lib/marketplace/sync-client';
 
 export type ClientScreen =
   | 'welcome'
@@ -196,9 +201,37 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
   const [alertFilter, setAlertFilter] = useState<'all' | 'act'>('all');
   const [reqSearch, setReqSearch] = useState<string>('');
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
+  const [notifOpen, setNotifOpen] = useState<boolean>(false);
   const [notifPrefsOpen, setNotifPrefsOpen] = useState<boolean>(false);
   const [reqs, setReqs] = useState<Record<string, ClientReqItem>>(getBaseReqs);
   const [order, setOrder] = useState<string[]>(['r1', 'r2', 'r3', 'r4', 'r5']);
+
+  // Live Firebase Firestore & Cross-Workspace Sync (Client <-> Partner <-> Superadmin)
+  useEffect(() => {
+    const applyServerState = (st: any) => {
+      if (!st?.client) return;
+      if (st.client.reqs && Object.keys(st.client.reqs).length > 0) {
+        setReqs(st.client.reqs);
+      }
+      if (Array.isArray(st.client.order) && st.client.order.length > 0) {
+        setOrder(st.client.order);
+      }
+      if (typeof st.client.seq === 'number') setSeq(st.client.seq);
+      if (typeof st.client.free === 'number') setFree(st.client.free);
+      if (typeof st.client.plan === 'number') setPlan(st.client.plan);
+      if (typeof st.client.planOn === 'boolean') setPlanOn(st.client.planOn);
+      if (st.client.kyc) setKyc(st.client.kyc);
+    };
+
+    fetchMarketplaceState().then((st) => {
+      if (st) applyServerState(st);
+    });
+
+    const unsub = subscribeMarketplaceSync((st) => {
+      applyServerState(st);
+    });
+    return unsub;
+  }, []);
 
   // Mobile bottom-sheet composer state (from Board 2 — Client mobile app core loop)
   const [sheet, setSheet] = useState<'' | 'compose' | 'review' | 'done'>('');
@@ -282,6 +315,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
       [id]: { ...prev[id], ...patch },
     }));
     if (toastMsg !== undefined) setToast(toastMsg);
+    postMarketplaceAction('client.update_requirement', { key: id, patch }).catch(() => {});
   };
 
   const updatePartner = (
@@ -302,11 +336,25 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
         },
       };
     });
+    let nextFree = free;
+    let nextPlan = plan;
     if (spendCredit) {
-      if (free > 0) setFree((f) => f - 1);
-      else if (plan > 0) setPlan((pl) => pl - 1);
+      if (free > 0) {
+        nextFree = free - 1;
+        setFree(nextFree);
+      } else if (plan > 0) {
+        nextPlan = plan - 1;
+        setPlan(nextPlan);
+      }
     }
     if (toastMsg !== undefined) setToast(toastMsg);
+    postMarketplaceAction('client.update_partner_status', {
+      key: reqId,
+      partnerId: pid,
+      st,
+      free: nextFree,
+      plan: nextPlan,
+    }).catch(() => {});
   };
 
   const go = (target: ClientScreen, extraRid?: string) => {
@@ -316,6 +364,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
     setCloseDlg(false);
     setToast('');
     setMenuOpen(false);
+    setNotifOpen(false);
   };
 
   const india = country === 'IN';
@@ -431,20 +480,10 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
         : `Posted ${code} · offered to 3 matching partners`
     );
 
-    // Sync to backend /api/leads non-blockingly
-    fetch('/api/leads', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        title: newReq.title,
-        description: newReq.spec,
-        sectorName: newReq.sector,
-        categoryName: newReq.cat,
-        subcategoryName: newReq.sub,
-        city: newReq.loc,
-        urgency: newReq.timeline,
-        budgetDisplay: newReq.budget,
-      }),
+    // Sync to shared Firebase Firestore marketplace state (updates Partner Wave 1 feed & Superadmin live)
+    postMarketplaceAction('client.post_requirement', {
+      key: id,
+      requirement: newReq,
     }).catch(() => {});
   };
 
@@ -725,6 +764,20 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
               <span className="cnt muted">{connectedPartners.length}</span>
             )}
           </button>
+
+          <button
+            type="button"
+            className={`nav pn ${curScreen === 'notifs' ? 'on' : ''}`}
+            aria-current={curScreen === 'notifs' ? 'page' : 'false'}
+            onClick={() => go('notifs')}
+          >
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
+              <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
+            </svg>
+            <span>Notifications</span>
+            {unread > 0 && <span className="cnt">{unread}</span>}
+          </button>
         </nav>
 
         <div
@@ -735,10 +788,29 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
             fontSize: 12,
             color: 'var(--tx3)',
             lineHeight: 1.5,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 8,
           }}
         >
-          <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 2 }}>Need a hand?</div>
-          WhatsApp us at <span className="mono">+91 40 4917 2200</span>
+          <div>
+            <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 2 }}>Need a hand?</div>
+            WhatsApp us at <span className="mono">+91 40 4917 2200</span>
+          </div>
+          <div style={{ display: 'flex', gap: 10, paddingTop: 6, borderTop: '1px solid var(--ln)' }}>
+            <Link
+              href="/dashboard/partner"
+              style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
+            >
+              Partner view →
+            </Link>
+            <Link
+              href="/superadmin"
+              style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
+            >
+              Superadmin →
+            </Link>
+          </div>
         </div>
       </aside>
 
@@ -775,7 +847,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
             {screen !== 'billing' && (
               <button
                 type="button"
-                className="pill hide-sm"
+                className="pill"
                 onClick={() => go('billing')}
                 aria-label={`Plan and credits: ${planOn ? `${plan} plan views` : `${free} free views`}`}
               >
@@ -791,9 +863,12 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
 
             <button
               type="button"
-              className="ib hide-sm"
+              className="ib"
               aria-label={unread ? `Notifications, ${unread} unread` : 'Notifications'}
-              onClick={() => go('notifs')}
+              onClick={() => {
+                setNotifOpen((n) => !n);
+                setMenuOpen(false);
+              }}
             >
               <svg
                 width="20"
@@ -810,13 +885,93 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
               {unread > 0 && <span className="dot">{unread}</span>}
             </button>
 
+            {notifOpen && (
+              <>
+                <div
+                  onClick={() => setNotifOpen(false)}
+                  style={{ position: 'fixed', inset: 0, zIndex: 35 }}
+                />
+                <div
+                  className="menu"
+                  role="menu"
+                  aria-label="Notifications"
+                  style={{ width: 340, right: 44 }}
+                >
+                  <div
+                    style={{
+                      padding: '10px 12px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      borderBottom: '1px solid var(--ln)',
+                      marginBottom: 4,
+                    }}
+                  >
+                    <b style={{ fontSize: 13.5 }}>Notifications</b>
+                    {unread > 0 && (
+                      <button
+                        type="button"
+                        className="btn bl"
+                        style={{ minHeight: 0, padding: 0, fontSize: 12 }}
+                        onClick={() => setNotifsRead(true)}
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+                  {alertItems.slice(0, 3).map((a, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      className="mi"
+                      onClick={() => {
+                        setNotifsRead(true);
+                        go('req', a.rid);
+                      }}
+                      style={{
+                        flexDirection: 'column',
+                        alignItems: 'flex-start',
+                        gap: 2,
+                        background: a.unread && !notifsRead ? 'var(--rbg2)' : 'transparent',
+                        marginBottom: 2,
+                      }}
+                    >
+                      <span style={{ fontSize: 13, fontWeight: a.unread && !notifsRead ? 700 : 500, textAlign: 'left' }}>
+                        {a.t}
+                      </span>
+                      <span style={{ fontSize: 11.5, color: 'var(--tx3)', textAlign: 'left' }}>
+                        {a.d} · {a.time}
+                      </span>
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    className="mi"
+                    onClick={() => go('notifs')}
+                    style={{
+                      borderTop: '1px solid var(--ln)',
+                      marginTop: 4,
+                      justifyContent: 'center',
+                      color: '#C8102E',
+                      fontWeight: 700,
+                    }}
+                  >
+                    <span>View all notifications →</span>
+                  </button>
+                </div>
+              </>
+            )}
+
             <button
               type="button"
               className="av"
               aria-label="Account menu"
               aria-haspopup="menu"
               aria-expanded={menuOpen}
-              onClick={() => setMenuOpen((m) => !m)}
+              onClick={() => {
+                setMenuOpen((m) => !m);
+                setNotifOpen(false);
+              }}
             >
               PA
             </button>
@@ -877,10 +1032,22 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                     <span>{dark ? 'Light mode' : 'Dark mode'}</span>
                     <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{dark ? 'On' : 'Off'}</span>
                   </button>
+                  <div style={{ borderTop: '1px solid var(--ln)', margin: '6px 0' }} />
+                  <Link href="/dashboard/partner" role="menuitem" className="mi">
+                    <span>Switch to Partner view</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>→</span>
+                  </Link>
+                  <Link href="/superadmin" role="menuitem" className="mi">
+                    <span>Superadmin Console</span>
+                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>→</span>
+                  </Link>
                   <Link
                     href="/login"
                     role="menuitem"
                     className="mi"
+                    onClick={() => {
+                      fetch('/api/auth/session', { method: 'DELETE' }).catch(() => {});
+                    }}
                     style={{
                       color: 'var(--rtx)',
                       borderTop: '1px solid var(--ln)',
@@ -900,7 +1067,8 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
         <main
           style={{
             width: '100%',
-            maxWidth: 1120,
+            maxWidth: 1040,
+            margin: '0 auto',
             padding: '28px clamp(16px, 4vw, 48px) 140px',
             boxSizing: 'border-box',
             display: 'flex',
@@ -2831,6 +2999,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                           onClick={() => {
                             setPlanOn(false);
                             setToast('Plan cancellation scheduled for period end');
+                            postMarketplaceAction('client.update_account', { planOn: false }).catch(() => {});
                           }}
                         >
                           Cancel plan
@@ -3219,6 +3388,7 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                       onClick={() => {
                         setKyc('pending');
                         setToast('Submitted for review');
+                        postMarketplaceAction('client.update_account', { kyc: 'pending' }).catch(() => {});
                       }}
                       style={{ alignSelf: 'flex-start' }}
                     >
@@ -4204,6 +4374,10 @@ export function XpoClientApp({ initialScreen = 'home' }: { initialScreen?: Clien
                       setCo('success');
                       setPlanOn(true);
                       setPlan(30);
+                      postMarketplaceAction('client.update_account', {
+                        planOn: true,
+                        plan: 30,
+                      }).catch(() => {});
                     }
                   }}
                 >
