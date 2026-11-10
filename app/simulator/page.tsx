@@ -259,7 +259,7 @@ export default function XpoSimulatorStudioPage() {
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                     <span className="chip" style={{ background: 'var(--rbg)', color: 'var(--rtx)' }}>
-                      Side-by-Side Mobile Applications (390×844)
+                      iPhone 16 Pro Dimensions (393 × 852)
                     </span>
                     <span className="chip" style={{ background: 'var(--gbg)', color: 'var(--gtx)' }}>
                       Real-Time Synced
@@ -269,7 +269,7 @@ export default function XpoSimulatorStudioPage() {
                     Client Mobile App &amp; Partner Mobile App — Live Side-by-Side
                   </h2>
                   <p style={{ margin: 0, fontSize: 13.5, color: 'var(--tx2)' }}>
-                    Post a requirement on the left phone (Client Mobile) or in the WhatsApp simulator above, then reply with a quote and accept the connection on the right phone (Partner Mobile).
+                    Post a requirement on the left iPhone (Client Mobile) or in the WhatsApp simulator above, then reply with a quote and accept the connection on the right iPhone (Partner Mobile).
                   </p>
                 </div>
               </div>
@@ -277,7 +277,7 @@ export default function XpoSimulatorStudioPage() {
               <div
                 style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(412px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
                   gap: 28,
                   justifyItems: 'center',
                   alignItems: 'start',
@@ -297,9 +297,12 @@ export default function XpoSimulatorStudioPage() {
                     }}
                   >
                     <span style={{ width: 9, height: 9, borderRadius: 99, background: '#C8102E' }} />
-                    <b style={{ fontSize: 13.5 }}>Client Mobile App (Pavan · Test Traders)</b>
+                    <b style={{ fontSize: 13.5 }}>Client Mobile App · iPhone 16 Pro</b>
+                    <span style={{ fontSize: 11, color: 'var(--tx3)' }}>Pavan · Test Traders</span>
                   </div>
-                  <XpoClientApp forceMobileSim hideSimToolbar />
+                  <div className="mobile-sim-wrapper">
+                    <XpoClientApp forceMobileSim hideSimToolbar />
+                  </div>
                 </div>
 
                 {/* Right Phone: Partner Mobile App */}
@@ -316,9 +319,12 @@ export default function XpoSimulatorStudioPage() {
                     }}
                   >
                     <span style={{ width: 9, height: 9, borderRadius: 99, background: '#1E3A8A' }} />
-                    <b style={{ fontSize: 13.5 }}>Partner Mobile App (Rohan · Klo Tech)</b>
+                    <b style={{ fontSize: 13.5 }}>Partner Mobile App · iPhone 16 Pro</b>
+                    <span style={{ fontSize: 11, color: 'var(--tx3)' }}>Rohan · Klo Tech</span>
                   </div>
-                  <XpoPartnerApp forceMobileSim hideSimToolbar />
+                  <div className="mobile-sim-wrapper">
+                    <XpoPartnerApp forceMobileSim hideSimToolbar />
+                  </div>
                 </div>
               </div>
             </section>
@@ -338,14 +344,21 @@ export default function XpoSimulatorStudioPage() {
         {tab === 'client_mobile' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
             <div style={{ textAlign: 'center', maxWidth: 620 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span className="chip" style={{ background: 'var(--rbg)', color: 'var(--rtx)' }}>
+                  iPhone 16 Pro · 393 × 852
+                </span>
+              </div>
               <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800 }}>
-                XPO Client Mobile Application (iOS / Android 390×844)
+                XPO Client Mobile Application
               </h1>
               <p style={{ margin: 0, fontSize: 13.5, color: 'var(--tx2)' }}>
-                Use the bottom tab bar (Home · Requests · + Post · Connected · Alerts) and mobile bottom sheets. All actions sync live with the Partner App and Superadmin Console.
+                Use the bottom tab bar (Home · Requests · + Post · Connected) and mobile bottom sheets. All actions sync live with the Partner App and Superadmin Console.
               </p>
             </div>
-            <XpoClientApp forceMobileSim hideSimToolbar />
+            <div className="mobile-sim-wrapper">
+              <XpoClientApp forceMobileSim hideSimToolbar />
+            </div>
           </div>
         )}
 
@@ -353,14 +366,21 @@ export default function XpoSimulatorStudioPage() {
         {tab === 'partner_mobile' && (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
             <div style={{ textAlign: 'center', maxWidth: 620 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                <span className="chip" style={{ background: 'var(--bbg)', color: 'var(--btx)' }}>
+                  iPhone 16 Pro · 393 × 852
+                </span>
+              </div>
               <h1 style={{ margin: '0 0 6px', fontSize: 22, fontWeight: 800 }}>
-                XPO Partner Mobile Application (iOS / Android 390×844)
+                XPO Partner Mobile Application
               </h1>
               <p style={{ margin: 0, fontSize: 13.5, color: 'var(--tx2)' }}>
                 Review 5-minute Wave 1 matched leads, send quotes with 1 reply credit, and accept client connection requests to reveal direct phone numbers.
               </p>
             </div>
-            <XpoPartnerApp forceMobileSim hideSimToolbar />
+            <div className="mobile-sim-wrapper">
+              <XpoPartnerApp forceMobileSim hideSimToolbar />
+            </div>
           </div>
         )}
       </main>

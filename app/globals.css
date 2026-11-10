@@ -1323,23 +1323,103 @@ h3, h4 { line-height: 1.3; }
 }
 
 /* ============================================================================
-   Interactive Mobile App Simulator Bezel (.mobile-sim)
-   Forces mobile application layout inside a 390x844 phone frame on desktop
+   Interactive iPhone 16 Pro Application Simulator Bezel (.mobile-sim)
+   Authentic 393 × 852 Viewport, Dynamic Island & Titanium Frame
    ============================================================================ */
+.mobile-sim-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px;
+}
+
+/* iPhone physical side buttons */
+.mobile-sim-wrapper::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 140px;
+  width: 4px;
+  height: 28px; /* Action Button */
+  background: #3B3E4A;
+  border-radius: 3px 0 0 3px;
+  box-shadow: 0 48px 0 0 #3B3E4A, 0 114px 0 0 #3B3E4A; /* Volume Up (52px) & Volume Down (52px) */
+}
+
+.mobile-sim-wrapper::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 185px;
+  width: 4px;
+  height: 72px; /* Power / Side Button */
+  background: #3B3E4A;
+  border-radius: 0 3px 3px 0;
+}
+
 .mobile-sim {
-  width: 412px !important;
-  max-width: 100vw !important;
-  height: 856px !important;
-  max-height: calc(100vh - 84px) !important;
+  width: 393px !important;
+  min-width: 393px !important;
+  max-width: 393px !important;
+  height: 852px !important;
+  min-height: 852px !important;
+  max-height: 852px !important;
   margin: 0 auto !important;
-  border-radius: 44px !important;
-  border: 10px solid #1E2028 !important;
-  box-shadow: 0 28px 64px -18px rgba(0, 0, 0, 0.48), 0 0 0 2px #363945 !important;
+  border-radius: 50px !important;
+  border: 11px solid #1E2026 !important;
+  outline: 2px solid #363945 !important;
+  box-shadow: 0 32px 72px -16px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
   overflow: hidden !important;
   position: relative !important;
   display: flex !important;
   flex-direction: column !important;
   transform: translateZ(0);
+  background: var(--bg) !important;
+}
+
+/* iPhone Dynamic Island */
+.iphone-dynamic-island {
+  position: absolute;
+  top: 11px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 124px;
+  height: 33px;
+  background: #000000;
+  border-radius: 20px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px;
+  box-sizing: border-box;
+  pointer-events: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.iphone-dynamic-island::after {
+  content: "";
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #11141E;
+  border: 1.5px solid #202434;
+}
+
+/* iPhone Bottom Home Indicator */
+.iphone-home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 134px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--tx);
+  opacity: 0.85;
+  z-index: 60;
+  pointer-events: none;
 }
 
 .mobile-sim .side {
@@ -1353,6 +1433,7 @@ h3, h4 { line-height: 1.3; }
   overflow-y: auto !important;
   overflow-x: hidden !important;
   padding-bottom: 84px !important;
+  -webkit-overflow-scrolling: touch;
 }
 
 .mobile-sim .hide-sm {
@@ -1364,12 +1445,12 @@ h3, h4 { line-height: 1.3; }
 }
 
 .mobile-sim .top {
-  padding: 0 14px !important;
-  min-height: 56px !important;
+  padding: 0 16px !important;
+  min-height: 54px !important;
 }
 
 .mobile-sim .pg {
-  padding: 18px 16px 110px !important;
+  padding: 16px 16px 110px !important;
   max-width: 100% !important;
 }
 
@@ -1382,7 +1463,7 @@ h3, h4 { line-height: 1.3; }
   z-index: 35 !important;
   background: var(--sf) !important;
   border-top: 1px solid var(--ln) !important;
-  padding: 4px 4px 10px !important;
+  padding: 4px 4px 18px !important; /* extra bottom padding for home indicator */
   align-items: flex-start !important;
 }
 

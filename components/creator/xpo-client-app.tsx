@@ -777,32 +777,32 @@ export function XpoClientApp({
         }}
       >
         {isSim && (
-          <div
-            style={{
-              background: 'var(--sf)',
-              borderBottom: '1px solid var(--ln)',
-              padding: '6px 18px 4px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              fontSize: 11.5,
-              fontWeight: 800,
-              color: 'var(--tx)',
-              flexShrink: 0,
-            }}
-          >
-            <span>9:41</span>
-            <span
+          <>
+            <div className="iphone-dynamic-island" />
+            <div className="iphone-home-indicator" />
+            <div
               style={{
-                width: 76,
-                height: 16,
-                borderRadius: 99,
-                background: '#15171C',
-                display: 'inline-block',
+                background: 'var(--sf)',
+                borderBottom: '1px solid var(--ln)',
+                padding: '10px 22px 6px',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: 12,
+                fontWeight: 800,
+                color: 'var(--tx)',
+                flexShrink: 0,
+                zIndex: 30,
               }}
-            />
-            <span>5G · 100%</span>
-          </div>
+            >
+              <span>9:41</span>
+              <span style={{ width: 124, height: 20 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11 }}>
+                <span>5G</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </>
         )}
       {/* LEFT SIDEBAR (Desktop) */}
       <aside
@@ -907,20 +907,6 @@ export function XpoClientApp({
             {connectedPartners.length > 0 && (
               <span className="cnt muted">{connectedPartners.length}</span>
             )}
-          </button>
-
-          <button
-            type="button"
-            className={`nav pn ${curScreen === 'notifs' ? 'on' : ''}`}
-            aria-current={curScreen === 'notifs' ? 'page' : 'false'}
-            onClick={() => go('notifs')}
-          >
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-              <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
-            </svg>
-            <span>Notifications</span>
-            {unread > 0 && <span className="cnt">{unread}</span>}
           </button>
         </nav>
 
