@@ -5,71 +5,92 @@ import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="bg-[#15171C] text-white pt-16 pb-12 border-t border-white/10">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 pb-12 border-b border-white/10">
-          <div className="md:col-span-2">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="inline-flex rounded-lg bg-white px-3 py-2"><img src="/xpo-logo.png" alt="XPO India" className="h-7 w-auto object-contain" /></span>
+    <footer className="bg-white border-t border-[#E7E7E2] py-12 text-[#15171C] transition-colors">
+      <div className="max-w-[1140px] mx-auto px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-10">
+          <div>
+            <Link href="/" className="inline-block mb-3">
+              <img src="/xpo-logo.png" alt="XPO India" className="h-7 w-auto object-contain" />
             </Link>
-            <p className="mt-4 text-xs text-gray-400 leading-relaxed max-w-md">
-              WhatsApp-first B2B marketplace connecting Clients and verified Partners with AI-guided
-              onboarding, 5-minute opportunity distribution, mutual-consent privacy, and zero deal
-              commission.
+            <p className="text-sm text-[#565B63] max-w-[30ch] leading-relaxed">
+              The B2B sourcing marketplace for every Indian business — freelancers to factories.
             </p>
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">
-              Marketplace Roles
+            <h4 className="text-[12px] font-extrabold uppercase tracking-wider text-[#8A8F98] mb-3.5">
+              Explore
             </h4>
-            <ul className="space-y-2.5 text-xs text-gray-400">
+            <ul className="space-y-2.5 text-[14.5px] text-[#565B63]">
               <li>
-                <Link href="/register?role=client" className="hover:text-white">
-                  Client — Post Requirement (Free)
+                <a href="#how" className="hover:text-[#15171C] transition-colors">
+                  How it works
+                </a>
+              </li>
+              <li>
+                <a href="#cats" className="hover:text-[#15171C] transition-colors">
+                  Categories
+                </a>
+              </li>
+              <li>
+                <a href="#faq" className="hover:text-[#15171C] transition-colors">
+                  FAQ
+                </a>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <h4 className="text-[12px] font-extrabold uppercase tracking-wider text-[#8A8F98] mb-3.5">
+              For you
+            </h4>
+            <ul className="space-y-2.5 text-[14.5px] text-[#565B63]">
+              <li>
+                <Link href="/dashboard/client" className="hover:text-[#15171C] transition-colors">
+                  Post a requirement
                 </Link>
               </li>
               <li>
-                <Link href="/register?role=partner" className="hover:text-white">
-                  Partner — 5-Min Business Leads
+                <Link href="/dashboard/partner" className="hover:text-[#15171C] transition-colors">
+                  Become a partner
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-white">
-                  Customer Sign In
+                <Link href="/login" className="hover:text-[#15171C] transition-colors">
+                  Sign in
                 </Link>
               </li>
             </ul>
           </div>
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">
-              Platform & Governance
+            <h4 className="text-[12px] font-extrabold uppercase tracking-wider text-[#8A8F98] mb-3.5">
+              Company
             </h4>
-            <ul className="space-y-2.5 text-xs text-gray-400">
+            <ul className="space-y-2.5 text-[14.5px] text-[#565B63]">
               <li>
-                <Link href="/pricing" className="hover:text-white">
-                  Client & Partner Plans
+                <Link href="/how-it-works" className="hover:text-[#15171C] transition-colors">
+                  About
                 </Link>
               </li>
               <li>
-                <Link href="/categories" className="hover:text-white">
-                  4-Tier Industry Taxonomy
+                <Link href="/dashboard/support" className="hover:text-[#15171C] transition-colors">
+                  Contact
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard/support" className="hover:text-white">
-                  Trust, Safety & Privacy
-                </Link>
-              </li>
-              <li>
-                <Link href="/superadmin/login" className="hover:text-[#C8102E] font-semibold">
-                  Superadmin Portal
+                <Link href="/dashboard/support" className="hover:text-[#15171C] transition-colors">
+                  Trust &amp; privacy
                 </Link>
               </li>
             </ul>
           </div>
         </div>
-        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-4">
-          <p>© {new Date().getFullYear()} XPO Marketplace. Zero Commission • Mutual Consent Privacy.</p>
+
+        <div className="border-t border-[#E7E7E2] pt-6 flex flex-wrap items-center gap-4 text-[13px] text-[#8A8F98]">
+          <span>© 2026 XPO India</span>
+          <Link href="/dashboard/support" className="hover:text-[#15171C]">Terms</Link>
+          <Link href="/dashboard/support" className="hover:text-[#15171C]">Privacy</Link>
+          <Link href="/dashboard/support" className="hover:text-[#15171C]">Refund policy</Link>
+          <span className="flex-1" />
+          <span>GST-verified suppliers · Secure payments</span>
         </div>
       </div>
     </footer>

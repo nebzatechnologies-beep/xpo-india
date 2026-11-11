@@ -22,23 +22,26 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-[#E4E5E9] transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
+      <div className="max-w-[1140px] mx-auto px-6 h-18 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2.5 group">
             <img src="/xpo-logo.png" alt="XPO India" className="h-8 w-auto object-contain" />
           </Link>
         </div>
 
-        <nav className="hidden md:flex items-center gap-7 text-xs font-semibold text-[#4B5563]">
-          <Link href="/categories" className="hover:text-[#15171C] transition-colors">
-            Sectors & Categories
-          </Link>
-          <Link href="/how-it-works" className="hover:text-[#15171C] transition-colors">
-            How XPO Works
-          </Link>
-          <Link href="/pricing" className="hover:text-[#15171C] transition-colors">
-            Plans & Quotas
-          </Link>
+        <nav className="hidden md:flex items-center gap-7 text-[15px] font-semibold text-[#565B63]">
+          <a href="#how" className="hover:text-[#15171C] transition-colors">
+            How it works
+          </a>
+          <a href="#cats" className="hover:text-[#15171C] transition-colors">
+            Categories
+          </a>
+          <a href="#partners" className="hover:text-[#15171C] transition-colors">
+            For partners
+          </a>
+          <a href="#faq" className="hover:text-[#15171C] transition-colors">
+            FAQ
+          </a>
           <a
             href={waHref}
             target="_blank"
@@ -154,27 +157,34 @@ export function Navbar() {
 
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-[#E4E5E9] bg-white px-4 pt-3 pb-6 space-y-3">
-          <Link
-            href="/categories"
+          <a
+            href="#how"
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-medium text-[#15171C] py-1.5"
           >
-            Sectors & Categories
-          </Link>
-          <Link
-            href="/how-it-works"
+            How it works
+          </a>
+          <a
+            href="#cats"
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-medium text-[#15171C] py-1.5"
           >
-            How XPO Works
-          </Link>
-          <Link
-            href="/pricing"
+            Categories
+          </a>
+          <a
+            href="#partners"
             onClick={() => setMobileMenuOpen(false)}
             className="block text-sm font-medium text-[#15171C] py-1.5"
           >
-            Plans & Quotas
-          </Link>
+            For partners
+          </a>
+          <a
+            href="#faq"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-medium text-[#15171C] py-1.5"
+          >
+            FAQ
+          </a>
           <a
             href={waHref}
             target="_blank"

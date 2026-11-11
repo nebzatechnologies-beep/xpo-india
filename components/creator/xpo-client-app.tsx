@@ -659,7 +659,7 @@ export function XpoClientApp({
 
   // Dynamic simulation events for Prototype Controls
   const waitingPartner = r?.partners.find((p) => p.st === 'waiting');
-  const isSim = forceMobileSim || mobileSim;
+  const isSim = forceMobileSim;
 
   return (
     <div
@@ -914,51 +914,19 @@ export function XpoClientApp({
         <div
           style={{
             marginTop: 'auto',
-            padding: 12,
+            paddingTop: 12,
             borderTop: '1px solid var(--ln)',
-            fontSize: 12,
-            color: 'var(--tx3)',
-            lineHeight: 1.5,
             display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
+            alignItems: 'center',
+            gap: 10,
           }}
         >
-          <div>
-            <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 4 }}>Post or track on WhatsApp</div>
-            <a
-              href={getXpoWhatsAppBotUrl('client')}
-              target="_blank"
-              rel="noreferrer"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '6px 10px',
-                borderRadius: 8,
-                background: '#16A34A',
-                color: '#FFFFFF',
-                fontWeight: 700,
-                fontSize: 11.5,
-                textDecoration: 'none',
-              }}
-            >
-              💬 Open XPO WhatsApp Bot →
-            </a>
-          </div>
-          <div style={{ display: 'flex', gap: 10, paddingTop: 6, borderTop: '1px solid var(--ln)' }}>
-            <Link
-              href="/dashboard/partner"
-              style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
-            >
-              Partner view →
-            </Link>
-            <Link
-              href="/superadmin"
-              style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
-            >
-              Superadmin →
-            </Link>
+          <span className="av" style={{ flex: '0 0 34px', width: 34, height: 34, fontSize: 12 }}>
+            PA
+          </span>
+          <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+            <b style={{ fontSize: 13.5, lineHeight: 1.2 }}>Pavan</b>
+            <span style={{ fontSize: 11.5, color: 'var(--tx3)' }}>Test Traders</span>
           </div>
         </div>
       </aside>
@@ -993,6 +961,25 @@ export function XpoClientApp({
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+            <button
+              type="button"
+              className="btn b1 sm hide-sm"
+              onClick={() => {
+                go('home');
+                setDrafted(false);
+              }}
+              style={{
+                background: '#C8102E',
+                color: '#fff',
+                borderRadius: 10,
+                minHeight: 36,
+                padding: '0 14px',
+                fontWeight: 700,
+                fontSize: 13,
+              }}
+            >
+              + New requirement
+            </button>
             {!hideSimToolbar && (
               <a
                 href={getXpoWhatsAppBotUrl('client')}
@@ -1161,6 +1148,32 @@ export function XpoClientApp({
                     </span>
                   </div>
 
+                  <div
+                    style={{
+                      margin: '2px 4px 6px',
+                      padding: 12,
+                      borderRadius: 12,
+                      background: 'var(--sf2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                    }}
+                  >
+                    <span className="lbl" style={{ fontSize: 11 }}>Plan &amp; billing</span>
+                    <b style={{ fontSize: 14 }}>{planOn ? `${plan} plan views left` : `${free} free views left`}</b>
+                    <button
+                      type="button"
+                      className="btn b2 sm"
+                      onClick={() => {
+                        setMenuOpen(false);
+                        go('billing');
+                      }}
+                      style={{ minHeight: 32, fontSize: 12.5 }}
+                    >
+                      Manage plan
+                    </button>
+                  </div>
+
                   <button type="button" role="menuitem" className="mi" onClick={() => go('profile')}>
                     <span>Profile</span>
                   </button>
@@ -1182,6 +1195,19 @@ export function XpoClientApp({
                   <button type="button" role="menuitem" className="mi" onClick={() => go('help')}>
                     <span>Help &amp; privacy</span>
                   </button>
+                  <div
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      color: 'var(--tx2)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Need a hand?</span>
+                    <span className="mono" style={{ color: 'var(--tx3)' }}>+91 40 4917 2200</span>
+                  </div>
                   <button
                     type="button"
                     role="menuitem"
@@ -1226,18 +1252,7 @@ export function XpoClientApp({
         </header>
 
         {/* MAIN CONTENT AREA */}
-        <main
-          style={{
-            width: '100%',
-            maxWidth: 1040,
-            margin: '0 auto',
-            padding: '28px clamp(16px, 4vw, 48px) 140px',
-            boxSizing: 'border-box',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 24,
-          }}
-        >
+        <main className="app-page">
           {/* TOAST BANNER */}
           {toast && (
             <div
@@ -4632,228 +4647,230 @@ export function XpoClientApp({
         </div>
       )}
 
-      {/* PROTOTYPE CONTROLS DRAWER (Verbatim from End-to-End UX.html) */}
-      <section
-        aria-label="Prototype controls"
-        className="proto"
-        style={{
-          position: 'fixed',
-          right: 16,
-          bottom: 16,
-          zIndex: 30,
-          width: 280,
-          background: 'var(--inv)',
-          color: '#fff',
-          borderRadius: 16,
-          padding: 14,
-          boxShadow: '0 18px 40px -18px rgba(0,0,0,.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          fontSize: 12.5,
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setPanel((p) => !p)}
+      {/* PROTOTYPE CONTROLS DRAWER (Shown only if explicitly forced in debug simulation) */}
+      {forceMobileSim && (
+        <section
+          aria-label="Prototype controls"
+          className="proto"
           style={{
-            background: 'none',
-            border: 0,
+            position: 'fixed',
+            right: 16,
+            bottom: 16,
+            zIndex: 30,
+            width: 280,
+            background: 'var(--inv)',
             color: '#fff',
-            font: "800 13px 'Plus Jakarta Sans', sans-serif",
+            borderRadius: 16,
+            padding: 14,
+            boxShadow: '0 18px 40px -18px rgba(0,0,0,.5)',
             display: 'flex',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            padding: 0,
+            flexDirection: 'column',
+            gap: 10,
+            fontSize: 12.5,
           }}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 7, height: 7, borderRadius: 99, background: '#C8102E' }} />Prototype controls</span>
-          <span style={{ marginLeft: 10 }}>{panel ? '−' : '+'}</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setPanel((p) => !p)}
+            style={{
+              background: 'none',
+              border: 0,
+              color: '#fff',
+              font: "800 13px 'Plus Jakarta Sans', sans-serif",
+              display: 'flex',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}><span style={{ width: 7, height: 7, borderRadius: 99, background: '#C8102E' }} />Prototype controls</span>
+            <span style={{ marginLeft: 10 }}>{panel ? '−' : '+'}</span>
+          </button>
 
-        {panel && (
-          <>
-            <span style={{ color: '#B9BCC4' }}>Jump to a situation</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {(
-                [
-                  ['active', 'Active client'],
-                  ['new', 'First visit'],
-                  ['out', 'Out of free views'],
-                  ['plan', 'Plan active'],
-                  ['abroad', 'Overseas client'],
-                ] as const
-              ).map(([sKey, sLabel]) => (
-                <button
-                  key={sKey}
-                  type="button"
-                  className="ctl"
-                  onClick={() => applyScene(sKey)}
-                >
-                  {sLabel}
-                </button>
-              ))}
-              <button
-                type="button"
-                className="ctl"
-                onClick={() => setSheet('compose')}
-              >
-                Mobile Post Sheet
-              </button>
-            </div>
-
-            <span style={{ color: '#B9BCC4' }}>Act as the other side</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              {waitingPartner && (
-                <>
+          {panel && (
+            <>
+              <span style={{ color: '#B9BCC4' }}>Jump to a situation</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {(
+                  [
+                    ['active', 'Active client'],
+                    ['new', 'First visit'],
+                    ['out', 'Out of free views'],
+                    ['plan', 'Plan active'],
+                    ['abroad', 'Overseas client'],
+                  ] as const
+                ).map(([sKey, sLabel]) => (
                   <button
+                    key={sKey}
                     type="button"
                     className="ctl"
-                    onClick={() =>
-                      updatePartner(
-                        rid,
-                        waitingPartner.id,
-                        'connected',
-                        `${waitingPartner.real} accepted · numbers shared both ways`
-                      )
-                    }
+                    onClick={() => applyScene(sKey)}
                   >
-                    Partner accepts
+                    {sLabel}
                   </button>
-                  <button
-                    type="button"
-                    className="ctl"
-                    onClick={() =>
-                      updatePartner(
-                        rid,
-                        waitingPartner.id,
-                        'declined',
-                        `${waitingPartner.real} can't take this on`
-                      )
-                    }
-                  >
-                    Partner declines
-                  </button>
-                </>
-              )}
-
-              {reqs.r2 && reqs.r2.status === 'finding' && reqs.r2.partners.length === 0 && (
+                ))}
                 <button
                   type="button"
                   className="ctl"
-                  onClick={() => {
-                    updateReq(
-                      'r2',
-                      {
-                        status: 'interested',
-                        partners: [
-                          {
-                            id: 'p9',
-                            real: 'Shree Packaging',
-                            masked: 'Manufacturer · Pune',
-                            city: 'Pune',
-                            verified: true,
-                            pitch:
-                              '"5-ply and 3-ply lines in Chakan; 10,000 printed boxes in 9 days."',
-                            tags: ['Offset print', 'Replied in 3 min'],
-                            details: '11 years · ISO 9001 · GST verified',
-                            phone: '+91 99870 44556',
-                            st: 'locked',
-                          },
-                        ],
-                      },
-                      'Shree Packaging is interested in XPO-REQ-41208'
-                    );
-                    setNotifsRead(false);
-                  }}
+                  onClick={() => setSheet('compose')}
                 >
-                  A partner says yes to the boxes request
+                  Mobile Post Sheet
                 </button>
-              )}
+              </div>
 
-              {reqs.r3 && reqs.r3.status === 'held' && (
-                <>
-                  <button
-                    type="button"
-                    className="ctl"
-                    onClick={() =>
-                      updateReq(
-                        'r3',
-                        { status: 'finding', wave: 1 },
-                        'XPO-REQ-41190 approved · now finding partners'
-                      )
-                    }
-                  >
-                    Admin approves held request
-                  </button>
-                  <button
-                    type="button"
-                    className="ctl"
-                    onClick={() =>
-                      updateReq('r3', { status: 'rejected' }, 'XPO-REQ-41190 needs changes')
-                    }
-                  >
-                    Admin asks for changes
-                  </button>
-                </>
-              )}
+              <span style={{ color: '#B9BCC4' }}>Act as the other side</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                {waitingPartner && (
+                  <>
+                    <button
+                      type="button"
+                      className="ctl"
+                      onClick={() =>
+                        updatePartner(
+                          rid,
+                          waitingPartner.id,
+                          'connected',
+                          `${waitingPartner.real} accepted · numbers shared both ways`
+                        )
+                      }
+                    >
+                      Partner accepts
+                    </button>
+                    <button
+                      type="button"
+                      className="ctl"
+                      onClick={() =>
+                        updatePartner(
+                          rid,
+                          waitingPartner.id,
+                          'declined',
+                          `${waitingPartner.real} can't take this on`
+                        )
+                      }
+                    >
+                      Partner declines
+                    </button>
+                  </>
+                )}
 
-              {kyc === 'pending' && (
-                <>
+                {reqs.r2 && reqs.r2.status === 'finding' && reqs.r2.partners.length === 0 && (
                   <button
                     type="button"
                     className="ctl"
                     onClick={() => {
-                      setKyc('verified');
-                      setToast("You're verified");
+                      updateReq(
+                        'r2',
+                        {
+                          status: 'interested',
+                          partners: [
+                            {
+                              id: 'p9',
+                              real: 'Shree Packaging',
+                              masked: 'Manufacturer · Pune',
+                              city: 'Pune',
+                              verified: true,
+                              pitch:
+                                '"5-ply and 3-ply lines in Chakan; 10,000 printed boxes in 9 days."',
+                              tags: ['Offset print', 'Replied in 3 min'],
+                              details: '11 years · ISO 9001 · GST verified',
+                              phone: '+91 99870 44556',
+                              st: 'locked',
+                            },
+                          ],
+                        },
+                        'Shree Packaging is interested in XPO-REQ-41208'
+                      );
+                      setNotifsRead(false);
                     }}
                   >
-                    Admin verifies KYC
+                    A partner says yes to the boxes request
                   </button>
-                  <button
-                    type="button"
-                    className="ctl"
-                    onClick={() => setKyc('rejected')}
-                  >
-                    Admin rejects KYC
-                  </button>
-                </>
-              )}
+                )}
 
-              <button
-                type="button"
-                className="ctl"
-                onClick={() => setFailNext((f) => !f)}
-              >
-                {failNext ? 'Next payment: will fail ✓' : 'Make next payment fail'}
-              </button>
-            </div>
+                {reqs.r3 && reqs.r3.status === 'held' && (
+                  <>
+                    <button
+                      type="button"
+                      className="ctl"
+                      onClick={() =>
+                        updateReq(
+                          'r3',
+                          { status: 'finding', wave: 1 },
+                          'XPO-REQ-41190 approved · now finding partners'
+                        )
+                      }
+                    >
+                      Admin approves held request
+                    </button>
+                    <button
+                      type="button"
+                      className="ctl"
+                      onClick={() =>
+                        updateReq('r3', { status: 'rejected' }, 'XPO-REQ-41190 needs changes')
+                      }
+                    >
+                      Admin asks for changes
+                    </button>
+                  </>
+                )}
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
-              <a
-                href={getXpoWhatsAppBotUrl('client')}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: '#86EFAC', fontWeight: 700, textDecoration: 'none' }}
-              >
-                💬 Open WhatsApp Bot →
-              </a>
-              <Link
-                href="/dashboard/partner"
-                style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
-              >
-                Partner app →
-              </Link>
-              <Link
-                href="/superadmin"
-                style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
-              >
-                Superadmin →
-              </Link>
-            </div>
-          </>
-        )}
-      </section>
+                {kyc === 'pending' && (
+                  <>
+                    <button
+                      type="button"
+                      className="ctl"
+                      onClick={() => {
+                        setKyc('verified');
+                        setToast("You're verified");
+                      }}
+                    >
+                      Admin verifies KYC
+                    </button>
+                    <button
+                      type="button"
+                      className="ctl"
+                      onClick={() => setKyc('rejected')}
+                    >
+                      Admin rejects KYC
+                    </button>
+                  </>
+                )}
+
+                <button
+                  type="button"
+                  className="ctl"
+                  onClick={() => setFailNext((f) => !f)}
+                >
+                  {failNext ? 'Next payment: will fail ✓' : 'Make next payment fail'}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+                <a
+                  href={getXpoWhatsAppBotUrl('client')}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: '#86EFAC', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  💬 Open WhatsApp Bot →
+                </a>
+                <Link
+                  href="/dashboard/partner"
+                  style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  Partner app →
+                </Link>
+                <Link
+                  href="/superadmin"
+                  style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  Superadmin →
+                </Link>
+              </div>
+            </>
+          )}
+        </section>
+      )}
       </div>
     </div>
   );

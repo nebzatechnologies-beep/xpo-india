@@ -617,7 +617,7 @@ export function XpoPartnerApp({
   });
 
   const activeOpp = S.opportunities.find((o) => o.id === S.oppId) || S.opportunities[0];
-  const isSim = forceMobileSim || mobileSim;
+  const isSim = forceMobileSim;
 
   return (
     <div
@@ -850,51 +850,19 @@ export function XpoPartnerApp({
           <div
             style={{
               marginTop: 'auto',
-              padding: 12,
+              paddingTop: 12,
               borderTop: '1px solid var(--ln)',
-              fontSize: 12,
-              color: 'var(--tx3)',
-              lineHeight: 1.5,
               display: 'flex',
-              flexDirection: 'column',
-              gap: 8,
+              alignItems: 'center',
+              gap: 10,
             }}
           >
-            <div>
-              <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 4 }}>Receive Wave 1 on WhatsApp</div>
-              <a
-                href={getXpoWhatsAppBotUrl('partner')}
-                target="_blank"
-                rel="noreferrer"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '6px 10px',
-                  borderRadius: 8,
-                  background: '#16A34A',
-                  color: '#FFFFFF',
-                  fontWeight: 700,
-                  fontSize: 11.5,
-                  textDecoration: 'none',
-                }}
-              >
-                💬 Open XPO WhatsApp Bot →
-              </a>
-            </div>
-            <div style={{ display: 'flex', gap: 10, paddingTop: 6, borderTop: '1px solid var(--ln)' }}>
-              <Link
-                href="/dashboard/client"
-                style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
-              >
-                Client view →
-              </Link>
-              <Link
-                href="/superadmin"
-                style={{ fontSize: 11.5, fontWeight: 700, color: 'var(--tx2)', textDecoration: 'none' }}
-              >
-                Superadmin →
-              </Link>
+            <span className="av" style={{ flex: '0 0 34px', width: 34, height: 34, fontSize: 12 }}>
+              KT
+            </span>
+            <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+              <b style={{ fontSize: 13.5, lineHeight: 1.2 }}>Klo Tech</b>
+              <span style={{ fontSize: 11.5, color: 'var(--tx3)' }}>Web &amp; Mobile Development</span>
             </div>
           </div>
         </aside>
@@ -1097,6 +1065,29 @@ export function XpoPartnerApp({
                     </span>
                   </div>
 
+                  <div
+                    style={{
+                      margin: '2px 4px 6px',
+                      padding: 12,
+                      borderRadius: 12,
+                      background: 'var(--sf2)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: 8,
+                    }}
+                  >
+                    <span className="lbl" style={{ fontSize: 11 }}>Plan &amp; billing</span>
+                    <b style={{ fontSize: 14 }}>{S.credits} free replies left</b>
+                    <button
+                      type="button"
+                      className="btn b2 sm"
+                      onClick={() => setS((prev) => ({ ...prev, screen: 'billing', menuOpen: 'none' }))}
+                      style={{ minHeight: 32, fontSize: 12.5 }}
+                    >
+                      Manage plan
+                    </button>
+                  </div>
+
                   <button
                     type="button"
                     role="menuitem"
@@ -1141,6 +1132,19 @@ export function XpoPartnerApp({
                   >
                     <span>Help &amp; privacy</span>
                   </button>
+                  <div
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: 12.5,
+                      color: 'var(--tx2)',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <span>Need a hand?</span>
+                    <span className="mono" style={{ color: 'var(--tx3)' }}>+91 40 4917 2200</span>
+                  </div>
                   <button
                     type="button"
                     role="menuitem"
@@ -1185,7 +1189,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 1: MATCHED REQUESTS FEED */}
           {S.screen === 'feed' && (
-            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+            <div className="app-page">
               {/* Incoming connection request highlight banner if any */}
               {incomingCount > 0 && (
                 <div
@@ -1381,7 +1385,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 2: OPPORTUNITY DETAIL */}
           {S.screen === 'opp' && activeOpp && (
-            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+            <div className="app-page">
               <button type="button" className="bl only-sm" style={{ marginBottom: 6, paddingLeft: 0 }} onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}>← Matched requests</button>
               <div style={{ marginBottom: 18 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
@@ -1634,7 +1638,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 3: MY REPLIES */}
           {S.screen === 'replies' && (
-            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+            <div className="app-page">
               <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>My replies</h1>
               <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
                 Every client request Klo Tech has replied to.
@@ -1675,7 +1679,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 4: CONNECTED CLIENTS */}
           {S.screen === 'conn' && (
-            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+            <div className="app-page">
               <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>Connected clients</h1>
               <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
                 Direct client contacts you&apos;ve unlocked. Reach out on WhatsApp or phone — zero commission.
@@ -1730,7 +1734,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 4B: NOTIFICATIONS & ALERTS (Unified with Client App) */}
           {S.screen === 'notifs' && (
-            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+            <div className="app-page">
               <div
                 style={{
                   display: 'flex',
@@ -1828,7 +1832,7 @@ export function XpoPartnerApp({
 
           {/* SCREEN 5: UNIFIED ACCOUNT (PROFILE, VERIFICATION, ACCOUNT & PLAN, SETTINGS, HELP) */}
           {['profile', 'verify', 'billing', 'settings', 'help'].includes(S.screen) && (
-            <div className="pg" style={{ maxWidth: 1040, padding: '28px clamp(16px, 4vw, 48px) 140px' }}>
+            <div className="app-page">
               <h1 style={{ fontSize: 28, fontWeight: 800, margin: '0 0 14px' }}>Account</h1>
 
               <div
@@ -2857,121 +2861,123 @@ export function XpoPartnerApp({
         ))}
       </div>
 
-      {/* PROTOTYPE CONTROLS DRAWER (Unified .proto design matching Client & Superadmin) */}
-      <section
-        aria-label="Prototype controls"
-        className="proto"
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          position: 'fixed',
-          right: 16,
-          bottom: 16,
-          zIndex: 30,
-          width: 280,
-          background: 'var(--inv)',
-          color: '#fff',
-          borderRadius: 16,
-          padding: 14,
-          boxShadow: '0 18px 40px -18px rgba(0,0,0,.5)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 10,
-          fontSize: 12.5,
-        }}
-      >
-        <button
-          type="button"
-          onClick={() => setS((prev) => ({ ...prev, ctlOpen: !prev.ctlOpen }))}
+      {/* PROTOTYPE CONTROLS DRAWER (Only shown when forceMobileSim is active) */}
+      {forceMobileSim && (
+        <section
+          aria-label="Prototype controls"
+          className="proto"
+          onClick={(e) => e.stopPropagation()}
           style={{
-            background: 'none',
-            border: 0,
+            position: 'fixed',
+            right: 16,
+            bottom: 16,
+            zIndex: 30,
+            width: 280,
+            background: 'var(--inv)',
             color: '#fff',
-            font: "800 13px 'Plus Jakarta Sans', sans-serif",
+            borderRadius: 16,
+            padding: 14,
+            boxShadow: '0 18px 40px -18px rgba(0,0,0,.5)',
             display: 'flex',
-            justifyContent: 'space-between',
-            cursor: 'pointer',
-            padding: 0,
+            flexDirection: 'column',
+            gap: 10,
+            fontSize: 12.5,
           }}
         >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-            <span style={{ width: 7, height: 7, borderRadius: 99, background: '#C8102E' }} />
-            Prototype controls
-          </span>
-          <span style={{ marginLeft: 10 }}>{S.ctlOpen ? '−' : '+'}</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setS((prev) => ({ ...prev, ctlOpen: !prev.ctlOpen }))}
+            style={{
+              background: 'none',
+              border: 0,
+              color: '#fff',
+              font: "800 13px 'Plus Jakarta Sans', sans-serif",
+              display: 'flex',
+              justifyContent: 'space-between',
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ width: 7, height: 7, borderRadius: 99, background: '#C8102E' }} />
+              Prototype controls
+            </span>
+            <span style={{ marginLeft: 10 }}>{S.ctlOpen ? '−' : '+'}</span>
+          </button>
 
-        {S.ctlOpen && (
-          <>
-            <span style={{ color: '#B9BCC4' }}>Jump to a situation</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-              {(
-                [
-                  ['active', 'Active partner'],
-                  ['incoming', 'Client requests'],
-                  ['zero', 'Out of replies'],
-                  ['paid', 'Plan active'],
-                  ['overseas', 'Overseas (USD)'],
-                ] as const
-              ).map(([id, label]) => (
+          {S.ctlOpen && (
+            <>
+              <span style={{ color: '#B9BCC4' }}>Jump to a situation</span>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+                {(
+                  [
+                    ['active', 'Active partner'],
+                    ['incoming', 'Client requests'],
+                    ['zero', 'Out of replies'],
+                    ['paid', 'Plan active'],
+                    ['overseas', 'Overseas (USD)'],
+                  ] as const
+                ).map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    className="ctl"
+                    onClick={() => applyScene(id)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <span style={{ color: '#B9BCC4' }}>Act as the client side</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                <button type="button" className="ctl" onClick={trigNewMatch}>
+                  New Wave 1 matched request arrives
+                </button>
+                <button type="button" className="ctl" onClick={trigClientUnlocks}>
+                  Client unlocks your reply
+                </button>
                 <button
-                  key={id}
                   type="button"
                   className="ctl"
-                  onClick={() => applyScene(id)}
+                  onClick={() => {
+                    setS((prev) => ({ ...prev, payFail: !prev.payFail }));
+                    toast(
+                      'info',
+                      !S.payFail ? 'Next payment will fail' : 'Next payment will succeed'
+                    );
+                  }}
                 >
-                  {label}
+                  {S.payFail ? 'Next payment: will fail ✓' : 'Make next payment fail'}
                 </button>
-              ))}
-            </div>
+              </div>
 
-            <span style={{ color: '#B9BCC4' }}>Act as the client side</span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <button type="button" className="ctl" onClick={trigNewMatch}>
-                New Wave 1 matched request arrives
-              </button>
-              <button type="button" className="ctl" onClick={trigClientUnlocks}>
-                Client unlocks your reply
-              </button>
-              <button
-                type="button"
-                className="ctl"
-                onClick={() => {
-                  setS((prev) => ({ ...prev, payFail: !prev.payFail }));
-                  toast(
-                    'info',
-                    !S.payFail ? 'Next payment will fail' : 'Next payment will succeed'
-                  );
-                }}
-              >
-                {S.payFail ? 'Next payment: will fail ✓' : 'Make next payment fail'}
-              </button>
-            </div>
-
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
-              <a
-                href={getXpoWhatsAppBotUrl('partner')}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: '#86EFAC', fontWeight: 700, textDecoration: 'none' }}
-              >
-                💬 Open WhatsApp Bot →
-              </a>
-              <Link
-                href="/dashboard/client"
-                style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
-              >
-                Client app →
-              </Link>
-              <Link
-                href="/superadmin"
-                style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
-              >
-                Superadmin →
-              </Link>
-            </div>
-          </>
-        )}
-      </section>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
+                <a
+                  href={getXpoWhatsAppBotUrl('partner')}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: '#86EFAC', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  💬 Open WhatsApp Bot →
+                </a>
+                <Link
+                  href="/dashboard/client"
+                  style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  Client app →
+                </Link>
+                <Link
+                  href="/superadmin"
+                  style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}
+                >
+                  Superadmin →
+                </Link>
+              </div>
+            </>
+          )}
+        </section>
+      )}
       </div>
     </div>
   );
