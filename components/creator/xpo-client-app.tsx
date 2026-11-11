@@ -375,6 +375,30 @@ export function XpoClientApp({
     setToast('');
     setMenuOpen(false);
     setNotifOpen(false);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      const mainEl = document.querySelector('main.app-page');
+      if (mainEl) mainEl.scrollTop = 0;
+    }
+  };
+
+  const handleNewRequirement = () => {
+    if (screen !== 'home') {
+      go('home');
+    }
+    setDrafted(false);
+    if (typeof window !== 'undefined') {
+      setTimeout(() => {
+        const textarea =
+          document.getElementById('ask') ||
+          document.getElementById('comp') ||
+          document.querySelector('textarea');
+        if (textarea) {
+          textarea.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          (textarea as HTMLTextAreaElement).focus();
+        }
+      }, 80);
+    }
   };
 
   const india = country === 'IN';
@@ -850,18 +874,6 @@ export function XpoClientApp({
           </span>
         </div>
 
-        <button
-          type="button"
-          className="btn b1"
-          onClick={() => {
-            go('home');
-            setDrafted(false);
-          }}
-          style={{ width: '100%' }}
-        >
-          + New requirement
-        </button>
-
         <nav aria-label="Client" style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <button
             type="button"
@@ -919,6 +931,8 @@ export function XpoClientApp({
             display: 'flex',
             alignItems: 'center',
             gap: 10,
+            flexShrink: 0,
+            paddingBottom: 4,
           }}
         >
           <span className="av" style={{ flex: '0 0 34px', width: 34, height: 34, fontSize: 12 }}>
@@ -960,14 +974,11 @@ export function XpoClientApp({
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative', zIndex: 40 }}>
             <button
               type="button"
               className="btn b1 sm hide-sm"
-              onClick={() => {
-                go('home');
-                setDrafted(false);
-              }}
+              onClick={handleNewRequirement}
               style={{
                 background: '#C8102E',
                 color: '#fff',
@@ -4028,32 +4039,6 @@ export function XpoClientApp({
             </svg>
           </span>
           <span>Connected</span>
-        </button>
-
-        <button
-          type="button"
-          className="tb"
-          aria-current={screen === 'notifs' ? 'page' : 'false'}
-          onClick={() => go('notifs')}
-          style={{ color: screen === 'notifs' ? '#C8102E' : 'var(--tx2)' }}
-        >
-          <span
-            className="tpill"
-            style={
-              screen === 'notifs' ? { background: 'var(--rbg)', color: '#C8102E' } : undefined
-            }
-          >
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-              <path d="M10.3 21a1.9 1.9 0 0 0 3.4 0" />
-            </svg>
-            {unread > 0 && (
-              <span className="dot" style={{ top: -4, right: 4 }}>
-                {unread}
-              </span>
-            )}
-          </span>
-          <span>Alerts</span>
         </button>
       </nav>
 

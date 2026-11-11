@@ -367,7 +367,7 @@ body {
 .top {
   position: sticky;
   top: 0;
-  z-index: 15;
+  z-index: 40;
   min-height: 64px;
   display: flex;
   align-items: center;
@@ -451,7 +451,7 @@ body {
   border-radius: 16px;
   box-shadow: 0 24px 48px -24px rgba(21, 23, 28, 0.35);
   padding: 8px;
-  z-index: 40;
+  z-index: 45;
   display: flex;
   flex-direction: column;
 }
@@ -1848,3 +1848,12 @@ section.band {
 }
 
 
+
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  background: transparent;
+  border: 0;
+}

@@ -96,12 +96,12 @@ export function subscribeMarketplaceSync(
 
   // Real-time background sync interval across devices/sessions/webhooks
   const pollInterval = window.setInterval(() => {
-    if (document.visibilityState === 'visible') {
+    if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
       fetchMarketplaceState().then((st) => {
-        notifyIfFresh(st);
-      });
+        if (st) notifyIfFresh(st);
+      }).catch(() => {});
     }
-  }, 4000);
+  }, 8000);
 
   return () => {
     window.removeEventListener('focus', handleFocus);
