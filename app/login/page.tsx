@@ -11,6 +11,7 @@ import {
 } from 'firebase/auth';
 import { getClientAuth, isFirebaseClientConfigured } from '@/lib/firebase/client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { getXpoWhatsAppBotUrl } from '@/lib/whatsapp/demo-bot-link';
 import { Phone, Mail, ShieldCheck, AlertCircle, ArrowRight, Loader2 } from 'lucide-react';
 
 function LoginContent() {
@@ -122,6 +123,28 @@ function LoginContent() {
       await exchangeTokenAndRedirect(idToken, cred.user.phoneNumber || undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Invalid OTP code');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleQuickDemoSignIn(demoEmail: string, demoPass: string, fallbackRoute: string) {
+    setError(null);
+    setMode('email');
+    setEmail(demoEmail);
+    setPassword(demoPass);
+    if (!clientConfigured) {
+      router.push(fallbackRoute);
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const auth = getClientAuth();
+      const cred = await signInWithEmailAndPassword(auth, demoEmail, demoPass);
+      const idToken = await cred.user.getIdToken(true);
+      await exchangeTokenAndRedirect(idToken);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo sign-in failed');
     } finally {
       setSubmitting(false);
     }
@@ -333,6 +356,53 @@ function LoginContent() {
           )}
 
           <div id="recaptcha-login-container" />
+
+          {/* Demo Testing Credentials Box */}
+          <div className="mt-5 p-4 rounded-xl bg-[#FAFBFD] border border-[#E4E5E9] space-y-2.5 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-extrabold text-[#15171C]">🧪 Demo Testing Accounts (Password: 12345678)</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">
+                1-CLICK LOGIN
+              </span>
+            </div>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => void handleQuickDemoSignIn('pavan@gmail.com', '12345678', '/dashboard/client')}
+              className="w-full py-2.5 px-3 rounded-xl bg-[#C8102E] hover:bg-[#A50D25] text-white font-bold text-xs transition flex items-center justify-between"
+            >
+              <span>👤 1-Click Client Login (Buyer)</span>
+              <span className="font-mono text-[11px] opacity-90">pavan@gmail.com</span>
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => void handleQuickDemoSignIn('partner@gmail.com', '12345678', '/dashboard/partner')}
+              className="w-full py-2.5 px-3 rounded-xl bg-[#1E3A8A] hover:bg-[#172E6E] text-white font-bold text-xs transition flex items-center justify-between"
+            >
+              <span>🏭 1-Click Partner Login (Supplier)</span>
+              <span className="font-mono text-[11px] opacity-90">partner@gmail.com</span>
+            </button>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => void handleQuickDemoSignIn('kavalipavan22@gmail.com', '12345678', '/superadmin')}
+              className="w-full py-2.5 px-3 rounded-xl bg-[#15171C] hover:bg-black text-white font-bold text-xs transition flex items-center justify-between"
+            >
+              <span>🛡️ 1-Click Superadmin Login</span>
+              <span className="font-mono text-[11px] opacity-90">kavalipavan22@gmail.com</span>
+            </button>
+            <div className="pt-2 border-t border-[#E4E5E9]">
+              <a
+                href={getXpoWhatsAppBotUrl('general')}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5"
+              >
+                💬 Open Dummy XPO WhatsApp Chatbot →
+              </a>
+            </div>
+          </div>
 
           <div className="mt-6 pt-5 border-t border-[#F3F4F6] flex items-center justify-between text-xs">
             <span className="text-[#6B7280]">New to XPO?</span>

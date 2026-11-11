@@ -59,13 +59,21 @@ export function subscribeMarketplaceSync(
 ): () => void {
   if (typeof window === 'undefined') return () => {};
 
+  let lastUpdatedAt = '';
+  const notifyIfFresh = (st: SharedMarketplaceState | null) => {
+    if (!st) return;
+    if (st.updatedAt && st.updatedAt === lastUpdatedAt) return;
+    lastUpdatedAt = st.updatedAt || String(Date.now());
+    onUpdate(st);
+  };
+
   let bc: BroadcastChannel | null = null;
   if ('BroadcastChannel' in window) {
     try {
       bc = new BroadcastChannel(CHANNEL_NAME);
       bc.onmessage = (ev) => {
         if (ev?.data?.type === 'STATE_UPDATED' && ev.data.state) {
-          onUpdate(ev.data.state as SharedMarketplaceState);
+          notifyIfFresh(ev.data.state as SharedMarketplaceState);
         }
       };
     } catch {
@@ -75,17 +83,30 @@ export function subscribeMarketplaceSync(
 
   const handleFocus = () => {
     fetchMarketplaceState().then((st) => {
-      if (st) onUpdate(st);
+      notifyIfFresh(st);
     });
   };
 
-  window.addEventListener('focus', handleFocus);
-  document.addEventListener('visibilitychange', () => {
+  const handleVisibility = () => {
     if (document.visibilityState === 'visible') handleFocus();
-  });
+  };
+
+  window.addEventListener('focus', handleFocus);
+  document.addEventListener('visibilitychange', handleVisibility);
+
+  // Real-time background sync interval across devices/sessions/webhooks
+  const pollInterval = window.setInterval(() => {
+    if (document.visibilityState === 'visible') {
+      fetchMarketplaceState().then((st) => {
+        notifyIfFresh(st);
+      });
+    }
+  }, 4000);
 
   return () => {
     window.removeEventListener('focus', handleFocus);
+    document.removeEventListener('visibilitychange', handleVisibility);
+    window.clearInterval(pollInterval);
     if (bc) {
       try {
         bc.close();

@@ -178,15 +178,118 @@ export function XpoWhatsAppAutomationLab({
 
   const clientChatRef = useRef<HTMLDivElement | null>(null);
   const partnerChatRef = useRef<HTMLDivElement | null>(null);
+  const seenCoordMsgsRef = useRef<Set<string>>(new Set());
+  const lastRemoteClientStRef = useRef<string>('ACTIVE');
+  const lastRemotePartnerStRef = useRef<string>('OFFER_SENT');
+
+  const waConfig = liveState?.admin?.whatsappAutomation;
+  const waveRules = liveState?.admin?.waveRules;
+  const waveWindowSeconds = waveRules?.responseWindowSeconds || 300;
+  const partnersPerRound = waveRules?.partnersPerRound || 3;
 
   useEffect(() => {
     fetchMarketplaceState().then((st) => {
-      if (st) setLiveState(st);
+      if (st) {
+        setLiveState(st);
+        const existingMsgs = st.admin?.whatsappAutomation?.coordinatorMessages || [];
+        existingMsgs.forEach((m) => seenCoordMsgsRef.current.add(m.id));
+        if (st.admin?.whatsappAutomation?.clientWaState) {
+          lastRemoteClientStRef.current = st.admin.whatsappAutomation.clientWaState;
+          setClientWaState(st.admin.whatsappAutomation.clientWaState as WaStateId);
+        }
+        if (st.admin?.whatsappAutomation?.partnerWaState) {
+          lastRemotePartnerStRef.current = st.admin.whatsappAutomation.partnerWaState;
+          setPartnerWaState(st.admin.whatsappAutomation.partnerWaState as WaStateId);
+        }
+      }
     });
     return subscribeMarketplaceSync((st) => {
       setLiveState(st);
     });
   }, []);
+
+  // Watch Superadmin Coordinator messages & remote state overrides in real time
+  useEffect(() => {
+    if (!waConfig) return;
+
+    if (
+      waConfig.clientWaState &&
+      waConfig.clientWaState !== lastRemoteClientStRef.current
+    ) {
+      const prev = lastRemoteClientStRef.current as WaStateId;
+      const next = waConfig.clientWaState as WaStateId;
+      lastRemoteClientStRef.current = next;
+      setClientWaState(next);
+      setLogs((prevLogs) => [
+        {
+          id: 'log-rem-c-' + Date.now(),
+          ts: new Date().toTimeString().slice(0, 8),
+          direction: 'STATE_TRANSITION',
+          summary: `Superadmin remotely transitioned Client WhatsApp state to ${next}`,
+          stateFrom: prev,
+          stateTo: next,
+          payload: { source: 'Superadmin Flow Controller', clientWaState: next },
+        },
+        ...prevLogs.slice(0, 24),
+      ]);
+    }
+
+    if (
+      waConfig.partnerWaState &&
+      waConfig.partnerWaState !== lastRemotePartnerStRef.current
+    ) {
+      const prev = lastRemotePartnerStRef.current as WaStateId;
+      const next = waConfig.partnerWaState as WaStateId;
+      lastRemotePartnerStRef.current = next;
+      setPartnerWaState(next);
+      setLogs((prevLogs) => [
+        {
+          id: 'log-rem-p-' + Date.now(),
+          ts: new Date().toTimeString().slice(0, 8),
+          direction: 'STATE_TRANSITION',
+          summary: `Superadmin remotely transitioned Partner WhatsApp state to ${next}`,
+          stateFrom: prev,
+          stateTo: next,
+          payload: { source: 'Superadmin Flow Controller', partnerWaState: next },
+        },
+        ...prevLogs.slice(0, 24),
+      ]);
+    }
+
+    const coordMsgs = waConfig.coordinatorMessages || [];
+    coordMsgs.forEach((cm) => {
+      if (!seenCoordMsgsRef.current.has(cm.id)) {
+        seenCoordMsgsRef.current.add(cm.id);
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: cm.id,
+            persona: cm.target,
+            sender: 'bot',
+            header: '👨‍💼 XPO Coordinator (Live Takeover)',
+            text: cm.text,
+            time: cm.time || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            status: 'read',
+          },
+        ]);
+        setLogs((prevLogs) => [
+          {
+            id: 'log-cm-' + cm.id,
+            ts: new Date().toTimeString().slice(0, 8),
+            direction: 'OUTBOUND_META_API',
+            summary: `Superadmin Coordinator sent live message to ${cm.target.toUpperCase()} WhatsApp`,
+            payload: cm,
+          },
+          ...prevLogs.slice(0, 24),
+        ]);
+      }
+    });
+  }, [waConfig]);
+
+  useEffect(() => {
+    lastRemoteClientStRef.current = clientWaState;
+    lastRemotePartnerStRef.current = partnerWaState;
+  }, [clientWaState, partnerWaState]);
 
   useEffect(() => {
     if (!waveRunning) return;
@@ -243,6 +346,16 @@ export function XpoWhatsAppAutomationLab({
     return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
   };
 
+  const syncWaStatesToFirestore = (nextClient?: WaStateId, nextPartner?: WaStateId) => {
+    const cSt = nextClient || clientWaState;
+    const pSt = nextPartner || partnerWaState;
+    void postMarketplaceAction('admin.update_whatsapp_automation', {
+      clientWaState: cSt,
+      partnerWaState: pSt,
+      summary: `WhatsApp state synced: Client=${cSt}, Partner=${pSt}`,
+    });
+  };
+
   // ============================================================================
   // Parse natural language / Hinglish requirement on WhatsApp
   // ============================================================================
@@ -271,30 +384,62 @@ export function XpoWhatsAppAutomationLab({
       }),
     }).catch(() => {});
 
-    // 1. Check Global Keywords (STOP, START, SUPPORT, MENU)
-    if (upper === 'STOP' || upper === 'UNSUBSCRIBE') {
-      const prevSt = clientWaState;
-      setClientWaState('PAUSED_OR_OPTED_OUT');
+    // 0. Check if Superadmin has paused all WhatsApp automation globally
+    if (waConfig?.autoPaused) {
       addLog({
         direction: 'STATE_TRANSITION',
-        summary: 'Global Keyword "STOP" → Immediate Opt-Out Suppression',
-        stateFrom: prevSt,
-        stateTo: 'PAUSED_OR_OPTED_OUT',
-        payload: { keyword: 'STOP', optOutSuppressed: true },
+        summary: 'Master Automation Paused by Superadmin → Queued for Coordinator',
+        stateFrom: clientWaState,
+        stateTo: 'SUPPORT_REVIEW',
+        payload: { autoPaused: true, queuedInCoordinatorInbox: true },
       });
       appendMsg({
         persona: 'client',
         sender: 'bot',
-        header: '🛑 Opt-Out Confirmed',
-        text: 'You have been unsubscribed from XPO India WhatsApp alerts. No further messages will be sent.\n\nReply *START* anytime to re-activate your account.',
-        buttons: [{ id: 'c_kw_start', label: '▶ Reply START to Resume', tone: 'primary' }],
+        header: '⏸️ Automation Paused by Superadmin',
+        text: 'Automated bot replies are currently paused by the XPO Superadmin. Your message has been queued in the Coordinator Inbox for live human response.',
       });
       return;
+    }
+
+    const findKwReply = (kw: string, fallback: string) => {
+      const match = waConfig?.globalKeywords?.find((k) => k.word.toUpperCase() === kw);
+      if (match && !match.enabled) return null;
+      return match?.reply || fallback;
+    };
+
+    // 1. Check Global Keywords (STOP, START, MENU, RESET, SUPPORT/HELP/AGENT)
+    if (upper === 'STOP' || upper === 'UNSUBSCRIBE') {
+      const replyTxt = findKwReply(
+        'STOP',
+        'You have been unsubscribed from XPO India WhatsApp alerts. No further messages will be sent.\n\nReply *START* anytime to re-activate your account.'
+      );
+      if (replyTxt) {
+        const prevSt = clientWaState;
+        setClientWaState('PAUSED_OR_OPTED_OUT');
+        syncWaStatesToFirestore('PAUSED_OR_OPTED_OUT', partnerWaState);
+        addLog({
+          direction: 'STATE_TRANSITION',
+          summary: 'Global Keyword "STOP" → Immediate Opt-Out Suppression',
+          stateFrom: prevSt,
+          stateTo: 'PAUSED_OR_OPTED_OUT',
+          payload: { keyword: 'STOP', optOutSuppressed: true },
+        });
+        appendMsg({
+          persona: 'client',
+          sender: 'bot',
+          header: '🛑 Opt-Out Confirmed',
+          text: replyTxt,
+          buttons: [{ id: 'c_kw_start', label: '▶ Reply START to Resume', tone: 'primary' }],
+        });
+        return;
+      }
     }
 
     if (upper === 'START' || upper === 'RESUME') {
       const prevSt = clientWaState;
       setClientWaState('ACTIVE');
+      syncWaStatesToFirestore('ACTIVE', partnerWaState);
       addLog({
         direction: 'STATE_TRANSITION',
         summary: 'Global Keyword "START" → Opt-In Resubscription',
@@ -305,7 +450,7 @@ export function XpoWhatsAppAutomationLab({
       appendMsg({
         persona: 'client',
         sender: 'bot',
-        header: '✓ Account Re-Activated',
+        header: waConfig?.welcomeGreeting || '✓ Account Re-Activated',
         text: 'Welcome back, *Pavan*! Your XPO Client workspace is active again. Tell us what you need in one sentence:',
         buttons: [
           { id: 'c_sample_boxes', label: '📦 Post: 10,000 Corrugated Boxes', tone: 'primary' },
@@ -315,36 +460,106 @@ export function XpoWhatsAppAutomationLab({
       return;
     }
 
+    if (upper === 'MENU') {
+      const replyTxt = findKwReply(
+        'MENU',
+        '1 · Post a requirement\n2 · My active requirements\n3 · Billing & plans\n4 · Talk to a person'
+      );
+      if (replyTxt) {
+        appendMsg({
+          persona: 'client',
+          sender: 'bot',
+          header: '📋 XPO India Main Menu',
+          text: replyTxt,
+          buttons: [
+            { id: 'c_sample_boxes', label: '1 · Post a Requirement', tone: 'primary' },
+            { id: 'c_check_status', label: '2 · My Active Requirements', tone: 'default' },
+          ],
+        });
+        return;
+      }
+    }
+
+    if (upper === 'RESET') {
+      const replyTxt = findKwReply(
+        'RESET',
+        'Cleared the current draft. Send your requirement again whenever ready.'
+      );
+      if (replyTxt) {
+        setPendingDraft(null);
+        setClientWaState('ACTIVE');
+        syncWaStatesToFirestore('ACTIVE', partnerWaState);
+        appendMsg({
+          persona: 'client',
+          sender: 'bot',
+          header: '🔄 Draft Cleared',
+          text: replyTxt,
+        });
+        return;
+      }
+    }
+
     if (upper.includes('SUPPORT') || upper.includes('AGENT') || upper.includes('HELP')) {
+      const kwKey = upper.includes('HELP') ? 'HELP' : 'AGENT';
+      const replyTxt =
+        findKwReply(
+          kwKey,
+          'We have paused automated replies and alerted an XPO Coordinator (+91 40 4917 2200). A specialist will reply here within 15 minutes.'
+        ) ||
+        'We have paused automated replies and alerted an XPO Coordinator (+91 40 4917 2200).';
       const prevSt = clientWaState;
       setClientWaState('SUPPORT_REVIEW');
+      syncWaStatesToFirestore('SUPPORT_REVIEW', partnerWaState);
       addLog({
         direction: 'STATE_TRANSITION',
-        summary: 'Keyword "SUPPORT" → Bot Paused · Escalated to Superadmin Coordinator Queue',
+        summary: `Keyword "${kwKey}" → Bot Paused · Escalated to Superadmin Coordinator Queue`,
         stateFrom: prevSt,
         stateTo: 'SUPPORT_REVIEW',
-        payload: { keyword: 'SUPPORT', botPaused: true, escalatedTo: 'Superadmin Today Queue' },
+        payload: { keyword: kwKey, botPaused: true, escalatedTo: 'Superadmin Today Queue' },
       });
       appendMsg({
         persona: 'client',
         sender: 'bot',
         header: '👩‍💼 Human Coordinator Assigned',
-        text: 'We have paused automated replies and alerted an XPO Coordinator (+91 40 4917 2200). A specialist will reply here within 15 minutes.',
+        text: replyTxt,
         buttons: [{ id: 'c_kw_start', label: 'Resume Automated Bot', tone: 'default' }],
       });
       return;
     }
 
-    // 2. Parse B2B requirement intent (English, Hindi, Hinglish)
+    // 2. Parse B2B requirement intent (English, Hindi, Hinglish + Superadmin Synonyms & Safety Keywords)
     const lower = text.toLowerCase();
-    const isHeld = lower.includes('bet') || lower.includes('casino') || lower.includes('gambl');
+    const rawFlags = Array.isArray(waConfig?.flaggedKeywords)
+      ? waConfig.flaggedKeywords
+      : String(waConfig?.flaggedKeywords || 'betting, gambling, casino, crypto, adult, loan').split(',');
+    const configuredFlags = rawFlags.map((s) => s.trim().toLowerCase()).filter(Boolean);
+    const matchedFlag =
+      waConfig?.autoHoldFlagged !== false
+        ? configuredFlags.find((kw) => lower.includes(kw))
+        : undefined;
+    const isHeld = Boolean(matchedFlag);
+
     let title = text.length > 68 ? text.slice(0, 65) + '...' : text;
     let cat = 'Web & Mobile Development';
     let city = 'Hyderabad';
     let timeline = 'Within 2-4 Weeks';
     let budget = '₹2,00,000';
 
-    if (lower.includes('box') || lower.includes('dabba') || lower.includes('carton') || lower.includes('packaging')) {
+    // Check Superadmin custom synonym mappings first
+    const matchedSynonym = (waConfig?.customSynonyms || []).find((syn) =>
+      lower.includes(syn.word.toLowerCase())
+    );
+
+    if (matchedSynonym) {
+      cat = matchedSynonym.category;
+      city = lower.includes('pune')
+        ? 'Pune'
+        : lower.includes('mumbai')
+        ? 'Mumbai'
+        : lower.includes('nagpur')
+        ? 'Nagpur'
+        : 'Hyderabad';
+    } else if (lower.includes('box') || lower.includes('dabba') || lower.includes('carton') || lower.includes('packaging')) {
       title = '10,000 printed 3-ply corrugated boxes';
       cat = 'Packaging & Printing';
       city = lower.includes('pune') ? 'Pune' : 'Hyderabad';
@@ -391,20 +606,24 @@ export function XpoWhatsAppAutomationLab({
     setPendingDraft(draftObj);
     const prevSt = clientWaState;
     setClientWaState('CLIENT_POST_REQ_CONFIRM');
+    syncWaStatesToFirestore('CLIENT_POST_REQ_CONFIRM', partnerWaState);
     setActiveStep(1);
+
+    const modeLabel =
+      waConfig?.intakeMode === 'step_by_step' ? 'Step-by-Step Guided Intake' : 'One-Shot AI Parse';
 
     addLog({
       direction: 'STATE_TRANSITION',
-      summary: `AI Intent Resolver (96% conf) → Extracted [${cat}] in [${city}]`,
+      summary: `AI Intent Resolver (${modeLabel}) → Extracted [${cat}] in [${city}]`,
       stateFrom: prevSt,
       stateTo: 'CLIENT_POST_REQ_CONFIRM',
-      payload: draftObj,
+      payload: { ...draftObj, matchedSynonym: matchedSynonym?.word, matchedFlag },
     });
 
     appendMsg({
       persona: 'client',
       sender: 'bot',
-      header: '✨ Structured Requirement Draft Ready',
+      header: `✨ Structured Requirement Draft (${modeLabel})`,
       text:
         `I've structured your requirement for free Wave 1 matching:\n\n` +
         `• *Ref:* ${code}\n` +
@@ -414,8 +633,8 @@ export function XpoWhatsAppAutomationLab({
         `• *Timeline:* ${timeline}\n` +
         `• *Est. Budget:* ${budget}\n` +
         (isHeld
-          ? `\n⚠️ *Safety Notice:* Contains restricted keyword ("betting"). Will be queued for Superadmin review before partner dispatch.`
-          : `\nTap *Confirm & Post Free* to dispatch immediately to 3 verified Partners (5-min response window):`),
+          ? `\n⚠️ *Safety Notice:* Contains restricted keyword ("${matchedFlag || 'betting'}"). Will be queued for Superadmin review before partner dispatch.`
+          : `\nTap *Confirm & Post Free* to dispatch immediately to ${partnersPerRound} verified Partners (${Math.round(waveWindowSeconds / 60)}-min response window):`),
       buttons: [
         { id: 'c_confirm_post', label: '✓ Confirm & Post Free', tone: 'primary' },
         { id: 'c_cancel_draft', label: '✕ Cancel Draft', tone: 'default' },
@@ -433,6 +652,19 @@ export function XpoWhatsAppAutomationLab({
       text: btnLabel,
       status: 'read',
     });
+
+    if (btnId === 'c_cancel_draft') {
+      setPendingDraft(null);
+      setClientWaState('ACTIVE');
+      syncWaStatesToFirestore('ACTIVE', partnerWaState);
+      appendMsg({
+        persona: 'client',
+        sender: 'bot',
+        header: '✕ Draft Cancelled',
+        text: 'No problem — your draft was discarded. Send a new requirement anytime.',
+      });
+      return;
+    }
 
     if (btnId === 'c_sample_boxes') {
       await handleClientNaturalLanguage(
@@ -461,7 +693,7 @@ export function XpoWhatsAppAutomationLab({
         header: `📊 Active Requirements (${reqCount})`,
         text:
           `1. *XPO-REQ-40971* · E-commerce website for 5-store chain — *2 Partners Interested*\n` +
-          `2. *XPO-REQ-41208* · 10,000 printed 3-ply corrugated boxes — *Wave 1 Live (5m window)*\n` +
+          `2. *XPO-REQ-41208* · 10,000 printed 3-ply corrugated boxes — *Wave 1 Live (${Math.round(waveWindowSeconds / 60)}m window)*\n` +
           `3. *XPO-REQ-41190* · Marketing for fantasy sports app — *Being Checked by Admin*\n\n` +
           `Tap below to review interested partners or post a new requirement:`,
         buttons: [
@@ -511,12 +743,13 @@ export function XpoWhatsAppAutomationLab({
       setActiveReqTitle(d.title);
 
       if (d.held) {
+        syncWaStatesToFirestore('ACTIVE', partnerWaState);
         addLog({
           direction: 'FIRESTORE_SYNC',
           summary: `Requirement ${d.code} held by Safety Filter → Queued in Superadmin Moderation`,
           stateFrom: 'CLIENT_POST_REQ_CONFIRM',
           stateTo: 'ACTIVE',
-          payload: { code: d.code, status: 'held', reason: 'Flagged keyword: betting' },
+          payload: { code: d.code, status: 'held', reason: 'Flagged keyword safety rule' },
         });
         appendMsg({
           persona: 'client',
@@ -529,21 +762,22 @@ export function XpoWhatsAppAutomationLab({
 
       // Normal Wave 1 Dispatch!
       setPartnerWaState('OFFER_SENT');
+      syncWaStatesToFirestore('ACTIVE', 'OFFER_SENT');
       setCurrentWave(1);
-      setWaveSeconds(300);
+      setWaveSeconds(waveWindowSeconds);
       setWaveRunning(true);
       setActiveStep(2);
 
       addLog({
         direction: 'FIRESTORE_SYNC',
-        summary: `Saved ${d.code} to Firestore & triggered Wave 1 (3 matched Partners, 5:00 window)`,
+        summary: `Saved ${d.code} to Firestore & triggered Wave 1 (${partnersPerRound} matched Partners, ${formatTimer(waveWindowSeconds)} window)`,
         stateFrom: 'CLIENT_POST_REQ_CONFIRM',
         stateTo: 'OFFER_SENT',
         payload: {
           action: 'client.post_requirement',
           code: d.code,
-          wave1Partners: ['Klo Tech', 'Shree Packaging', 'Deccan Pack'],
-          windowSeconds: 300,
+          wave1Partners: ['Klo Tech', 'Shree Packaging', 'Deccan Pack'].slice(0, partnersPerRound),
+          windowSeconds: waveWindowSeconds,
         },
       });
 
@@ -553,8 +787,8 @@ export function XpoWhatsAppAutomationLab({
         header: `🚀 Posted Free · ${d.code}`,
         text:
           `Your requirement *${d.title}* is now live!\n\n` +
-          `• *Wave 1 Dispatched:* Offered to *3 top-matched verified Partners* in ${d.city}\n` +
-          `• *Response Window:* 5 minutes per wave\n\n` +
+          `• *Wave 1 Dispatched:* Offered to *${partnersPerRound} top-matched verified Partners* in ${d.city}\n` +
+          `• *Response Window:* ${Math.round(waveWindowSeconds / 60)} minutes per wave\n\n` +
           `We will message you right here as soon as Partners reply with quotes.`,
       });
 
@@ -562,7 +796,7 @@ export function XpoWhatsAppAutomationLab({
       appendMsg({
         persona: 'partner',
         sender: 'bot',
-        header: `⚡ NEW WAVE 1 LEAD · ${d.code}`,
+        header: `${waConfig?.waveAlertHeader || '⚡ NEW WAVE 1 LEAD · 5 MIN WINDOW'} · ${d.code}`,
         templateName: 'opportunity_alert (Meta Approved)',
         text:
           `Match Score: *98% (Top Local Match)*\n` +
@@ -573,7 +807,7 @@ export function XpoWhatsAppAutomationLab({
           `*Timeline:* ${d.timeline}\n` +
           `*Budget:* ${d.budget}\n` +
           `*Specs:* ${d.spec}\n\n` +
-          `⏱ *5:00 Response Window started upon delivery.* Reply now to lock your spot in the top 3:`,
+          `⏱ *${formatTimer(waveWindowSeconds)} Response Window started upon delivery.* Reply now to lock your spot in the top ${partnersPerRound}:`,
         buttons: [
           { id: 'p_claim_quote', label: '✓ Interested · Send Quote (1 Reply)', tone: 'primary' },
           { id: 'p_pass_offer', label: '✕ Pass (0 Credits)', tone: 'default' },
@@ -819,32 +1053,70 @@ export function XpoWhatsAppAutomationLab({
     const nextWave = currentWave + 1;
     setCurrentWave(nextWave);
     setTimeout(() => {
-      setWaveSeconds(300);
+      setWaveSeconds(waveWindowSeconds);
       setWaveRunning(true);
     }, 600);
 
     addLog({
       direction: 'STATE_TRANSITION',
-      summary: `Wave ${currentWave} 5-Min Window Expired (00:00) · 0 Credits Deducted · Cascaded to Wave ${nextWave} (Next 3 Ranked Partners)`,
+      summary: `Wave ${currentWave} Window Expired (00:00) · 0 Credits Deducted · Cascaded to Wave ${nextWave} (Next ${partnersPerRound} Ranked Partners)`,
       stateFrom: 'OFFER_SENT',
       stateTo: 'OFFER_SENT',
       payload: {
         expiredWave: currentWave,
         newWave: nextWave,
         partnerPenaltyCredits: 0,
-        dispatchedTo: ['Apex Packaging · Pune', 'Morya Cartons · Mumbai', 'Sahyadri Print · Nashik'],
+        dispatchedTo: ['Apex Packaging · Pune', 'Morya Cartons · Mumbai', 'Sahyadri Print · Nashik'].slice(
+          0,
+          partnersPerRound
+        ),
       },
     });
 
     appendMsg({
       persona: 'partner',
       sender: 'system',
-      text: `⏱ Wave ${currentWave} 5-minute window expired. 0 credits deducted. Engine automatically cascaded ${activeReqCode} to Wave ${nextWave} (next 3 ranked Partners).`,
+      text: `⏱ Wave ${currentWave} (${formatTimer(waveWindowSeconds)}) window expired. 0 credits deducted. Engine automatically cascaded ${activeReqCode} to Wave ${nextWave} (next ${partnersPerRound} ranked Partners).`,
     });
   };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {waConfig?.autoPaused && (
+        <div
+          style={{
+            padding: '12px 16px',
+            borderRadius: 12,
+            background: '#FEF2F2',
+            border: '1.5px solid #DC2626',
+            color: '#991B1B',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+            fontWeight: 700,
+            fontSize: 13,
+          }}
+        >
+          <span>
+            ⏸️ <b>Superadmin Master Override Active:</b> Automated WhatsApp bot replies are currently paused globally. Inbound messages are queued in the Coordinator Inbox.
+          </span>
+          <button
+            type="button"
+            className="btn pri sm"
+            onClick={() => {
+              void postMarketplaceAction('admin.update_whatsapp_automation', {
+                autoPaused: false,
+                summary: 'Resumed WhatsApp automation from Simulator',
+              });
+            }}
+          >
+            ▶ Resume Automation Now
+          </button>
+        </div>
+      )}
+
       {/* ==================== TOP ARCHITECTURE & 5-STAGE INTERACTIVE STEPPER ==================== */}
       <section
         className="card"
@@ -870,19 +1142,25 @@ export function XpoWhatsAppAutomationLab({
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <span
                 className="chip"
-                style={{ background: '#E3F2E8', color: '#14532D', fontWeight: 800 }}
+                style={{
+                  background: waConfig?.autoPaused ? '#FEE2E2' : '#E3F2E8',
+                  color: waConfig?.autoPaused ? '#991B1B' : '#14532D',
+                  fontWeight: 800,
+                }}
               >
-                ● Meta WhatsApp Cloud API · Live 18-State Engine
+                {waConfig?.autoPaused
+                  ? '⏸ Master Bot Paused by Superadmin'
+                  : '● Meta WhatsApp Cloud API · Live 18-State Engine'}
               </span>
               <span className="chip" style={{ background: 'var(--bbg)', color: 'var(--btx)' }}>
-                Synced with Firestore, Client App, Partner App &amp; Superadmin
+                Intake: {waConfig?.intakeMode === 'step_by_step' ? 'Step-by-Step' : 'One-Shot AI'} · Wave: {partnersPerRound} Partners / {Math.round(waveWindowSeconds / 60)}m
               </span>
             </div>
             <b style={{ fontSize: 19 }}>
               End-to-End WhatsApp Automation &amp; 5-Minute Wave Matching Simulator
             </b>
             <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-              Click any step below or chat inside the Client &amp; Partner WhatsApp phones — every action updates the live database across all workspaces.
+              Click any step below or chat inside the Client &amp; Partner WhatsApp phones — every action &amp; Superadmin flow setting updates live across all workspaces.
             </span>
           </div>
 

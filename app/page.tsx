@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/landing/navbar';
 import { Footer } from '@/components/landing/footer';
+import { getXpoWhatsAppBotUrl } from '@/lib/whatsapp/demo-bot-link';
+import { fetchMarketplaceState, subscribeMarketplaceSync, type MarketplaceLiveState } from '@/lib/marketplace/sync-client';
 import {
   CheckCircle2,
   Building2,
   Handshake,
-  Smartphone,
+  MessageCircle,
   ChevronDown,
   Search,
 } from 'lucide-react';
@@ -20,6 +22,19 @@ export default function HomePage() {
   const [searchVal, setSearchVal] = useState('');
   const [pricingPeriod, setPricingPeriod] = useState<'INR' | 'USD'>('INR');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [liveAdmin, setLiveAdmin] = useState<MarketplaceLiveState['admin'] | null>(null);
+
+  useEffect(() => {
+    void fetchMarketplaceState().then((s) => {
+      if (s?.admin) setLiveAdmin(s.admin);
+    });
+    const unsub = subscribeMarketplaceSync((state) => {
+      if (state.admin) {
+        setLiveAdmin(state.admin);
+      }
+    });
+    return unsub;
+  }, []);
 
   const sampleChips = [
     { label: '📦 10,000 Corrugated Boxes, Pune', query: '10,000 printed 3-ply corrugated boxes Pune' },
@@ -88,7 +103,7 @@ export default function HomePage() {
     },
   ];
 
-  const faqs = [
+  const baseFaqs = [
     {
       q: 'How does XPO match clients and partners in 5 minutes?',
       a: 'When a Client posts a requirement (on Web, Mobile, or WhatsApp), our 4-tier taxonomy engine scores verified Partners based on category, location, and past delivery track record. Wave 1 offers are delivered to the top 3 matched Partners via WhatsApp with a 5-minute priority window. If a Partner is busy, the lead cascades to the next eligible Partner without any penalty.',
@@ -110,6 +125,14 @@ export default function HomePage() {
       a: 'Posting requirements is 100% free forever for Clients, including 5 free Partner unlocks. Partners get free registration with 5 starter lead reply credits. Paid plans (Client Plus at ₹299/mo and Partner Pro at ₹999/mo) offer higher monthly quotas, priority waves, and dedicated coordinator support.',
     },
   ];
+  const cmsFaqs = liveAdmin?.siteCms?.faqs;
+  const faqs = cmsFaqs && cmsFaqs.length > 0 ? cmsFaqs : baseFaqs;
+  const clientMonthlyInr = liveAdmin?.pricing?.clientMonthly ? `₹${liveAdmin.pricing.clientMonthly}` : '₹299';
+  const clientMonthlyUsd = liveAdmin?.pricing?.clientUsdMonthly ? `$${liveAdmin.pricing.clientUsdMonthly}` : '$9.99';
+  const partnerMonthlyInr = liveAdmin?.pricing?.partnerMonthly ? `₹${liveAdmin.pricing.partnerMonthly}` : '₹999';
+  const partnerMonthlyUsd = liveAdmin?.pricing?.partnerUsdMonthly ? `$${liveAdmin.pricing.partnerUsdMonthly}` : '$19.99';
+  const clientQuota = String(liveAdmin?.pricing?.clientMonthlyViews || 30);
+  const partnerQuota = String(liveAdmin?.pricing?.partnerMonthlyReplies || 50);
 
   return (
     <div
@@ -332,22 +355,24 @@ export default function HomePage() {
                 <Handshake style={{ width: 18, height: 18, color: '#1E3A8A' }} />
                 <span>Partner Lead Feed (5 Free)</span>
               </Link>
-              <Link
-                href="/simulator"
+              <a
+                href={getXpoWhatsAppBotUrl('general')}
+                target="_blank"
+                rel="noreferrer"
                 className="btn"
                 style={{
                   minHeight: 48,
                   padding: '0 22px',
                   borderRadius: 14,
                   fontSize: 14.5,
-                  background: '#15171C',
+                  background: '#16A34A',
                   color: '#FFFFFF',
                   textDecoration: 'none',
                 }}
               >
-                <Smartphone style={{ width: 18, height: 18, color: '#38BDF8' }} />
-                <span>📱 iPhone &amp; WhatsApp Studio →</span>
-              </Link>
+                <MessageCircle style={{ width: 18, height: 18, color: '#FFFFFF' }} />
+                <span>💬 Chat on XPO WhatsApp Bot →</span>
+              </a>
             </div>
 
             {/* 4 Feature Highlights */}
@@ -492,9 +517,15 @@ export default function HomePage() {
                     <Link href="/dashboard/client" className="btn b1 sm" style={{ textDecoration: 'none' }}>
                       Open Client Dashboard →
                     </Link>
-                    <Link href="/simulator" className="btn b2 sm" style={{ textDecoration: 'none' }}>
-                      📱 Test on iPhone Simulator
-                    </Link>
+                    <a
+                      href={getXpoWhatsAppBotUrl('client')}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn b2 sm"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      💬 Post via WhatsApp Chatbot →
+                    </a>
                   </div>
                 </div>
 
@@ -557,9 +588,15 @@ export default function HomePage() {
                     <Link href="/dashboard/partner" className="btn b1 sm" style={{ textDecoration: 'none' }}>
                       Open Partner Feed →
                     </Link>
-                    <Link href="/simulator" className="btn b2 sm" style={{ textDecoration: 'none' }}>
-                      📱 Test on iPhone Simulator
-                    </Link>
+                    <a
+                      href={getXpoWhatsAppBotUrl('partner')}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn b2 sm"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      💬 Reply via WhatsApp Chatbot →
+                    </a>
                   </div>
                 </div>
 
@@ -615,10 +652,25 @@ export default function HomePage() {
                       <span>Automatic opt-out on STOP and coordinator escalation on SUPPORT</span>
                     </li>
                   </ul>
-                  <div style={{ display: 'flex', gap: 10, paddingTop: 4 }}>
-                    <Link href="/simulator" className="btn b1 sm" style={{ textDecoration: 'none' }}>
-                      ▶ Launch WhatsApp Automation Lab →
-                    </Link>
+                  <div style={{ display: 'flex', gap: 10, paddingTop: 4, flexWrap: 'wrap' }}>
+                    <a
+                      href={getXpoWhatsAppBotUrl('client')}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn b1 sm"
+                      style={{ textDecoration: 'none', background: '#16A34A' }}
+                    >
+                      💬 Open Dummy XPO Chatbot (Client) →
+                    </a>
+                    <a
+                      href={getXpoWhatsAppBotUrl('partner')}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn b2 sm"
+                      style={{ textDecoration: 'none' }}
+                    >
+                      💬 Open Dummy XPO Chatbot (Partner) →
+                    </a>
                   </div>
                 </div>
 
@@ -629,20 +681,38 @@ export default function HomePage() {
                       XPO
                     </div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: 13 }}>XPO Assistant ✔</div>
-                      <div style={{ fontSize: 10.5, opacity: 0.85 }}>Meta Verified Business Account</div>
+                      <div style={{ fontWeight: 800, fontSize: 13 }}>XPO Assistant ✔ (+91 98490 00112)</div>
+                      <div style={{ fontSize: 10.5, opacity: 0.85 }}>Meta Verified Business Account · Dummy Bot</div>
                     </div>
+                  </div>
+                  <div style={{ background: '#DCF8C6', padding: 10, borderRadius: '12px 12px 2px 12px', fontSize: 12.5, marginBottom: 8, marginLeft: 32 }}>
+                    <b>Client (You):</b> Need 10,000 printed 3-ply corrugated boxes in Pune within 2 weeks, budget ₹1.8L
                   </div>
                   <div style={{ background: '#FFFFFF', padding: 12, borderRadius: '12px 12px 12px 2px', fontSize: 13, marginBottom: 8 }}>
                     <b style={{ color: '#075E54', display: 'block', marginBottom: 2 }}>⚡ NEW WAVE 1 LEAD · XPO-REQ-41208</b>
                     <b>10,000 printed 3-ply corrugated boxes (Pune)</b>
                     <p style={{ margin: '4px 0 0', fontSize: 12, color: '#4A4F59' }}>
-                      ⏱ 5-Minute Wave 1 Clock active. Tap to reply:
+                      ⏱ 5-Minute Wave 1 Clock active. Dispatched to 3 verified Partners. Tap to reply on WhatsApp:
                     </p>
                   </div>
-                  <div style={{ background: '#075E54', color: '#fff', textAlign: 'center', padding: '8px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>
-                    ✓ Interested · Send Quote (1 Reply)
-                  </div>
+                  <a
+                    href={getXpoWhatsAppBotUrl('partner')}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'block',
+                      background: '#075E54',
+                      color: '#fff',
+                      textAlign: 'center',
+                      padding: '9px 12px',
+                      borderRadius: 8,
+                      fontSize: 12.5,
+                      fontWeight: 700,
+                      textDecoration: 'none',
+                    }}
+                  >
+                    ✓ Interested · Send Quote on WhatsApp (1 Reply) →
+                  </a>
                 </div>
               </div>
             )}
@@ -851,13 +921,13 @@ export default function HomePage() {
                 </span>
                 <b style={{ fontSize: 20 }}>Monthly Plan</b>
                 <div style={{ fontSize: 28, fontWeight: 900, color: '#C8102E' }}>
-                  {pricingPeriod === 'INR' ? '₹299' : '$9.99'} <span style={{ fontSize: 14, fontWeight: 400, color: '#4A4F59' }}>/ month</span>
+                  {pricingPeriod === 'INR' ? clientMonthlyInr : clientMonthlyUsd} <span style={{ fontSize: 14, fontWeight: 400, color: '#4A4F59' }}>/ month</span>
                 </div>
                 <p style={{ margin: 0, fontSize: 13, color: '#4A4F59' }}>
                   For active purchasing teams and procurement heads.
                 </p>
                 <div style={{ borderTop: '1px solid #E4E5E9', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-                  <div>✓ <b>30 partner unlocks</b> every month</div>
+                  <div>✓ <b>{clientQuota} partner unlocks</b> every month</div>
                   <div>✓ Priority matching queue</div>
                   <div>✓ Dedicated WhatsApp coordinator</div>
                   <div>✓ GST invoice download</div>
@@ -874,13 +944,13 @@ export default function HomePage() {
                 </span>
                 <b style={{ fontSize: 20 }}>Monthly Pro</b>
                 <div style={{ fontSize: 28, fontWeight: 900, color: '#1E3A8A' }}>
-                  {pricingPeriod === 'INR' ? '₹999' : '$19.99'} <span style={{ fontSize: 14, fontWeight: 400, color: '#4A4F59' }}>/ month</span>
+                  {pricingPeriod === 'INR' ? partnerMonthlyInr : partnerMonthlyUsd} <span style={{ fontSize: 14, fontWeight: 400, color: '#4A4F59' }}>/ month</span>
                 </div>
                 <p style={{ margin: 0, fontSize: 13, color: '#4A4F59' }}>
                   For growing agencies, manufacturers &amp; service providers.
                 </p>
                 <div style={{ borderTop: '1px solid #E4E5E9', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
-                  <div>✓ <b>50 lead replies</b> per month</div>
+                  <div>✓ <b>{partnerQuota} lead replies</b> per month</div>
                   <div>✓ Wave 1 (5-minute window) priority</div>
                   <div>✓ Verified Partner badge on profile</div>
                   <div>✓ 0% commission on all contracts</div>
@@ -997,22 +1067,24 @@ export default function HomePage() {
               >
                 Join as Partner (5 Free)
               </Link>
-              <Link
-                href="/simulator"
+              <a
+                href={getXpoWhatsAppBotUrl('general')}
+                target="_blank"
+                rel="noreferrer"
                 className="btn"
                 style={{
                   minHeight: 48,
                   padding: '0 24px',
                   borderRadius: 14,
                   fontSize: 14.5,
-                  background: '#262A34',
+                  background: '#16A34A',
                   color: '#FFFFFF',
-                  border: '1px solid #3D4250',
+                  border: '1px solid #15803D',
                   textDecoration: 'none',
                 }}
               >
-                📱 Try Simulator Studio
-              </Link>
+                💬 Chat on XPO WhatsApp Bot
+              </a>
             </div>
           </div>
         </section>

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/lib/auth/auth-context';
 import { Button } from '@/components/ui/button';
+import { getXpoWhatsAppBotUrl } from '@/lib/whatsapp/demo-bot-link';
 import { LayoutDashboard, Menu, MessageCircle, Shield, X } from 'lucide-react';
 
 export function Navbar() {
@@ -11,10 +12,7 @@ export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  const waNumber = (process.env.NEXT_PUBLIC_WA_BUSINESS_NUMBER || '').replace(/\D/g, '');
-  const waHref = waNumber
-    ? `https://wa.me/${waNumber}?text=${encodeURIComponent('Hi XPO')}`
-    : '/how-it-works';
+  const waHref = getXpoWhatsAppBotUrl('general');
 
   const dashboardUrl = user?.isSuperadmin
     ? '/superadmin'
@@ -43,8 +41,8 @@ export function Navbar() {
           </Link>
           <a
             href={waHref}
-            target={waNumber ? '_blank' : undefined}
-            rel={waNumber ? 'noreferrer' : undefined}
+            target="_blank"
+            rel="noreferrer"
             className="inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 font-bold"
           >
             <MessageCircle className="w-3.5 h-3.5" />
@@ -177,6 +175,16 @@ export function Navbar() {
           >
             Plans & Quotas
           </Link>
+          <a
+            href={waHref}
+            target="_blank"
+            rel="noreferrer"
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-1.5 text-sm font-bold text-emerald-700 py-1.5"
+          >
+            <MessageCircle className="w-4 h-4" />
+            Start on WhatsApp Chatbot
+          </a>
           <div className="pt-3 border-t border-[#E4E5E9] flex flex-col gap-2">
             {user ? (
               <Link href={dashboardUrl} onClick={() => setMobileMenuOpen(false)}>

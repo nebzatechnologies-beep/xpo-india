@@ -11,15 +11,12 @@ import {
 } from 'firebase/auth';
 import { getClientAuth, isFirebaseClientConfigured } from '@/lib/firebase/client';
 import { useAuth } from '@/lib/auth/auth-context';
+import { getXpoWhatsAppBotUrl } from '@/lib/whatsapp/demo-bot-link';
 import {
   AlertCircle,
   ArrowRight,
-
-
   Mail,
   Phone,
-
-
   ShieldCheck,
   Loader2,
 } from 'lucide-react';
@@ -82,6 +79,28 @@ function AdminLoginContent() {
         ? nextPath
         : '/superadmin'
     );
+  }
+
+  async function handleQuickDemoAdminLogin() {
+    setError(null);
+    setMode('email');
+    setEmail('kavalipavan22@gmail.com');
+    setPassword('12345678');
+    if (!clientConfigured) {
+      router.push('/superadmin');
+      return;
+    }
+    try {
+      setSubmitting(true);
+      const auth = getClientAuth();
+      const cred = await signInWithEmailAndPassword(auth, 'kavalipavan22@gmail.com', '12345678');
+      const idToken = await cred.user.getIdToken(true);
+      await exchangeTokenAndVerifyAdmin(idToken);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Demo admin sign-in failed');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   async function handleEmailSignIn(e: React.FormEvent) {
@@ -355,6 +374,45 @@ function AdminLoginContent() {
           )}
 
           <div id="recaptcha-admin-container" />
+
+          {/* Demo Testing Credentials Box */}
+          <div className="mt-5 p-4 rounded-xl bg-[#FAFBFD] border border-[#E4E5E9] space-y-3 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-extrabold text-[#15171C]">🧪 Demo Testing Accounts (Password: 12345678)</span>
+              <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-bold text-[10px]">
+                LIVE FIREBASE
+              </span>
+            </div>
+            <button
+              type="button"
+              disabled={submitting}
+              onClick={() => void handleQuickDemoAdminLogin()}
+              className="w-full py-2.5 px-3 rounded-xl bg-[#C8102E] hover:bg-[#A50D25] text-white font-bold text-xs transition flex items-center justify-between"
+            >
+              <span>⚡ 1-Click Sign In as Superadmin</span>
+              <span className="font-mono text-[11px] opacity-90">kavalipavan22@gmail.com</span>
+            </button>
+            <div className="grid grid-cols-1 gap-1.5 pt-1 text-[11px] text-[#4A4F59]">
+              <div className="flex items-center justify-between">
+                <span>👤 <b>Client Demo:</b> <code>pavan@gmail.com</code> / <code>12345678</code></span>
+                <Link href="/login" className="text-[#C8102E] font-bold hover:underline">Test Client →</Link>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>🏭 <b>Partner Demo:</b> <code>partner@gmail.com</code> / <code>12345678</code></span>
+                <Link href="/login" className="text-[#1E3A8A] font-bold hover:underline">Test Partner →</Link>
+              </div>
+            </div>
+            <div className="pt-2 border-t border-[#E4E5E9]">
+              <a
+                href={getXpoWhatsAppBotUrl('general')}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-1.5"
+              >
+                💬 Open Dummy XPO WhatsApp Chatbot →
+              </a>
+            </div>
+          </div>
 
           <div className="mt-6 pt-5 border-t border-[#F0F0F0] flex items-center justify-between text-xs">
             <span className="text-[#4A4F59]">Customer or Partner?</span>

@@ -8,6 +8,7 @@ import {
   postMarketplaceAction,
   subscribeMarketplaceSync,
 } from '@/lib/marketplace/sync-client';
+import { getXpoWhatsAppBotUrl } from '@/lib/whatsapp/demo-bot-link';
 
 export type PartnerScreenId =
   | 'feed'
@@ -860,8 +861,26 @@ export function XpoPartnerApp({
             }}
           >
             <div>
-              <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 2 }}>Need a hand?</div>
-              WhatsApp us at <span className="mono">+91 40 4917 2200</span>
+              <div style={{ fontWeight: 700, color: 'var(--tx2)', marginBottom: 4 }}>Receive Wave 1 on WhatsApp</div>
+              <a
+                href={getXpoWhatsAppBotUrl('partner')}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '6px 10px',
+                  borderRadius: 8,
+                  background: '#16A34A',
+                  color: '#FFFFFF',
+                  fontWeight: 700,
+                  fontSize: 11.5,
+                  textDecoration: 'none',
+                }}
+              >
+                💬 Open XPO WhatsApp Bot →
+              </a>
             </div>
             <div style={{ display: 'flex', gap: 10, paddingTop: 6, borderTop: '1px solid var(--ln)' }}>
               <Link
@@ -930,25 +949,17 @@ export function XpoPartnerApp({
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative' }}>
               {!hideSimToolbar && (
-                <>
-                  <button
-                    type="button"
-                    className="pill hide-sm"
-                    onClick={() => setMobileSim((m) => !m)}
-                    title="Toggle 390×844 Mobile Application Simulator"
-                  >
-                    <span>📱 {mobileSim ? 'Desktop View' : 'Mobile App'}</span>
-                  </button>
-                  <Link
-                    href="/simulator"
-                    className="pill hide-sm"
-                    style={{ textDecoration: 'none', color: 'var(--tx)' }}
-                    title="Open Live Mobile & WhatsApp Automation Studio"
-                  >
-                    <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
-                    <span>WhatsApp &amp; Mobile Sim</span>
-                  </Link>
-                </>
+                <a
+                  href={getXpoWhatsAppBotUrl('partner')}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="pill hide-sm"
+                  style={{ textDecoration: 'none', color: 'var(--tx)' }}
+                  title="Redirect to WhatsApp with Dummy XPO India Chatbot"
+                >
+                  <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
+                  <span>💬 XPO WhatsApp Bot</span>
+                </a>
               )}
               {S.screen !== 'billing' && (
                 <button
@@ -2937,27 +2948,14 @@ export function XpoPartnerApp({
             </div>
 
             <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', paddingTop: 4 }}>
-              <button
-                type="button"
-                onClick={() => setMobileSim((m) => !m)}
-                style={{
-                  background: 'none',
-                  border: 0,
-                  padding: 0,
-                  color: '#86EFAC',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  fontSize: 12.5,
-                }}
-              >
-                📱 {mobileSim ? 'Desktop View' : 'Mobile App Sim'}
-              </button>
-              <Link
-                href="/simulator"
+              <a
+                href={getXpoWhatsAppBotUrl('partner')}
+                target="_blank"
+                rel="noreferrer"
                 style={{ color: '#86EFAC', fontWeight: 700, textDecoration: 'none' }}
               >
-                WhatsApp Sim →
-              </Link>
+                💬 Open WhatsApp Bot →
+              </a>
               <Link
                 href="/dashboard/client"
                 style={{ color: '#9FC1FF', fontWeight: 700, textDecoration: 'none' }}

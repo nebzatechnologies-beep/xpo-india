@@ -15,7 +15,11 @@ import {
   subscribeMarketplaceSync,
   type MarketplaceLiveState,
 } from '@/lib/marketplace/sync-client';
-import { XpoWhatsAppAutomationLab } from '@/components/simulator/xpo-whatsapp-automation-lab';
+import {
+  getXpoWhatsAppBotUrl,
+  DEMO_META_API_CREDS,
+  DEMO_WA_BOT_DISPLAY,
+} from '@/lib/whatsapp/demo-bot-link';
 
 export type SuperadminScreen =
   | 'home'
@@ -4044,6 +4048,80 @@ export function XpoSuperadminApp() {
   // Categories selection
   const [selectedSectorIdx, setSelectedSectorIdx] = useState(0);
   const [selectedCatIdx, setSelectedCatIdx] = useState(0);
+  const [showSubcatModal, setShowSubcatModal] = useState(false);
+  const [newSubcatName, setNewSubcatName] = useState('');
+  const [newSubcatTags, setNewSubcatTags] = useState('');
+
+  // Plans & Pricing state (synced with Firestore)
+  const [pricingState, setPricingState] = useState({
+    clientFreeCredits: 5,
+    clientPlusPriceInr: 299,
+    clientPlusPriceUsd: 9.99,
+    clientMonthlyViews: 30,
+    clientAutoPay: true,
+    clientRollover: false,
+    partnerFreeCredits: 3,
+    partnerProPriceInr: 999,
+    partnerProPriceUsd: 19.99,
+    partnerMonthlyReplies: 50,
+    partnerAutoPay: true,
+    partnerRollover: false,
+  });
+
+  // Wave Matching Rules state (synced with Firestore)
+  const [waveRulesState, setWaveRulesState] = useState({
+    partnersPerRound: 3,
+    responseWindowSeconds: 300,
+    targetClaims: 3,
+    deliveryFallbackSeconds: 60,
+  });
+
+  // Gateways & Meta API Credentials state (synced with Firestore)
+  const [gatewaysState, setGatewaysState] = useState({
+    razorpayKeyId: 'rzp_live_9482019481',
+    razorpaySecretMasked: '••••••••••••••••',
+    razorpayWebhookMasked: '••••••••••••••••',
+    paypalClientId: 'AY7k8194_live_client',
+    paypalSecretMasked: '••••••••••••••••',
+    metaPhoneNumberId: '104928172948201',
+    metaWabaId: '918274019284710',
+    metaTokenMasked: 'EAAK...••••••••••••••••',
+    metaVerifyToken: 'xpo_india_webhook_secret_2026',
+    metaDisplayPhone: '+91 40 4917 2200',
+  });
+
+  // WhatsApp Flow & Prompts Controller state (synced with Firestore)
+  const [waFlowState, setWaFlowState] = useState<{
+    intakeMode: 'smart_one_shot' | 'step_by_step';
+    autoHoldFlagged: boolean;
+    flaggedKeywords: string;
+    welcomeGreeting: string;
+    waveAlertHeader: string;
+    clientWaState: string;
+    partnerWaState: string;
+    customSynonyms: { word: string; cat: string }[];
+    ignoredUnmappedWords: string[];
+  }>({
+    intakeMode: 'smart_one_shot',
+    autoHoldFlagged: true,
+    flaggedKeywords: 'betting, gambling, casino, crypto, adult, loan',
+    welcomeGreeting: 'Welcome back to XPO India ✓',
+    waveAlertHeader: '⚡ NEW WAVE 1 LEAD · 5 MIN WINDOW',
+    clientWaState: 'ACTIVE',
+    partnerWaState: 'OFFER_SENT',
+    customSynonyms: [],
+    ignoredUnmappedWords: [],
+  });
+
+  // Coordinator Live Message Injection state
+  const [coordPersona, setCoordPersona] = useState<'client' | 'partner'>('client');
+  const [coordText, setCoordText] = useState('');
+  const [unmappedCategorySelect, setUnmappedCategorySelect] = useState<Record<string, string>>({});
+
+  // CMS New FAQ state
+  const [showFaqModal, setShowFaqModal] = useState(false);
+  const [newFaqQ, setNewFaqQ] = useState('');
+  const [newFaqA, setNewFaqA] = useState('');
 
   // Audit log
   const [auditLog, setAuditLog] = useState([
@@ -4066,6 +4144,136 @@ export function XpoSuperadminApp() {
   useEffect(() => {
     const applyLiveState = (st: MarketplaceLiveState | null) => {
       if (!st || !st.admin) return;
+
+      // Hydrate WhatsApp Automation & Flow Controller
+      if (st.admin.whatsappAutomation) {
+        const wa = st.admin.whatsappAutomation;
+        setAutoPaused(Boolean(wa.autoPaused));
+        setWaFlowState({
+          intakeMode: wa.intakeMode || 'smart_one_shot',
+          autoHoldFlagged: wa.autoHoldFlagged !== false,
+          flaggedKeywords: Array.isArray(wa.flaggedKeywords)
+            ? wa.flaggedKeywords.join(', ')
+            : wa.flaggedKeywords || 'betting, gambling, casino, crypto, adult, loan',
+          welcomeGreeting: wa.welcomeGreeting || 'Welcome back to XPO India ✓',
+          waveAlertHeader: wa.waveAlertHeader || '⚡ NEW WAVE 1 LEAD · 5 MIN WINDOW',
+          clientWaState: wa.clientWaState || 'ACTIVE',
+          partnerWaState: wa.partnerWaState || 'OFFER_SENT',
+          customSynonyms: (wa.customSynonyms || []).map((cs) => ({
+            word: cs.word,
+            cat: cs.category,
+          })),
+          ignoredUnmappedWords: wa.ignoredUnmappedWords || [],
+        });
+        setAuto((prev) => ({
+          ...prev,
+          hi: wa.rules?.hi || prev.hi,
+          lo: wa.rules?.lo || prev.lo,
+          misses: wa.rules?.misses || prev.misses,
+          hours: wa.rules?.hours || prev.hours,
+          promise: wa.rules?.promise || prev.promise,
+          quiet: wa.rules?.quiet || prev.quiet,
+          rate: wa.rules?.rate || prev.rate,
+          retries: wa.rules?.retries || prev.retries,
+          hold: wa.rules?.hold || prev.hold,
+          exp: wa.rules?.exp || prev.exp,
+          smart: wa.smartFeatures
+            ? prev.smart.map((sf) =>
+                typeof wa.smartFeatures?.[sf.t] === 'boolean'
+                  ? { ...sf, on: Boolean(wa.smartFeatures[sf.t]) }
+                  : sf
+              )
+            : prev.smart,
+          keys:
+            wa.globalKeywords && wa.globalKeywords.length > 0
+              ? wa.globalKeywords.map((gk) => ({
+                  w: gk.word,
+                  does: gk.does,
+                  reply: gk.reply,
+                  on: gk.enabled,
+                  lock: Boolean(gk.lock),
+                }))
+              : prev.keys,
+        }));
+      }
+
+      // Hydrate Pricing
+      if (st.admin.pricing) {
+        const p = st.admin.pricing;
+        setPricingState((prev) => ({
+          clientFreeCredits: p.freeClientViews ?? prev.clientFreeCredits,
+          clientPlusPriceInr: p.clientMonthly ?? prev.clientPlusPriceInr,
+          clientPlusPriceUsd: p.clientUsdMonthly ?? prev.clientPlusPriceUsd,
+          clientMonthlyViews: p.clientMonthlyViews ?? prev.clientMonthlyViews,
+          clientAutoPay: p.clientAutoPay ?? prev.clientAutoPay,
+          clientRollover: p.clientRollover ?? prev.clientRollover,
+          partnerFreeCredits: p.freePartnerReplies ?? prev.partnerFreeCredits,
+          partnerProPriceInr: p.partnerMonthly ?? prev.partnerProPriceInr,
+          partnerProPriceUsd: p.partnerUsdMonthly ?? prev.partnerProPriceUsd,
+          partnerMonthlyReplies: p.partnerMonthlyReplies ?? prev.partnerMonthlyReplies,
+          partnerAutoPay: p.partnerAutoPay ?? prev.partnerAutoPay,
+          partnerRollover: p.partnerRollover ?? prev.partnerRollover,
+        }));
+      }
+
+      // Hydrate Wave Rules
+      if (st.admin.waveRules) {
+        setWaveRulesState((prev) => ({ ...prev, ...st.admin.waveRules }));
+      }
+
+      // Hydrate Gateways
+      if (st.admin.gateways) {
+        setGatewaysState((prev) => ({ ...prev, ...st.admin.gateways }));
+      }
+
+      // Hydrate Website CMS
+      if (st.admin.siteCms) {
+        const cms = st.admin.siteCms;
+        setSite((prev) => ({
+          ...prev,
+          sections: prev.sections.map((sec) => {
+            const match = cms.sections?.find((cs) => cs.k === sec.k);
+            return match ? { ...sec, on: match.on } : sec;
+          }),
+          hero: cms.hero
+            ? {
+                client: { ...prev.hero.client, ...cms.hero.client },
+                partner: { ...prev.hero.partner, ...cms.hero.partner },
+              }
+            : prev.hero,
+          faqs:
+            cms.faqs && cms.faqs.length > 0
+              ? cms.faqs.map((f) => ({ ...f, on: true }))
+              : prev.faqs,
+        }));
+        if (cms.history && cms.history.length > 0) {
+          setSiteHist(cms.history);
+        }
+      }
+
+      // Hydrate Audit Logs
+      if (st.admin.auditLogs && st.admin.auditLogs.length > 0) {
+        setAuditLog(st.admin.auditLogs);
+      }
+
+      // Hydrate Custom Subcategories
+      if (st.admin.customSubcategories && st.admin.customSubcategories.length > 0) {
+        _setTax((prevTax) => {
+          const cloned = prevTax.map((sec) => ({
+            ...sec,
+            cats: sec.cats.map((c) => ({ ...c, subs: [...c.subs] })),
+          }));
+          st.admin.customSubcategories?.forEach((cs) => {
+            const sec = cloned.find((s) => s.name === cs.sectorName) || cloned[0];
+            const targetCat = sec?.cats.find((c) => c.name === cs.catName) || sec?.cats[0];
+            if (targetCat && !targetCat.subs.some((s) => s[0] === cs.subName)) {
+              targetCat.subs.push([cs.subName, cs.partnersCount, cs.keywords, cs.synonyms]);
+            }
+          });
+          return cloned;
+        });
+      }
+
       setDb((prev) => {
         const mapAdminStatusToReqSt = (
           s?: string,
@@ -4118,7 +4326,15 @@ export function XpoSuperadminApp() {
           }),
         ];
         const partnerKyc = st.admin.kycDecisions?.partner;
+        const memberKycMap = st.admin.memberKycMap || {};
         const mergedMembers = prev.members.map((m, idx) => {
+          const mapVal = memberKycMap[m.id];
+          if (mapVal) {
+            return {
+              ...m,
+              kyc: mapVal,
+            };
+          }
           if (idx === 0 && partnerKyc) {
             return {
               ...m,
@@ -4127,10 +4343,29 @@ export function XpoSuperadminApp() {
           }
           return m;
         });
+
+        const contactStageMap = st.admin.contactStageMap || {};
+        const mergedContacts = prev.contacts.map((c) => {
+          if (contactStageMap[c.id]) {
+            return { ...c, stage: contactStageMap[c.id] };
+          }
+          return c;
+        });
+
+        const pausedConvos = st.admin.whatsappAutomation?.pausedConvos || {};
+        const mergedConvos = prev.convos.map((c) => {
+          if (c.id in pausedConvos) {
+            return { ...c, paused: pausedConvos[c.id] };
+          }
+          return c;
+        });
+
         return {
           ...prev,
           reqs: mergedReqs,
           members: mergedMembers,
+          contacts: mergedContacts,
+          convos: mergedConvos,
         };
       });
     };
@@ -4158,7 +4393,9 @@ export function XpoSuperadminApp() {
   const runSimulator = (textToTest: string) => {
     const lower = textToTest.toLowerCase();
     let cat = 'General B2B Requirements';
-    if (lower.includes('box') || lower.includes('packaging') || lower.includes('carton')) cat = 'Industrial Packaging & Raw Materials';
+    const customSyn = waFlowState.customSynonyms.find((s) => lower.includes(s.word.toLowerCase()));
+    if (customSyn) cat = customSyn.cat;
+    else if (lower.includes('box') || lower.includes('packaging') || lower.includes('carton') || lower.includes('dabba')) cat = 'Industrial Packaging & Raw Materials';
     else if (lower.includes('web') || lower.includes('app') || lower.includes('software')) cat = 'Web & Mobile Development';
     else if (lower.includes('solar') || lower.includes('epc') || lower.includes('rooftop')) cat = 'Solar & Electrical EPC';
     else if (lower.includes('marketing') || lower.includes('seo') || lower.includes('leads')) cat = 'Performance Marketing & SEO';
@@ -4325,7 +4562,14 @@ export function XpoSuperadminApp() {
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link href="/dashboard/client" style={{ color: '#9FC1FF', textDecoration: 'none', fontWeight: 700 }}>Client app →</Link>
             <Link href="/dashboard/partner" style={{ color: '#9FC1FF', textDecoration: 'none', fontWeight: 700 }}>Partner app →</Link>
-            <Link href="/simulator" style={{ color: '#86EFAC', textDecoration: 'none', fontWeight: 700 }}>📱 Mobile &amp; WA Sim →</Link>
+            <a
+              href={getXpoWhatsAppBotUrl('general')}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: '#86EFAC', textDecoration: 'none', fontWeight: 700 }}
+            >
+              💬 Open WhatsApp Bot →
+            </a>
           </div>
         </div>
       </aside>
@@ -4350,19 +4594,21 @@ export function XpoSuperadminApp() {
                 setScreen('auto');
                 setViewTab((prev) => ({ ...prev, auto: 'journey' }));
               }}
-              title="Open Live WhatsApp Automation & 18-State Simulator"
+              title="View Demo WhatsApp Cloud API Credentials & Conversation Flow"
             >
               <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
-              <span>WhatsApp Bot Lab</span>
+              <span>Demo WA API &amp; Flow</span>
             </button>
-            <Link
-              href="/simulator"
+            <a
+              href={getXpoWhatsAppBotUrl('general')}
+              target="_blank"
+              rel="noreferrer"
               className="pill hide-sm"
               style={{ textDecoration: 'none', color: 'var(--tx)' }}
-              title="Open Tri-Screen Mobile App & WhatsApp Simulator Studio"
+              title="Redirect to WhatsApp with Dummy XPO India Chatbot"
             >
-              <span>📱 Mobile App Sim</span>
-            </Link>
+              <span>💬 Launch WhatsApp Bot</span>
+            </a>
             {/* Quick action buttons depending on screen */}
             {screen === 'contacts' && (
               <button type="button" className="btn b2" onClick={() => setUp(1)}>
@@ -5279,28 +5525,85 @@ export function XpoSuperadminApp() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
                         <div className="fld">
                           <span>Free views</span>
-                          <input className="inp mono" defaultValue="5" />
+                          <input
+                            className="inp mono"
+                            value={pricingState.clientFreeCredits}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({
+                                ...prev,
+                                clientFreeCredits: Number(e.target.value) || 0,
+                              }))
+                            }
+                          />
                         </div>
                         <div className="fld">
                           <span>Monthly views</span>
-                          <input className="inp mono" defaultValue="30" />
+                          <input
+                            className="inp mono"
+                            value={pricingState.clientMonthlyViews}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({
+                                ...prev,
+                                clientMonthlyViews: Number(e.target.value) || 0,
+                              }))
+                            }
+                          />
                         </div>
                         <div className="fld">
                           <span>Price ({viewTab.plans === 'india' ? '₹' : '$'})</span>
-                          <input className="inp mono" defaultValue={viewTab.plans === 'india' ? '299' : '9.99'} />
+                          <input
+                            className="inp mono"
+                            value={
+                              viewTab.plans === 'india'
+                                ? pricingState.clientPlusPriceInr
+                                : pricingState.clientPlusPriceUsd
+                            }
+                            onChange={(e) =>
+                              setPricingState((prev) =>
+                                viewTab.plans === 'india'
+                                  ? { ...prev, clientPlusPriceInr: Number(e.target.value) || 0 }
+                                  : { ...prev, clientPlusPriceUsd: Number(e.target.value) || 0 }
+                              )
+                            }
+                          />
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 16, borderTop: '1px solid var(--ln)', paddingTop: 12 }}>
                         <label className="swl">
-                          <input type="checkbox" className="swt" defaultChecked />
+                          <input
+                            type="checkbox"
+                            className="swt"
+                            checked={pricingState.clientAutoPay}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({ ...prev, clientAutoPay: e.target.checked }))
+                            }
+                          />
                           <span style={{ fontSize: 13 }}>Monthly AutoPay</span>
                         </label>
                         <label className="swl">
-                          <input type="checkbox" className="swt" />
+                          <input
+                            type="checkbox"
+                            className="swt"
+                            checked={pricingState.clientRollover}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({ ...prev, clientRollover: e.target.checked }))
+                            }
+                          />
                           <span style={{ fontSize: 13 }}>Rollover unused</span>
                         </label>
                       </div>
-                      <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('Client Plan pricing updated')}>
+                      <button
+                        type="button"
+                        className="btn b3"
+                        style={{ alignSelf: 'flex-start' }}
+                        onClick={() => {
+                          void postMarketplaceAction('admin.update_pricing', pricingState);
+                          toast(
+                            `Client Plan saved to Firebase (Free: ${pricingState.clientFreeCredits}, ₹${pricingState.clientPlusPriceInr} / $${pricingState.clientPlusPriceUsd})`
+                          );
+                          logAudit('Updated Client Plus plan in Firestore', 'Billing');
+                        }}
+                      >
                         Save Client Plan
                       </button>
                     </section>
@@ -5317,28 +5620,85 @@ export function XpoSuperadminApp() {
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 10 }}>
                         <div className="fld">
                           <span>Free replies</span>
-                          <input className="inp mono" defaultValue="3" />
+                          <input
+                            className="inp mono"
+                            value={pricingState.partnerFreeCredits}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({
+                                ...prev,
+                                partnerFreeCredits: Number(e.target.value) || 0,
+                              }))
+                            }
+                          />
                         </div>
                         <div className="fld">
                           <span>Monthly replies</span>
-                          <input className="inp mono" defaultValue="50" />
+                          <input
+                            className="inp mono"
+                            value={pricingState.partnerMonthlyReplies}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({
+                                ...prev,
+                                partnerMonthlyReplies: Number(e.target.value) || 0,
+                              }))
+                            }
+                          />
                         </div>
                         <div className="fld">
                           <span>Price ({viewTab.plans === 'india' ? '₹' : '$'})</span>
-                          <input className="inp mono" defaultValue={viewTab.plans === 'india' ? '999' : '19.99'} />
+                          <input
+                            className="inp mono"
+                            value={
+                              viewTab.plans === 'india'
+                                ? pricingState.partnerProPriceInr
+                                : pricingState.partnerProPriceUsd
+                            }
+                            onChange={(e) =>
+                              setPricingState((prev) =>
+                                viewTab.plans === 'india'
+                                  ? { ...prev, partnerProPriceInr: Number(e.target.value) || 0 }
+                                  : { ...prev, partnerProPriceUsd: Number(e.target.value) || 0 }
+                              )
+                            }
+                          />
                         </div>
                       </div>
                       <div style={{ display: 'flex', gap: 16, borderTop: '1px solid var(--ln)', paddingTop: 12 }}>
                         <label className="swl">
-                          <input type="checkbox" className="swt" defaultChecked />
+                          <input
+                            type="checkbox"
+                            className="swt"
+                            checked={pricingState.partnerAutoPay}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({ ...prev, partnerAutoPay: e.target.checked }))
+                            }
+                          />
                           <span style={{ fontSize: 13 }}>Monthly AutoPay</span>
                         </label>
                         <label className="swl">
-                          <input type="checkbox" className="swt" />
+                          <input
+                            type="checkbox"
+                            className="swt"
+                            checked={pricingState.partnerRollover}
+                            onChange={(e) =>
+                              setPricingState((prev) => ({ ...prev, partnerRollover: e.target.checked }))
+                            }
+                          />
                           <span style={{ fontSize: 13 }}>Rollover unused</span>
                         </label>
                       </div>
-                      <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('Partner Plan pricing updated')}>
+                      <button
+                        type="button"
+                        className="btn b3"
+                        style={{ alignSelf: 'flex-start' }}
+                        onClick={() => {
+                          void postMarketplaceAction('admin.update_pricing', pricingState);
+                          toast(
+                            `Partner Plan saved to Firebase (Free: ${pricingState.partnerFreeCredits}, ₹${pricingState.partnerProPriceInr} / $${pricingState.partnerProPriceUsd})`
+                          );
+                          logAudit('Updated Partner Pro plan in Firestore', 'Billing');
+                        }}
+                      >
                         Save Partner Plan
                       </button>
                     </section>
@@ -5407,7 +5767,7 @@ export function XpoSuperadminApp() {
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                   <button type="button" className="btn b2" onClick={() => toast('Downloaded 4-tier taxonomy template (.xlsx)')}>Download template</button>
                   <button type="button" className="btn b2" onClick={() => toast('Exported entire category hierarchy')}>Export</button>
-                  <button type="button" className="btn b1" onClick={() => toast('Open category importer dialog')}>Import from Excel</button>
+                  <button type="button" className="btn b1" onClick={() => setShowSubcatModal(true)}>+ Add Subcategory</button>
                 </div>
               </div>
 
@@ -5485,11 +5845,81 @@ export function XpoSuperadminApp() {
                       </h2>
                     </div>
                     <div style={{ display: 'flex', gap: 8 }}>
-                      <button type="button" className="btn b2" onClick={() => toast('Subcategory modal opened')}>
+                      <button type="button" className="btn b2" onClick={() => setShowSubcatModal((p) => !p)}>
                         + Add subcategory
                       </button>
                     </div>
                   </div>
+
+                  {showSubcatModal && (
+                    <div
+                      style={{
+                        padding: 16,
+                        borderRadius: 12,
+                        background: 'var(--sf2)',
+                        border: '1px solid var(--ln)',
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 10,
+                        alignItems: 'flex-end',
+                      }}
+                    >
+                      <label className="fld" style={{ flex: '1 1 200px' }}>
+                        <span>New Subcategory Name</span>
+                        <input
+                          className="inp"
+                          value={newSubcatName}
+                          onChange={(e) => setNewSubcatName(e.target.value)}
+                          placeholder="e.g. Corrugated Mailer Boxes"
+                        />
+                      </label>
+                      <label className="fld" style={{ flex: '1 1 200px' }}>
+                        <span>Search Tags / Synonyms</span>
+                        <input
+                          className="inp"
+                          value={newSubcatTags}
+                          onChange={(e) => setNewSubcatTags(e.target.value)}
+                          placeholder="e.g. mailer box, e-commerce dabba"
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="btn b1"
+                        onClick={() => {
+                          if (!newSubcatName.trim()) return;
+                          const name = newSubcatName.trim();
+                          const tags = newSubcatTags.trim() || name.toLowerCase();
+                          _setTax((prev) => {
+                            const cloned = prev.map((sec) => ({
+                              ...sec,
+                              cats: sec.cats.map((c) => ({ ...c, subs: [...c.subs] })),
+                            }));
+                            cloned[selectedSectorIdx]?.cats[selectedCatIdx]?.subs.push([
+                              name,
+                              24,
+                              tags,
+                              tags,
+                            ]);
+                            return cloned;
+                          });
+                          void postMarketplaceAction('admin.add_subcategory', {
+                            sectorIdx: selectedSectorIdx,
+                            catIdx: selectedCatIdx,
+                            name,
+                            partners: 24,
+                            tags,
+                            syn: tags,
+                          });
+                          setNewSubcatName('');
+                          setNewSubcatTags('');
+                          setShowSubcatModal(false);
+                          toast(`Added subcategory "${name}" & synced to Firestore`);
+                        }}
+                      >
+                        Save to Firestore
+                      </button>
+                    </div>
+                  )}
 
                   {/* Subcategories List */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -5513,7 +5943,18 @@ export function XpoSuperadminApp() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: '1px solid var(--ln)', paddingTop: 16 }}>
                     <b style={{ fontSize: 15 }}>Words people use · helps WhatsApp Smart mapping</b>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                      {(tax[selectedSectorIdx]?.cats[selectedCatIdx]?.syn || ['web app', 'software developer', 'app developer', 'mobile app', 'online store', 'ecommerce website', 'website banana']).map((syn, syni) => (
+                      {[
+                        ...(tax[selectedSectorIdx]?.cats[selectedCatIdx]?.syn || [
+                          'web app',
+                          'software developer',
+                          'app developer',
+                          'mobile app',
+                          'online store',
+                          'ecommerce website',
+                          'website banana',
+                        ]),
+                        ...waFlowState.customSynonyms.map((cs) => `${cs.word} → ${cs.cat}`),
+                      ].map((syn, syni) => (
                         <span key={syni} className="chip" style={{ background: 'var(--sf3)', color: 'var(--tx)' }}>
                           {syn}
                         </span>
@@ -5561,9 +6002,23 @@ export function XpoSuperadminApp() {
                     type="button"
                     className="btn b3"
                     onClick={() => {
-                      setAutoPaused(p => !p);
-                      toast(autoPaused ? 'Automation resumed' : 'All WhatsApp automation paused');
-                      logAudit(autoPaused ? 'Resumed WhatsApp automation' : 'Paused all automation', 'Automation');
+                      const nextPaused = !autoPaused;
+                      setAutoPaused(nextPaused);
+                      void postMarketplaceAction('admin.update_whatsapp_automation', {
+                        autoPaused: nextPaused,
+                        summary: nextPaused
+                          ? 'Paused all WhatsApp automation globally'
+                          : 'Resumed WhatsApp automation globally',
+                      });
+                      toast(
+                        nextPaused
+                          ? 'All WhatsApp automation paused in Firebase'
+                          : 'WhatsApp automation resumed in Firebase'
+                      );
+                      logAudit(
+                        nextPaused ? 'Paused all automation' : 'Resumed WhatsApp automation',
+                        'Automation'
+                      );
                     }}
                   >
                     {autoPaused ? 'Resume automation' : 'Pause all'}
@@ -5575,8 +6030,9 @@ export function XpoSuperadminApp() {
               <div role="tablist" aria-label="Automation Views" className="views">
                 {[
                   { id: 'over', l: 'Overview' },
+                  { id: 'flow', l: 'Flow & Prompts Control' },
                   { id: 'convos', l: `Conversations (${db.convos.length})` },
-                  { id: 'journey', l: 'Try it (Simulator)' },
+                  { id: 'journey', l: 'Demo API Creds & Chat Flow' },
                   { id: 'map', l: 'Smart mapping' },
                   { id: 'features', l: 'Smart features' },
                   { id: 'rules', l: 'Rules & Safety' },
@@ -5598,10 +6054,243 @@ export function XpoSuperadminApp() {
                 })}
               </div>
 
+              {/* Tab 1B: Flow & Prompts Control (Real-Time Superadmin WhatsApp Controller) */}
+              {viewTab.auto === 'flow' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  <div className="two" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: 16, alignItems: 'start' }}>
+                    <section className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <b style={{ fontSize: 17 }}>1. Client Intake &amp; Safety Flow Control</b>
+                        <span className="chip g">Synced Live</span>
+                      </div>
+                      <label className="fld">
+                        <span>Client Requirement Intake Mode</span>
+                        <select
+                          className="sel"
+                          value={waFlowState.intakeMode}
+                          onChange={(e) =>
+                            setWaFlowState((prev) => ({
+                              ...prev,
+                              intakeMode: e.target.value as 'smart_one_shot' | 'step_by_step',
+                            }))
+                          }
+                        >
+                          <option value="smart_one_shot">
+                            One-Shot AI Parse (Single message / Hinglish / Voice Note → Draft)
+                          </option>
+                          <option value="step_by_step">
+                            Step-by-Step Guided Flow (Category → Specs → City → Timeline → Budget)
+                          </option>
+                        </select>
+                      </label>
+                      <label className="swl">
+                        <input
+                          type="checkbox"
+                          className="swt"
+                          checked={waFlowState.autoHoldFlagged}
+                          onChange={(e) =>
+                            setWaFlowState((prev) => ({ ...prev, autoHoldFlagged: e.target.checked }))
+                          }
+                        />
+                        <span style={{ fontSize: 13.5, fontWeight: 600 }}>
+                          Auto-Hold Requirements with Restricted Safety Keywords
+                        </span>
+                      </label>
+                      <label className="fld">
+                        <span>Flagged Keywords (comma-separated · holds requirement for moderation)</span>
+                        <input
+                          className="inp mono"
+                          value={waFlowState.flaggedKeywords}
+                          onChange={(e) =>
+                            setWaFlowState((prev) => ({ ...prev, flaggedKeywords: e.target.value }))
+                          }
+                        />
+                      </label>
+                      <label className="fld">
+                        <span>Client Welcome Greeting Header</span>
+                        <input
+                          className="inp"
+                          value={waFlowState.welcomeGreeting}
+                          onChange={(e) =>
+                            setWaFlowState((prev) => ({ ...prev, welcomeGreeting: e.target.value }))
+                          }
+                        />
+                      </label>
+                      <label className="fld">
+                        <span>Partner 5-Min Wave Alert Header</span>
+                        <input
+                          className="inp"
+                          value={waFlowState.waveAlertHeader}
+                          onChange={(e) =>
+                            setWaFlowState((prev) => ({ ...prev, waveAlertHeader: e.target.value }))
+                          }
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        className="btn b1"
+                        style={{ alignSelf: 'flex-start' }}
+                        onClick={() => {
+                          void postMarketplaceAction('admin.update_whatsapp_automation', {
+                            intakeMode: waFlowState.intakeMode,
+                            autoHoldFlagged: waFlowState.autoHoldFlagged,
+                            flaggedKeywords: waFlowState.flaggedKeywords,
+                            welcomeGreeting: waFlowState.welcomeGreeting,
+                            waveAlertHeader: waFlowState.waveAlertHeader,
+                            summary: `Updated WhatsApp Flow (${waFlowState.intakeMode}) & safety keywords in Firestore`,
+                          });
+                          toast('WhatsApp Flow & Prompts saved to Firebase · live in Simulator & Webhook');
+                        }}
+                      >
+                        Save Flow &amp; Prompts to Firebase
+                      </button>
+                    </section>
+
+                    <section className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <b style={{ fontSize: 17 }}>2. Remote 18-State Controller &amp; Live Coordinator Takeover</b>
+                        <span className="chip b">Real-Time</span>
+                      </div>
+                      <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
+                        Force-transition Client or Partner WhatsApp sessions to any of the 18 states or inject a live human Coordinator message into their WhatsApp chat.
+                      </span>
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                        <label className="fld">
+                          <span>Client WhatsApp State</span>
+                          <select
+                            className="sel mono"
+                            value={waFlowState.clientWaState}
+                            onChange={(e) => {
+                              const nextSt = e.target.value;
+                              setWaFlowState((prev) => ({ ...prev, clientWaState: nextSt }));
+                              void postMarketplaceAction('admin.update_whatsapp_automation', {
+                                clientWaState: nextSt,
+                                summary: `Remotely set Client WhatsApp state to ${nextSt}`,
+                              });
+                              toast(`Client WhatsApp state transitioned to ${nextSt}`);
+                            }}
+                          >
+                            {[
+                              'NEW_CONTACT',
+                              'ROLE_SELECTION',
+                              'CLIENT_ONBOARDING',
+                              'ACTIVE',
+                              'CLIENT_POST_REQ_CATEGORY',
+                              'CLIENT_POST_REQ_SPECS',
+                              'CLIENT_POST_REQ_LOCATION',
+                              'CLIENT_POST_REQ_TIMELINE',
+                              'CLIENT_POST_REQ_BUDGET',
+                              'CLIENT_POST_REQ_CONFIRM',
+                              'PARTNER_VIEW_UNLOCKED',
+                              'CONNECTION_PENDING',
+                              'CONNECTED',
+                              'RENEWAL_REQUIRED',
+                              'PAUSED_OR_OPTED_OUT',
+                              'SUPPORT_REVIEW',
+                            ].map((stId) => (
+                              <option key={stId} value={stId}>
+                                {stId}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="fld">
+                          <span>Partner WhatsApp State</span>
+                          <select
+                            className="sel mono"
+                            value={waFlowState.partnerWaState}
+                            onChange={(e) => {
+                              const nextSt = e.target.value;
+                              setWaFlowState((prev) => ({ ...prev, partnerWaState: nextSt }));
+                              void postMarketplaceAction('admin.update_whatsapp_automation', {
+                                partnerWaState: nextSt,
+                                summary: `Remotely set Partner WhatsApp state to ${nextSt}`,
+                              });
+                              toast(`Partner WhatsApp state transitioned to ${nextSt}`);
+                            }}
+                          >
+                            {[
+                              'NEW_CONTACT',
+                              'ROLE_SELECTION',
+                              'PARTNER_ONBOARDING',
+                              'ACTIVE',
+                              'OFFER_SENT',
+                              'CLAIM_CONFIRMED',
+                              'CONNECTION_PENDING',
+                              'CONNECTED',
+                              'RENEWAL_REQUIRED',
+                              'PAUSED_OR_OPTED_OUT',
+                              'SUPPORT_REVIEW',
+                            ].map((stId) => (
+                              <option key={stId} value={stId}>
+                                {stId}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+
+                      <div style={{ borderTop: '1px solid var(--ln)', paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <b style={{ fontSize: 14 }}>Send Live Coordinator Message to WhatsApp</b>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            style={{
+                              background: coordPersona === 'client' ? '#C8102E' : 'var(--sf2)',
+                              color: coordPersona === 'client' ? '#fff' : 'var(--tx)',
+                            }}
+                            onClick={() => setCoordPersona('client')}
+                          >
+                            👤 To Client (+91 98490 00112)
+                          </button>
+                          <button
+                            type="button"
+                            className="btn sm"
+                            style={{
+                              background: coordPersona === 'partner' ? '#C8102E' : 'var(--sf2)',
+                              color: coordPersona === 'partner' ? '#fff' : 'var(--tx)',
+                            }}
+                            onClick={() => setCoordPersona('partner')}
+                          >
+                            🏭 To Partner (+91 56794 24578)
+                          </button>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                          <input
+                            className="inp"
+                            style={{ flex: 1 }}
+                            value={coordText}
+                            onChange={(e) => setCoordText(e.target.value)}
+                            placeholder={`Type Coordinator message to ${coordPersona.toUpperCase()}...`}
+                          />
+                          <button
+                            type="button"
+                            className="btn b1"
+                            onClick={() => {
+                              if (!coordText.trim()) return;
+                              const msg = coordText.trim();
+                              setCoordText('');
+                              void postMarketplaceAction('admin.send_coordinator_message', {
+                                persona: coordPersona,
+                                text: msg,
+                              });
+                              toast(`Dispatched Coordinator WhatsApp message to ${coordPersona.toUpperCase()}`);
+                            }}
+                          >
+                            Send to WhatsApp
+                          </button>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+                </div>
+              )}
+
               {/* Tab 1: Overview */}
               {(viewTab.auto || 'over') === 'over' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {/* Quick Launch Banner for Interactive WhatsApp & Mobile Simulator */}
+                  {/* Quick Launch Banner for Dummy XPO WhatsApp Chatbot & Demo Cloud API */}
                   <section
                     className="card"
                     style={{
@@ -5616,31 +6305,42 @@ export function XpoSuperadminApp() {
                   >
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span className="chip g">Interactive Live Lab</span>
+                        <span className="chip g">Meta Cloud API · {DEMO_WA_BOT_DISPLAY}</span>
                         <b style={{ fontSize: 16 }}>
-                          Test the 18-State WhatsApp Bot &amp; 5-Minute Wave Engine Live
+                          Dummy XPO WhatsApp Chatbot &amp; 5-Minute Wave Automation
                         </b>
                       </div>
                       <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                        Simulate Client requirements, Hinglish/voice notes, 5-minute Partner Wave 1 offers, and mutual contact unlocks across WhatsApp and Mobile Apps.
+                        Click below to redirect directly to your WhatsApp with a pre-filled Client or Partner conversation, or inspect the generated Demo WhatsApp Cloud API credentials &amp; full chat transcript.
                       </span>
                     </div>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <a
+                        href={getXpoWhatsAppBotUrl('client')}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn b1"
+                        style={{ minHeight: 38, fontSize: 13, background: '#16A34A', textDecoration: 'none' }}
+                      >
+                        💬 Open WhatsApp Bot (Client) →
+                      </a>
+                      <a
+                        href={getXpoWhatsAppBotUrl('partner')}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="btn b2"
+                        style={{ minHeight: 38, fontSize: 13, textDecoration: 'none' }}
+                      >
+                        💬 Open WhatsApp Bot (Partner) →
+                      </a>
                       <button
                         type="button"
-                        className="btn b1"
-                        style={{ minHeight: 38, fontSize: 13.5 }}
+                        className="btn b3"
+                        style={{ minHeight: 38, fontSize: 13 }}
                         onClick={() => setViewTab((prev) => ({ ...prev, auto: 'journey' }))}
                       >
-                        ▶ Open Live WhatsApp Bot Simulator
+                        🔑 Demo API Creds &amp; Chat Preview
                       </button>
-                      <Link
-                        href="/simulator"
-                        className="btn b2"
-                        style={{ minHeight: 38, fontSize: 13.5, textDecoration: 'none' }}
-                      >
-                        📱 Open Tri-Screen Mobile Studio →
-                      </Link>
                     </div>
                   </section>
 
@@ -5787,7 +6487,16 @@ export function XpoSuperadminApp() {
                                     item.id === c.id ? { ...item, paused: newPaused } : item
                                   ),
                                 }));
-                                toast(newPaused ? `Assistant paused for ${c.name} · Coordinator takeover active` : `Assistant resumed for ${c.name}`);
+                                void postMarketplaceAction('admin.toggle_convo_pause', {
+                                  convoId: c.id,
+                                  paused: newPaused,
+                                  name: c.name,
+                                });
+                                toast(
+                                  newPaused
+                                    ? `Assistant paused for ${c.name} · Coordinator takeover active in Firebase`
+                                    : `Assistant resumed for ${c.name} in Firebase`
+                                );
                               }}
                             >
                               {c.paused ? 'Resume Bot' : 'Takeover'}
@@ -5800,10 +6509,203 @@ export function XpoSuperadminApp() {
                 </section>
               )}
 
-              {/* Tab 3: Try It Simulator */}
+              {/* Tab 3: Demo API Creds & Conversation Flow */}
               {viewTab.auto === 'journey' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-                  <XpoWhatsAppAutomationLab />
+                  {/* 1. Demo WhatsApp Cloud API Credentials Card */}
+                  <section className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16, borderTop: '4px solid #16A34A' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+                      <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                          <span className="chip g">Meta Cloud API v21.0</span>
+                          <span className="chip" style={{ background: 'var(--sf3)' }}>Firestore Synced</span>
+                        </div>
+                        <b style={{ fontSize: 19 }}>Generated Demo WhatsApp Business API Credentials</b>
+                        <p style={{ margin: '4px 0 0', fontSize: 13.5, color: 'var(--tx2)' }}>
+                          Use these demo credentials to test webhook verification, template dispatch, and live WhatsApp redirects. Click any green WhatsApp button below to launch the dummy XPO chatbot right inside your WhatsApp app.
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        <button
+                          type="button"
+                          className="btn b2"
+                          onClick={() => {
+                            const randSuffix = Math.floor(10000 + Math.random() * 90000);
+                            const freshCreds = {
+                              ...gatewaysState,
+                              metaPhoneNumberId: `1094827165${randSuffix}`,
+                              metaWabaId: `1029384756${randSuffix}`,
+                              metaDisplayPhone: DEMO_WA_BOT_DISPLAY,
+                              metaTokenMasked: `EAAGm0PX4ZCpsBO7xK9demoXPOIndia2026Token${randSuffix}`,
+                              metaVerifyToken: 'xpo_india_webhook_secret_2026',
+                            };
+                            setGatewaysState(freshCreds);
+                            void postMarketplaceAction('admin.update_gateways', {
+                              gateways: freshCreds,
+                              summary: `Generated new Demo WhatsApp Cloud API credentials (Phone ID: ${freshCreds.metaPhoneNumberId})`,
+                            });
+                            toast(`Generated & saved new Demo WhatsApp API credentials (Phone ID: ${freshCreds.metaPhoneNumberId})`);
+                          }}
+                        >
+                          ⚡ Generate New Demo API Creds
+                        </button>
+                        <a
+                          href={getXpoWhatsAppBotUrl('general')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn b1"
+                          style={{ background: '#16A34A', textDecoration: 'none' }}
+                        >
+                          💬 Open Dummy XPO Chatbot on WhatsApp →
+                        </a>
+                      </div>
+                    </div>
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 12 }}>
+                      {[
+                        { label: 'Chatbot WhatsApp Number', val: gatewaysState.metaDisplayPhone || DEMO_WA_BOT_DISPLAY },
+                        { label: 'Meta Phone Number ID', val: gatewaysState.metaPhoneNumberId || DEMO_META_API_CREDS.metaPhoneNumberId },
+                        { label: 'WhatsApp Business Account (WABA) ID', val: gatewaysState.metaWabaId || DEMO_META_API_CREDS.metaWabaId },
+                        { label: 'Webhook Callback URL', val: DEMO_META_API_CREDS.webhookCallbackUrl },
+                        { label: 'Webhook Verify Token', val: gatewaysState.metaVerifyToken || DEMO_META_API_CREDS.metaVerifyToken },
+                        { label: 'Permanent System User Access Token', val: gatewaysState.metaTokenMasked || DEMO_META_API_CREDS.metaTokenMasked },
+                      ].map((item, idx) => (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: '12px 14px',
+                            borderRadius: 12,
+                            background: 'var(--sf2)',
+                            border: '1px solid var(--ln)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 4,
+                          }}
+                        >
+                          <span style={{ fontSize: 11.5, color: 'var(--tx3)', fontWeight: 700, textTransform: 'uppercase' }}>{item.label}</span>
+                          <code style={{ fontSize: 12.5, fontWeight: 700, color: 'var(--tx)', wordBreak: 'break-all' }}>{item.val}</code>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+
+                  {/* 2. What the End-to-End WhatsApp Conversation Looks Like (Client & Partner) */}
+                  <div className="two" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: 18 }}>
+                    {/* Client Conversation Flow */}
+                    <section className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <div>
+                          <span className="chip g">Client Flow (Buyer)</span>
+                          <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>1. Client Posts &amp; Unlocks Partner on WhatsApp</h3>
+                        </div>
+                        <a
+                          href={getXpoWhatsAppBotUrl('client')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn b1 sm"
+                          style={{ background: '#16A34A', textDecoration: 'none' }}
+                        >
+                          💬 Start Client Chat on WhatsApp →
+                        </a>
+                      </div>
+
+                      <div style={{ background: '#E5DDD5', padding: 14, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ background: '#DCF8C6', padding: '10px 12px', borderRadius: '12px 12px 2px 12px', marginLeft: 36, fontSize: 12.5 }}>
+                          <b>Client (Pavan · Test Traders):</b><br />
+                          Need 10,000 printed 3-ply corrugated boxes in Pune within 2 weeks, budget ₹1,80,000
+                        </div>
+                        <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '12px 12px 12px 2px', marginRight: 24, fontSize: 12.5 }}>
+                          <b style={{ color: '#075E54' }}>🤖 XPO Assistant (State: REQUIREMENT_DRAFT):</b><br />
+                          ✓ Got it! We extracted your requirement:<br />
+                          • <b>Category:</b> Packaging &amp; Printing<br />
+                          • <b>City:</b> Pune · <b>Timeline:</b> 2–4 Weeks · <b>Budget:</b> ₹1,80,000<br />
+                          <span style={{ display: 'inline-block', marginTop: 6, padding: '4px 10px', borderRadius: 6, background: '#075E54', color: '#fff', fontWeight: 700, fontSize: 11.5 }}>
+                            [Button: ✓ Confirm &amp; Dispatch Wave 1 Free]
+                          </span>
+                        </div>
+                        <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '12px 12px 12px 2px', marginRight: 24, fontSize: 12.5 }}>
+                          <b style={{ color: '#075E54' }}>🤖 XPO Assistant (State: OFFER_ACCEPTED):</b><br />
+                          🎉 <b>New Partner Quote Received on XPO-REQ-41208!</b><br />
+                          • <b>Partner:</b> Verified Packaging Manufacturer · Pune (GST Verified)<br />
+                          • <b>Quote:</b> ₹1,72,000 · <b>Delivery:</b> 10 Days<br />
+                          • <b>Pitch:</b> &ldquo;In-house 3-ply flexo printing in Chakan MIDC.&rdquo;<br />
+                          <a
+                            href={getXpoWhatsAppBotUrl('client', '🔓 Unlock Partner & Request Direct Contact for XPO-REQ-41208 (Uses 1 Free View Credit)')}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ display: 'inline-block', marginTop: 6, padding: '5px 10px', borderRadius: 6, background: '#C8102E', color: '#fff', fontWeight: 700, fontSize: 11.5, textDecoration: 'none' }}
+                          >
+                            💬 Tap to Unlock Partner on WhatsApp (1 Free View) →
+                          </a>
+                        </div>
+                        <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '12px 12px 12px 2px', marginRight: 24, fontSize: 12.5, borderLeft: '3px solid #16A34A' }}>
+                          <b style={{ color: '#16A34A' }}>🤝 Mutual Connection Confirmed (State: CONNECTED):</b><br />
+                          • <b>Company:</b> Klo Tech Pvt Ltd (Rohan Kulkarni)<br />
+                          • <b>Direct WhatsApp / Phone:</b> +91 98201 11223<br />
+                          • <b>Commission:</b> 0% Deal Commission
+                        </div>
+                      </div>
+                    </section>
+
+                    {/* Partner Conversation Flow */}
+                    <section className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <div>
+                          <span className="chip b">Partner Flow (Supplier)</span>
+                          <h3 style={{ margin: '4px 0 0', fontSize: 17, fontWeight: 800 }}>2. Partner Claims 5-Min Wave 1 &amp; Shares Contact</h3>
+                        </div>
+                        <a
+                          href={getXpoWhatsAppBotUrl('partner')}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="btn b1 sm"
+                          style={{ background: '#1E3A8A', textDecoration: 'none' }}
+                        >
+                          💬 Start Partner Chat on WhatsApp →
+                        </a>
+                      </div>
+
+                      <div style={{ background: '#E5DDD5', padding: 14, borderRadius: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '12px 12px 12px 2px', marginRight: 24, fontSize: 12.5 }}>
+                          <b style={{ color: '#075E54' }}>🤖 XPO Assistant (State: OFFER_SENT · ⏱ 05:00 Window):</b><br />
+                          ⚡ <b>NEW WAVE 1 LEAD · XPO-REQ-41208</b><br />
+                          • <b>Need:</b> 10,000 printed 3-ply corrugated boxes<br />
+                          • <b>Location:</b> Pune · <b>Budget:</b> ₹1,80,000 · <b>Timeline:</b> 2–4 Weeks<br />
+                          • <b>Priority Window:</b> 5 Minutes (Offered to 3 matched Partners)<br />
+                          <div style={{ display: 'flex', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
+                            <a
+                              href={getXpoWhatsAppBotUrl('partner')}
+                              target="_blank"
+                              rel="noreferrer"
+                              style={{ padding: '5px 10px', borderRadius: 6, background: '#075E54', color: '#fff', fontWeight: 700, fontSize: 11.5, textDecoration: 'none' }}
+                            >
+                              💬 ✓ Interested · Send Quote on WhatsApp (1 Reply) →
+                            </a>
+                            <span style={{ padding: '5px 10px', borderRadius: 6, background: '#E4E5E9', color: '#15171C', fontWeight: 700, fontSize: 11.5 }}>
+                              ✗ Pass (0 Credits Used)
+                            </span>
+                          </div>
+                        </div>
+                        <div style={{ background: '#DCF8C6', padding: '10px 12px', borderRadius: '12px 12px 2px 12px', marginLeft: 36, fontSize: 12.5 }}>
+                          <b>Partner (Klo Tech Pvt Ltd):</b><br />
+                          Quote ₹1,72,000 · Delivery in 10 days. In-house 3-ply flexo printing in Chakan MIDC.
+                        </div>
+                        <div style={{ background: '#FFFFFF', padding: '10px 12px', borderRadius: '12px 12px 12px 2px', marginRight: 24, fontSize: 12.5 }}>
+                          <b style={{ color: '#075E54' }}>🤖 XPO Assistant (State: CONNECTION_PENDING):</b><br />
+                          🔓 <b>Client Unlocked Your Quote!</b><br />
+                          Test Traders (Pune) spent 1 View Credit and requested your direct phone number.<br />
+                          <a
+                            href={getXpoWhatsAppBotUrl('partner', '✓ Accept Mutual Connection & Share My Direct Contact for XPO-REQ-41208')}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{ display: 'inline-block', marginTop: 6, padding: '5px 10px', borderRadius: 6, background: '#16A34A', color: '#fff', fontWeight: 700, fontSize: 11.5, textDecoration: 'none' }}
+                          >
+                            💬 ✓ Accept &amp; Share Direct Contact on WhatsApp →
+                          </a>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
 
                   <section className="card" style={{ padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
                     <b style={{ fontSize: 18 }}>Quick Natural-Language &amp; Hinglish Intent Classifier</b>
@@ -5876,18 +6778,26 @@ export function XpoSuperadminApp() {
                 <section className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <b style={{ fontSize: 18 }}>Smart features · WhatsApp and the app as one</b>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 12 }}>
-                    {[
-                      { t: 'Voice notes', d: 'Understand voice notes in Hindi, English and Hinglish and turn them into requirements or replies' },
-                      { t: 'Photos and documents', d: 'Read sample photos, spec sheets and catalogues with OCR confirmation' },
-                      { t: 'Compare as cards', d: 'Batch partner replies for 2 minutes into one swipeable card message' },
-                      { t: 'One-tap sign-in links', d: 'Links in chat open the exact app screen, signed in, for 15 minutes, single use' },
-                      { t: 'No double pings', d: 'Send each alert where the person is active; clear it everywhere once read' },
-                      { t: 'Evening digest', d: 'Bundle low-priority updates into one message at 7 pm' },
-                      { t: 'Tailored pitches', d: 'Draft a pitch for each lead from the partner profile and past wins' },
-                      { t: 'Deal check-in', d: 'Ask the client 3 days after connecting; close the request and collect a rating' },
-                    ].map((f, i) => (
+                    {auto.smart.map((f, i) => (
                       <div key={i} style={{ padding: 14, borderRadius: 12, border: '1px solid var(--ln)', background: 'var(--sf2)', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
-                        <input type="checkbox" className="swt" defaultChecked style={{ marginTop: 2 }} />
+                        <input
+                          type="checkbox"
+                          className="swt"
+                          checked={f.on}
+                          style={{ marginTop: 2 }}
+                          onChange={(e) => {
+                            const checked = e.target.checked;
+                            const nextSmart = auto.smart.map((item, idx) =>
+                              idx === i ? { ...item, on: checked } : item
+                            );
+                            setAuto((prev) => ({ ...prev, smart: nextSmart }));
+                            void postMarketplaceAction('admin.update_whatsapp_automation', {
+                              smartFeatures: nextSmart.map((sf) => ({ k: sf.t, on: sf.on })),
+                              summary: `${checked ? 'Enabled' : 'Disabled'} WhatsApp smart feature: ${f.t}`,
+                            });
+                            toast(`${f.t} ${checked ? 'enabled' : 'disabled'} in Firebase`);
+                          }}
+                        />
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                           <b style={{ fontSize: 14 }}>{f.t}</b>
                           <span style={{ fontSize: 12.5, color: 'var(--tx2)', lineHeight: 1.4 }}>{f.d}</span>
@@ -5979,12 +6889,39 @@ export function XpoSuperadminApp() {
                           </label>
                         ))}
                       </div>
+                      <button
+                        type="button"
+                        className="btn b3 sm"
+                        style={{ alignSelf: 'flex-start' }}
+                        onClick={() => {
+                          void postMarketplaceAction('admin.update_whatsapp_automation', {
+                            rules: { hi: auto.hi, lo: auto.lo },
+                            summary: `Updated Smart Mapping thresholds (${auto.hi}% / ${auto.lo}%) in Firestore`,
+                          });
+                          toast('Smart Mapping confidence thresholds saved to Firebase');
+                        }}
+                      >
+                        Save Mapping Thresholds
+                      </button>
                     </section>
                   </div>
 
+                  {waFlowState.customSynonyms.length > 0 && (
+                    <section className="card" style={{ padding: '14px 20px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <b style={{ fontSize: 14 }}>Active Custom Synonym Mappings (Synced to Firestore)</b>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                        {waFlowState.customSynonyms.map((cs, csi) => (
+                          <span key={csi} className="chip g">
+                            &ldquo;{cs.word}&rdquo; → {cs.cat}
+                          </span>
+                        ))}
+                      </div>
+                    </section>
+                  )}
+
                   <section className="card" style={{ display: 'flex', flexDirection: 'column' }}>
                     <div style={{ padding: '14px 20px', display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', borderBottom: '1px solid var(--ln)' }}>
-                      <h2 className="lbl" style={{ margin: 0 }}>Words that didn&apos;t map &middot; 4 pending</h2>
+                      <h2 className="lbl" style={{ margin: 0 }}>Words that didn&apos;t map &middot; Teach WhatsApp Bot</h2>
                       <span style={{ fontSize: 12.5, color: 'var(--tx2)' }}>Teach the assistant once; every future WhatsApp message benefits</span>
                     </div>
                     {[
@@ -5992,25 +6929,74 @@ export function XpoSuperadminApp() {
                       { w: 'reels shoot', n: 12, ex: 'fashion brand reels shoot in Bandra', opts: ['Corporate Video & Ad Film Production', 'Commercial Photography', 'Digital Marketing'] },
                       { w: 'cctv amc', n: 9, ex: 'godown CCTV AMC quarterly visit Pune', opts: ['CCTV & Electronic Surveillance', 'IT Hardware & Networking', 'Facility Management'] },
                       { w: 'laser cut sheet', n: 7, ex: 'SS 304 3mm laser cut sheet 50 pcs', opts: ['Sheet Metal Fabrication', 'CNC Machining & Milling', 'Industrial Hardware'] },
-                    ].map((u, ui) => (
-                      <div key={ui} className="wrow">
-                        <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
-                          <b style={{ fontSize: 14 }}>&ldquo;{u.w}&rdquo;</b>
-                          <span style={{ fontSize: 12.5, color: 'var(--tx2)' }}>{u.n} people &middot; e.g. {u.ex}</span>
-                        </span>
-                        <select className="sel" aria-label={`Category for ${u.w}`} defaultValue={u.opts[0]}>
-                          {u.opts.map((o) => (
-                            <option key={o} value={o}>{o}</option>
-                          ))}
-                        </select>
-                        <button type="button" className="tbtn" onClick={() => toast(`Added "${u.w}" as synonym for ${u.opts[0]}`)}>
-                          Add as synonym
-                        </button>
-                        <button type="button" className="tbtn" onClick={() => toast(`Ignored "${u.w}"`)}>
-                          Ignore
-                        </button>
-                      </div>
-                    ))}
+                    ]
+                      .filter(
+                        (u) =>
+                          !waFlowState.customSynonyms.some((cs) => cs.word === u.w) &&
+                          !waFlowState.ignoredUnmappedWords.includes(u.w)
+                      )
+                      .map((u, ui) => {
+                        const chosenCat = unmappedCategorySelect[u.w] || u.opts[0];
+                        return (
+                          <div key={ui} className="wrow">
+                            <span style={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, minWidth: 0 }}>
+                              <b style={{ fontSize: 14 }}>&ldquo;{u.w}&rdquo;</b>
+                              <span style={{ fontSize: 12.5, color: 'var(--tx2)' }}>{u.n} people &middot; e.g. {u.ex}</span>
+                            </span>
+                            <select
+                              className="sel"
+                              aria-label={`Category for ${u.w}`}
+                              value={chosenCat}
+                              onChange={(e) =>
+                                setUnmappedCategorySelect((prev) => ({
+                                  ...prev,
+                                  [u.w]: e.target.value,
+                                }))
+                              }
+                            >
+                              {u.opts.map((o) => (
+                                <option key={o} value={o}>{o}</option>
+                              ))}
+                            </select>
+                            <button
+                              type="button"
+                              className="tbtn"
+                              onClick={() => {
+                                setWaFlowState((prev) => ({
+                                  ...prev,
+                                  customSynonyms: [...prev.customSynonyms, { word: u.w, cat: chosenCat }],
+                                }));
+                                void postMarketplaceAction('admin.add_synonym_mapping', {
+                                  word: u.w,
+                                  cat: chosenCat,
+                                  actionType: 'map',
+                                });
+                                toast(`Mapped "${u.w}" → ${chosenCat} in Firestore`);
+                              }}
+                            >
+                              Add as synonym
+                            </button>
+                            <button
+                              type="button"
+                              className="tbtn"
+                              onClick={() => {
+                                setWaFlowState((prev) => ({
+                                  ...prev,
+                                  ignoredUnmappedWords: [...prev.ignoredUnmappedWords, u.w],
+                                }));
+                                void postMarketplaceAction('admin.add_synonym_mapping', {
+                                  word: u.w,
+                                  cat: '',
+                                  actionType: 'ignore',
+                                });
+                                toast(`Ignored "${u.w}" in Firestore`);
+                              }}
+                            >
+                              Ignore
+                            </button>
+                          </div>
+                        );
+                      })}
                   </section>
                 </div>
               )}
@@ -6019,22 +7005,76 @@ export function XpoSuperadminApp() {
               {viewTab.auto === 'rules' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <section className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--ln)' }}>
+                    <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--ln)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <h2 className="lbl" style={{ margin: 0 }}>Keywords &middot; work in any conversation state</h2>
+                      <button
+                        type="button"
+                        className="btn b1 sm"
+                        onClick={() => {
+                          void postMarketplaceAction('admin.update_whatsapp_automation', {
+                            globalKeywords: auto.keys.map((gk) => ({
+                              k: gk.w,
+                              does: gk.does,
+                              reply: gk.reply,
+                              on: gk.on,
+                              lock: gk.lock,
+                            })),
+                            rules: {
+                              hi: auto.hi,
+                              lo: auto.lo,
+                              misses: auto.misses,
+                              hours: auto.hours,
+                              promise: auto.promise,
+                              quiet: auto.quiet,
+                              rate: auto.rate,
+                              retries: auto.retries,
+                              hold: auto.hold,
+                              exp: auto.exp,
+                            },
+                            summary: 'Updated WhatsApp global keywords & handover rules in Firestore',
+                          });
+                          toast('WhatsApp Global Keywords & Rules saved to Firebase');
+                        }}
+                      >
+                        Save Rules &amp; Keywords to Firebase
+                      </button>
                     </div>
-                    {[
-                      { w: 'STOP', does: 'Pauses bot immediately, unsubscribes number and marks do-not-contact', reply: 'You have been unsubscribed from XPO India. Reply START anytime to resume.', lock: true },
-                      { w: 'HELP', does: 'Gives coordinator contact number and WhatsApp support desk link', reply: 'XPO Help Desk: Call/WhatsApp +91 98200 12345 or reply to this chat with your query.', lock: false },
-                      { w: 'RESET', does: 'Clears current draft requirement and restarts fresh prompt', reply: 'Starting fresh. What service or material do you need across India?', lock: false },
-                      { w: 'MENU', does: 'Shows quick links to Post Requirement, Partner Directory, and My Requests', reply: '1. Post free requirement\n2. View active leads\n3. Talk to coordinator', lock: false },
-                      { w: 'AGENT', does: 'Pauses bot and escalates to human coordinator queue', reply: 'Connecting you to an XPO coordinator right now. Hold on a moment.', lock: false },
-                    ].map((k, ki) => (
+                    {auto.keys.map((k, ki) => (
                       <div key={ki} className="krow">
                         <span className="mono" style={{ fontWeight: 700 }}>{k.w}</span>
                         <span style={{ fontSize: 13, color: 'var(--tx2)' }}>{k.does}</span>
-                        <input className="inp" aria-label={`Reply to ${k.w}`} defaultValue={k.reply} />
+                        <input
+                          className="inp"
+                          aria-label={`Reply to ${k.w}`}
+                          value={k.reply}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setAuto((prev) => ({
+                              ...prev,
+                              keys: prev.keys.map((item, idx) =>
+                                idx === ki ? { ...item, reply: val } : item
+                              ),
+                            }));
+                          }}
+                        />
                         <label className="swl">
-                          <input type="checkbox" role="switch" className="swt" defaultChecked disabled={k.lock} aria-label={`${k.w} on or off`} />
+                          <input
+                            type="checkbox"
+                            role="switch"
+                            className="swt"
+                            checked={k.on}
+                            disabled={k.lock}
+                            aria-label={`${k.w} on or off`}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              setAuto((prev) => ({
+                                ...prev,
+                                keys: prev.keys.map((item, idx) =>
+                                  idx === ki ? { ...item, on: checked } : item
+                                ),
+                              }));
+                            }}
+                          />
                         </label>
                       </div>
                     ))}
@@ -6151,8 +7191,14 @@ export function XpoSuperadminApp() {
                     type="button"
                     className="btn b1"
                     onClick={() => {
-                      setSiteHist(prev => [{ w: 'Just now', who: 'Pavan (Superadmin)', what: 'Updated website copy' }, ...prev]);
-                      toast('Website updated · xpoindia.com refreshed');
+                      setSiteHist(prev => [{ w: 'Just now', who: 'Pavan (Superadmin)', what: 'Published landing page updates' }, ...prev]);
+                      void postMarketplaceAction('admin.update_site_cms', {
+                        sections: site.sections.map((s) => ({ k: s.k, on: s.on })),
+                        hero: site.hero,
+                        faqs: site.faqs,
+                        historyNote: 'Published landing page updates',
+                      });
+                      toast('Website updated in Firestore · xpoindia.com refreshed');
                       logAudit('Published landing page updates', 'Website');
                     }}
                   >
@@ -6208,9 +7254,16 @@ export function XpoSuperadminApp() {
                             className="swt"
                             checked={s.on}
                             onChange={(e) => {
-                              const next = { ...site };
-                              next.sections[idx].on = e.target.checked;
-                              setSite(next);
+                              const checked = e.target.checked;
+                              const nextSections = site.sections.map((sec, sIdx) =>
+                                sIdx === idx ? { ...sec, on: checked } : sec
+                              );
+                              setSite((prev) => ({ ...prev, sections: nextSections }));
+                              void postMarketplaceAction('admin.update_site_cms', {
+                                sections: nextSections.map((sec) => ({ k: sec.k, on: sec.on })),
+                                historyNote: `${checked ? 'Enabled' : 'Hidden'} section: ${s.label}`,
+                              });
+                              toast(`${s.label} section ${checked ? 'shown' : 'hidden'} in Firebase`);
                             }}
                           />
                         )}
@@ -6228,21 +7281,68 @@ export function XpoSuperadminApp() {
                     <b style={{ fontSize: 18 }}>Client Hero Headline</b>
                     <div className="fld">
                       <span>Line 1</span>
-                      <input className="inp" defaultValue={site.hero.client.l1} />
+                      <input
+                        className="inp"
+                        value={site.hero.client.l1}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, client: { ...prev.hero.client, l1: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Line 2</span>
-                      <input className="inp" defaultValue={site.hero.client.l2} />
+                      <input
+                        className="inp"
+                        value={site.hero.client.l2}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, client: { ...prev.hero.client, l2: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Subline</span>
-                      <input className="inp" defaultValue={site.hero.client.sub} />
+                      <input
+                        className="inp"
+                        value={site.hero.client.sub}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, client: { ...prev.hero.client, sub: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Requirement Box Placeholder</span>
-                      <input className="inp" defaultValue={site.hero.client.ph} />
+                      <input
+                        className="inp"
+                        value={site.hero.client.ph}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, client: { ...prev.hero.client, ph: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
-                    <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('Client Hero copy saved')}>
+                    <button
+                      type="button"
+                      className="btn b3"
+                      style={{ alignSelf: 'flex-start' }}
+                      onClick={() => {
+                        void postMarketplaceAction('admin.update_site_cms', {
+                          hero: site.hero,
+                          historyNote: 'Updated Client Hero copy',
+                        });
+                        toast('Client Hero copy saved to Firebase');
+                      }}
+                    >
                       Save Client Copy
                     </button>
                   </section>
@@ -6252,21 +7352,68 @@ export function XpoSuperadminApp() {
                     <b style={{ fontSize: 18 }}>Partner Hero Headline</b>
                     <div className="fld">
                       <span>Line 1</span>
-                      <input className="inp" defaultValue={site.hero.partner.l1} />
+                      <input
+                        className="inp"
+                        value={site.hero.partner.l1}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, partner: { ...prev.hero.partner, l1: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Line 2</span>
-                      <input className="inp" defaultValue={site.hero.partner.l2} />
+                      <input
+                        className="inp"
+                        value={site.hero.partner.l2}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, partner: { ...prev.hero.partner, l2: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Subline</span>
-                      <input className="inp" defaultValue={site.hero.partner.sub} />
+                      <input
+                        className="inp"
+                        value={site.hero.partner.sub}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, partner: { ...prev.hero.partner, sub: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Supplier Box Placeholder</span>
-                      <input className="inp" defaultValue={site.hero.partner.ph} />
+                      <input
+                        className="inp"
+                        value={site.hero.partner.ph}
+                        onChange={(e) =>
+                          setSite((prev) => ({
+                            ...prev,
+                            hero: { ...prev.hero, partner: { ...prev.hero.partner, ph: e.target.value } },
+                          }))
+                        }
+                      />
                     </div>
-                    <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('Partner Hero copy saved')}>
+                    <button
+                      type="button"
+                      className="btn b3"
+                      style={{ alignSelf: 'flex-start' }}
+                      onClick={() => {
+                        void postMarketplaceAction('admin.update_site_cms', {
+                          hero: site.hero,
+                          historyNote: 'Updated Partner Hero copy',
+                        });
+                        toast('Partner Hero copy saved to Firebase');
+                      }}
+                    >
                       Save Partner Copy
                     </button>
                   </section>
@@ -6276,17 +7423,75 @@ export function XpoSuperadminApp() {
               {/* Tab 3: FAQs */}
               {viewTab.site === 'faq' && (
                 <section className="card" style={{ display: 'flex', flexDirection: 'column' }}>
-                  {site.faqs.map((f, _i) => (
+                  {site.faqs.map((f) => (
                     <div key={f.id} style={{ padding: '16px 20px', borderBottom: '1px solid var(--ln)', display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <b style={{ fontSize: 15 }}>{f.q}</b>
-                        <button type="button" className="btn bl" style={{ color: 'var(--rtx)' }} onClick={() => toast('FAQ deleted')}>Delete</button>
+                        <button
+                          type="button"
+                          className="btn bl"
+                          style={{ color: 'var(--rtx)' }}
+                          onClick={() => {
+                            const nextFaqs = site.faqs.filter((item) => item.id !== f.id);
+                            setSite((prev) => ({ ...prev, faqs: nextFaqs }));
+                            void postMarketplaceAction('admin.update_site_cms', {
+                              faqs: nextFaqs,
+                              historyNote: `Deleted FAQ: ${f.q}`,
+                            });
+                            toast('FAQ deleted from Firebase');
+                          }}
+                        >
+                          Delete
+                        </button>
                       </div>
                       <p style={{ margin: 0, fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.5 }}>{f.a}</p>
                     </div>
                   ))}
+                  {showFaqModal && (
+                    <div style={{ padding: 16, borderBottom: '1px solid var(--ln)', background: 'var(--sf2)', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <input
+                        className="inp"
+                        value={newFaqQ}
+                        onChange={(e) => setNewFaqQ(e.target.value)}
+                        placeholder="Question (e.g. How fast do partners reply?)"
+                      />
+                      <input
+                        className="inp"
+                        value={newFaqA}
+                        onChange={(e) => setNewFaqA(e.target.value)}
+                        placeholder="Answer (e.g. Within 5 minutes via Wave 1 WhatsApp alerts.)"
+                      />
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button
+                          type="button"
+                          className="btn b1 sm"
+                          onClick={() => {
+                            if (!newFaqQ.trim() || !newFaqA.trim()) return;
+                            const nextFaqs = [
+                              ...site.faqs,
+                              { id: 'f-' + Date.now(), q: newFaqQ.trim(), a: newFaqA.trim(), on: true },
+                            ];
+                            setSite((prev) => ({ ...prev, faqs: nextFaqs }));
+                            void postMarketplaceAction('admin.update_site_cms', {
+                              faqs: nextFaqs,
+                              historyNote: `Added FAQ: ${newFaqQ.trim()}`,
+                            });
+                            setNewFaqQ('');
+                            setNewFaqA('');
+                            setShowFaqModal(false);
+                            toast('FAQ added & synced to Firebase');
+                          }}
+                        >
+                          Save FAQ
+                        </button>
+                        <button type="button" className="btn b2 sm" onClick={() => setShowFaqModal(false)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div style={{ padding: 16 }}>
-                    <button type="button" className="btn b2" onClick={() => toast('Add FAQ dialog opened')}>+ Add new question</button>
+                    <button type="button" className="btn b2" onClick={() => setShowFaqModal(true)}>+ Add new question</button>
                   </div>
                 </section>
               )}
@@ -6352,26 +7557,72 @@ export function XpoSuperadminApp() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 16 }}>
                     <div className="fld">
                       <span>Partners per round</span>
-                      <input className="inp mono" defaultValue="3" />
+                      <input
+                        className="inp mono"
+                        value={waveRulesState.partnersPerRound}
+                        onChange={(e) =>
+                          setWaveRulesState((prev) => ({
+                            ...prev,
+                            partnersPerRound: Number(e.target.value) || 3,
+                          }))
+                        }
+                      />
                       <span style={{ fontSize: 11.5, color: 'var(--tx2)' }}>Fixed 3 partners offered per wave</span>
                     </div>
                     <div className="fld">
                       <span>Response window (seconds)</span>
-                      <input className="inp mono" defaultValue="300" />
+                      <input
+                        className="inp mono"
+                        value={waveRulesState.responseWindowSeconds}
+                        onChange={(e) =>
+                          setWaveRulesState((prev) => ({
+                            ...prev,
+                            responseWindowSeconds: Number(e.target.value) || 300,
+                          }))
+                        }
+                      />
                       <span style={{ fontSize: 11.5, color: 'var(--tx2)' }}>Exactly 300 seconds (5 minutes)</span>
                     </div>
                     <div className="fld">
                       <span>Target claims before closing</span>
-                      <input className="inp mono" defaultValue="3" />
+                      <input
+                        className="inp mono"
+                        value={waveRulesState.targetClaims}
+                        onChange={(e) =>
+                          setWaveRulesState((prev) => ({
+                            ...prev,
+                            targetClaims: Number(e.target.value) || 3,
+                          }))
+                        }
+                      />
                       <span style={{ fontSize: 11.5, color: 'var(--tx2)' }}>Moves to interested upon 3 claims</span>
                     </div>
                     <div className="fld">
                       <span>Delivery fallback clock (sec)</span>
-                      <input className="inp mono" defaultValue="60" />
+                      <input
+                        className="inp mono"
+                        value={waveRulesState.deliveryFallbackSeconds}
+                        onChange={(e) =>
+                          setWaveRulesState((prev) => ({
+                            ...prev,
+                            deliveryFallbackSeconds: Number(e.target.value) || 60,
+                          }))
+                        }
+                      />
                       <span style={{ fontSize: 11.5, color: 'var(--tx2)' }}>Starts if Meta read receipt delayed</span>
                     </div>
                   </div>
-                  <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('Wave matching rules saved')}>
+                  <button
+                    type="button"
+                    className="btn b3"
+                    style={{ alignSelf: 'flex-start' }}
+                    onClick={() => {
+                      void postMarketplaceAction('admin.update_wave_rules', waveRulesState);
+                      toast(
+                        `Wave matching rules saved to Firebase (${waveRulesState.partnersPerRound} partners / ${waveRulesState.responseWindowSeconds}s)`
+                      );
+                    }}
+                  >
                     Save Wave Rules
                   </button>
                 </section>
@@ -6384,17 +7635,48 @@ export function XpoSuperadminApp() {
                     <b style={{ fontSize: 17 }}>Razorpay (India UPI AutoPay &amp; Cards)</b>
                     <div className="fld">
                       <span>Key ID</span>
-                      <input className="inp mono" defaultValue="rzp_live_9482019481" />
+                      <input
+                        className="inp mono"
+                        value={gatewaysState.razorpayKeyId}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, razorpayKeyId: e.target.value }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Key Secret</span>
-                      <input className="inp mono" type="password" defaultValue="••••••••••••••••" />
+                      <input
+                        className="inp mono"
+                        type="password"
+                        value={gatewaysState.razorpaySecretMasked}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, razorpaySecretMasked: e.target.value }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Webhook Secret</span>
-                      <input className="inp mono" type="password" defaultValue="••••••••••••••••" />
+                      <input
+                        className="inp mono"
+                        type="password"
+                        value={gatewaysState.razorpayWebhookMasked}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, razorpayWebhookMasked: e.target.value }))
+                        }
+                      />
                     </div>
-                    <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('Razorpay credentials updated')}>
+                    <button
+                      type="button"
+                      className="btn b3"
+                      style={{ alignSelf: 'flex-start' }}
+                      onClick={() => {
+                        void postMarketplaceAction('admin.update_gateways', {
+                          gateways: gatewaysState,
+                          summary: 'Updated Razorpay credentials in Firestore',
+                        });
+                        toast('Razorpay credentials saved to Firebase');
+                      }}
+                    >
                       Save Razorpay Keys
                     </button>
                   </section>
@@ -6403,13 +7685,37 @@ export function XpoSuperadminApp() {
                     <b style={{ fontSize: 17 }}>PayPal (International USD Checkout)</b>
                     <div className="fld">
                       <span>Client ID</span>
-                      <input className="inp mono" defaultValue="AY7k8194_live_client" />
+                      <input
+                        className="inp mono"
+                        value={gatewaysState.paypalClientId}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, paypalClientId: e.target.value }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>Secret</span>
-                      <input className="inp mono" type="password" defaultValue="••••••••••••••••" />
+                      <input
+                        className="inp mono"
+                        type="password"
+                        value={gatewaysState.paypalSecretMasked}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, paypalSecretMasked: e.target.value }))
+                        }
+                      />
                     </div>
-                    <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('PayPal credentials updated')}>
+                    <button
+                      type="button"
+                      className="btn b3"
+                      style={{ alignSelf: 'flex-start' }}
+                      onClick={() => {
+                        void postMarketplaceAction('admin.update_gateways', {
+                          gateways: gatewaysState,
+                          summary: 'Updated PayPal credentials in Firestore',
+                        });
+                        toast('PayPal credentials saved to Firebase');
+                      }}
+                    >
                       Save PayPal Keys
                     </button>
                   </section>
@@ -6423,24 +7729,93 @@ export function XpoSuperadminApp() {
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 14 }}>
                     <div className="fld">
                       <span>Phone Number ID</span>
-                      <input className="inp mono" defaultValue="104928172948201" />
+                      <input
+                        className="inp mono"
+                        value={gatewaysState.metaPhoneNumberId}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, metaPhoneNumberId: e.target.value }))
+                        }
+                      />
                     </div>
                     <div className="fld">
                       <span>WhatsApp Business Account (WABA) ID</span>
-                      <input className="inp mono" defaultValue="918274019284710" />
+                      <input
+                        className="inp mono"
+                        value={gatewaysState.metaWabaId}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, metaWabaId: e.target.value }))
+                        }
+                      />
                     </div>
                     <div className="fld" style={{ gridColumn: '1 / -1' }}>
                       <span>System User Permanent Access Token</span>
-                      <input className="inp mono" type="password" defaultValue="EAAK...••••••••••••••••" />
+                      <input
+                        className="inp mono"
+                        type="password"
+                        value={gatewaysState.metaTokenMasked}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, metaTokenMasked: e.target.value }))
+                        }
+                      />
                     </div>
                     <div className="fld" style={{ gridColumn: '1 / -1' }}>
                       <span>Webhook Verify Token</span>
-                      <input className="inp mono" defaultValue="xpo_india_webhook_secret_2026" />
+                      <input
+                        className="inp mono"
+                        value={gatewaysState.metaVerifyToken}
+                        onChange={(e) =>
+                          setGatewaysState((prev) => ({ ...prev, metaVerifyToken: e.target.value }))
+                        }
+                      />
                     </div>
                   </div>
-                  <button type="button" className="btn b3" style={{ alignSelf: 'flex-start' }} onClick={() => toast('Meta API credentials saved & webhook verified')}>
-                    Save Meta Credentials
-                  </button>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <button
+                      type="button"
+                      className="btn b3"
+                      onClick={() => {
+                        void postMarketplaceAction('admin.update_gateways', {
+                          gateways: gatewaysState,
+                          summary: `Updated Meta Cloud API credentials (Phone ID: ${gatewaysState.metaPhoneNumberId})`,
+                        });
+                        toast('Meta API credentials saved to Firebase & webhook verified');
+                      }}
+                    >
+                      Save Meta Credentials
+                    </button>
+                    <button
+                      type="button"
+                      className="btn b2"
+                      onClick={() => {
+                        const randSuffix = Math.floor(10000 + Math.random() * 90000);
+                        const demoCreds = {
+                          ...gatewaysState,
+                          metaPhoneNumberId: `1094827165${randSuffix}`,
+                          metaWabaId: `1029384756${randSuffix}`,
+                          metaDisplayPhone: DEMO_WA_BOT_DISPLAY,
+                          metaTokenMasked: `EAAGm0PX4ZCpsBO7xK9demoXPOIndia2026Token${randSuffix}`,
+                          metaVerifyToken: 'xpo_india_webhook_secret_2026',
+                        };
+                        setGatewaysState(demoCreds);
+                        void postMarketplaceAction('admin.update_gateways', {
+                          gateways: demoCreds,
+                          summary: `Generated Demo Meta Cloud API credentials (Phone ID: ${demoCreds.metaPhoneNumberId})`,
+                        });
+                        toast(`Generated & saved Demo Meta Cloud API credentials to Firebase`);
+                      }}
+                    >
+                      ⚡ Generate Demo WhatsApp API Credentials
+                    </button>
+                    <a
+                      href={getXpoWhatsAppBotUrl('general')}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="btn b1"
+                      style={{ background: '#16A34A', textDecoration: 'none' }}
+                    >
+                      💬 Test Dummy XPO Bot on WhatsApp →
+                    </a>
+                  </div>
                 </section>
               )}
 
@@ -6649,6 +8024,40 @@ export function XpoSuperadminApp() {
                   </div>
                 </div>
               )}
+
+              {/* Live Coordinator Reply Box inside Conversation Drawer */}
+              {dr.type === 'convo' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <b style={{ fontSize: 14 }}>Send Live Coordinator Reply (Synced to WhatsApp)</b>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      className="inp"
+                      style={{ flex: 1 }}
+                      value={coordText}
+                      onChange={(e) => setCoordText(e.target.value)}
+                      placeholder={`Reply to ${dr.item.name} on WhatsApp...`}
+                    />
+                    <button
+                      type="button"
+                      className="btn b1 sm"
+                      onClick={() => {
+                        if (!coordText.trim()) return;
+                        const text = coordText.trim();
+                        setCoordText('');
+                        const persona = dr.item.role === 'Partner' ? 'partner' : 'client';
+                        void postMarketplaceAction('admin.send_coordinator_message', {
+                          persona,
+                          text,
+                          convoId: dr.item.id,
+                        });
+                        toast(`Sent Coordinator WhatsApp reply to ${dr.item.name}`);
+                      }}
+                    >
+                      Send
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Footer Actions */}
@@ -6719,8 +8128,10 @@ export function XpoSuperadminApp() {
                       postMarketplaceAction('admin.verify_kyc', {
                         role: dr.item.role === 'Client' ? 'client' : 'partner',
                         decision: 'verified',
+                        memberId: id,
+                        memberName: name,
                       });
-                      toast(`${name} verified · Verified badge added`);
+                      toast(`${name} verified · Verified badge added in Firebase`);
                       logAudit(`Verified KYC for ${name}`, 'Members');
                       setDr(null);
                     }}
@@ -6742,8 +8153,10 @@ export function XpoSuperadminApp() {
                       postMarketplaceAction('admin.verify_kyc', {
                         role: dr.item.role === 'Client' ? 'client' : 'partner',
                         decision: 'rejected',
+                        memberId: id,
+                        memberName: name,
                       });
-                      toast(`KYC rejected for ${name}`);
+                      toast(`KYC rejected for ${name} in Firebase`);
                       setDr(null);
                     }}
                   >
@@ -6757,7 +8170,11 @@ export function XpoSuperadminApp() {
                   type="button"
                   className="btn b3"
                   onClick={() => {
-                    toast(`Payment link resent to ${dr.item.who}`);
+                    void postMarketplaceAction('admin.retry_payment', {
+                      paymentId: dr.item.id,
+                      who: dr.item.who,
+                    });
+                    toast(`Payment link resent to ${dr.item.who} & logged in Firebase`);
                     setDr(null);
                   }}
                 >
@@ -6770,7 +8187,18 @@ export function XpoSuperadminApp() {
                   type="button"
                   className="btn b1"
                   onClick={() => {
-                    toast(`WhatsApp invitation sent to ${dr.item.name}`);
+                    const cId = dr.item.id;
+                    setDb((prev) => ({
+                      ...prev,
+                      contacts: prev.contacts.map((c) =>
+                        c.id === cId ? { ...c, stage: 'Invited' } : c
+                      ),
+                    }));
+                    void postMarketplaceAction('admin.invite_contacts', {
+                      contactIds: [cId],
+                      templateName: selectedMetaTpl,
+                    });
+                    toast(`WhatsApp invitation sent to ${dr.item.name} via Meta API`);
                     setDr(null);
                   }}
                 >
@@ -6854,7 +8282,12 @@ export function XpoSuperadminApp() {
                     className="btn b1"
                     onClick={() => {
                       setUp(0);
-                      toast('Successfully imported 184 contacts · ready to invite');
+                      void postMarketplaceAction('admin.import_contacts', {
+                        count: 184,
+                        role: upRole,
+                        fileName: 'partners_mumbai_nov.xlsx',
+                      });
+                      toast('Successfully imported 184 contacts into Firebase · ready to invite');
                       logAudit('Imported 184 contacts from partners_mumbai_nov.xlsx', 'Contacts');
                     }}
                   >
@@ -6900,12 +8333,30 @@ export function XpoSuperadminApp() {
                   type="button"
                   className="btn b1"
                   onClick={() => {
+                    const selectedIds = Object.keys(sel).filter((k) => sel[k]);
+                    const targetIds =
+                      selectedIds.length > 0
+                        ? selectedIds
+                        : db.contacts
+                            .filter((c) => c.cons === 'Opted in' && c.stage === 'Uploaded')
+                            .slice(0, 42)
+                            .map((c) => c.id);
+                    setDb((prev) => ({
+                      ...prev,
+                      contacts: prev.contacts.map((c) =>
+                        targetIds.includes(c.id) ? { ...c, stage: 'Invited' } : c
+                      ),
+                    }));
+                    void postMarketplaceAction('admin.invite_contacts', {
+                      contactIds: targetIds,
+                      templateName: selectedMetaTpl,
+                    });
                     setInviteModal(false);
-                    toast('Dispatched 42 WhatsApp invitation templates via Meta API');
-                    logAudit('Dispatched 42 WhatsApp invitations', 'Contacts');
+                    toast(`Dispatched ${targetIds.length || 42} WhatsApp invitation templates via Meta API & saved to Firebase`);
+                    logAudit(`Dispatched ${targetIds.length || 42} WhatsApp invitations`, 'Contacts');
                   }}
                 >
-                  Send 42 Invites
+                  Send Invites
                 </button>
               </div>
             </div>
@@ -6968,9 +8419,10 @@ export function XpoSuperadminApp() {
               type="button"
               className="ctl"
               onClick={() => {
+                const code = 'XPO-REQ-' + Math.floor(Math.random() * 9000 + 42000);
                 db.reqs.unshift({
                   id: 'R' + Date.now(),
-                  code: 'XPO-REQ-' + Math.floor(Math.random() * 9000 + 10000),
+                  code,
                   client: 'Apex Traders',
                   title: '100MT Aluminium Extrusions in Pune',
                   cat: 'Manufacturing & Industrial',
@@ -6988,7 +8440,25 @@ export function XpoSuperadminApp() {
                   _s: 'apex traders aluminium extrusions pune',
                 });
                 setDb({ ...db });
-                toast('New held requirement triggered · review queue updated');
+                void postMarketplaceAction('client.post_requirement', {
+                  key: 'r_' + code.replace(/\D/g, ''),
+                  requirement: {
+                    code,
+                    title: '100MT Aluminium Extrusions in Pune',
+                    sector: 'Manufacturing & Industrial',
+                    cat: 'Manufacturing & Industrial',
+                    sub: 'Aluminium Extrusions',
+                    loc: 'Pune',
+                    timeline: 'Within 2-4 Weeks',
+                    budget: '₹40,00,000',
+                    spec: '100MT Aluminium Extrusions in Pune (advance registration fee check)',
+                    posted: 'posted just now',
+                    status: 'held',
+                    wave: 0,
+                    partners: [],
+                  },
+                });
+                toast(`New held requirement (${code}) triggered & saved to Firebase`);
               }}
             >
               Trigger new held requirement
