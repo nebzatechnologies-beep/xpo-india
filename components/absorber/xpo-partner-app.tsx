@@ -616,6 +616,83 @@ export function XpoPartnerApp({
     return true;
   });
 
+  
+  const renderLeadCard = (o: PartnerOpportunity) => {
+    let badgeText = o.waveBadge || 'MATCHED TO YOU';
+    let badgeClass = 'c-a';
+    if (o.myReplyStatus === 'connected') {
+      badgeText = 'Connected';
+      badgeClass = 'c-g';
+    } else if (o.isOverseas) {
+      badgeText = 'Overseas · USD';
+      badgeClass = 'c-b';
+    } else if (badgeText.includes('NEW') || badgeText.includes('Wave 1') || badgeText.includes('WAVE 1')) {
+      badgeClass = 'c-r';
+    }
+
+    let statusText = '';
+    let statusClass = '';
+    if (o.myReplyStatus === 'client_requested') {
+      statusText = 'Action needed';
+      statusClass = 'c-r';
+    } else if (o.myReplyStatus === 'sent_waiting') {
+      statusText = 'Reply sent';
+      statusClass = 'c-a';
+    } else if (o.myReplyStatus === 'connected') {
+      statusText = 'Connected';
+      statusClass = 'c-g';
+    }
+
+    const isNew = o.myReplyStatus === 'none';
+    const act = isNew ? 'View & send reply' : 'Open details';
+
+    return (
+      <div
+        key={o.id}
+        role="button"
+        tabIndex={0}
+        className="card req"
+        onClick={() => openOpp(o.id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openOpp(o.id);
+          }
+        }}
+      >
+        <div className="head">
+          <span className="mono mute3">{o.ref}</span>
+          <span className={`chip ${badgeClass}`}>{badgeText}</span>
+          <span className="sp" />
+          {statusText && <span className={`chip ${statusClass}`}>{statusText}</span>}
+        </div>
+
+        <h3>{o.title}</h3>
+        <span className="mute" style={{ fontSize: 13, lineHeight: 1.5 }}>
+          {o.brief}
+        </span>
+
+        <div className="meta">
+          <span className="chip">{o.cat}</span>
+          <span className="chip">📍 {o.loc}</span>
+          <span className="chip">⏱ {o.when}</span>
+          <span className="chip">💰 {o.budget}</span>
+        </div>
+
+        <div className="foot">
+          <span className="mono mute3">Posted {o.posted}</span>
+          <span className="sp" />
+          <span
+            className={`btn sm ${isNew ? 'red' : 'ghost'}`}
+            style={{ pointerEvents: 'none' }}
+          >
+            {act} →
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   const activeOpp = S.opportunities.find((o) => o.id === S.oppId) || S.opportunities[0];
   const isSim = forceMobileSim;
 
@@ -1190,80 +1267,10 @@ export function XpoPartnerApp({
           {/* SCREEN 1: MATCHED REQUESTS FEED */}
           {S.screen === 'feed' && (
             <div className="app-page">
-              {/* Incoming connection request highlight banner if any */}
-              {incomingCount > 0 && (
-                <div
-                  className="card"
-                  style={{
-                    padding: '16px 20px',
-                    marginBottom: 20,
-                    borderLeft: '4px solid #C8102E',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span className="chip r">Action needed</span>
-                      <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                        XPO-REQ-40971
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 800 }}>
-                      Test Traders (Pavan) used 1 view to see your details
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                      Confirm to share your phone &amp; WhatsApp and unlock their direct number.
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button className="btn b1 sm" onClick={() => acceptClientRequest('req-1')}>
-                      Accept &amp; share contact
-                    </button>
-                    <button className="btn b2 sm" onClick={() => openOpp('req-1')}>
-                      Review request
-                    </button>
-                  </div>
-                </div>
-              )}
+              <p className="mute" style={{ fontSize: 13.5, margin: '0 2px 12px' }}>
+                Sent in 5-minute waves to verified partners in your categories. Zero commission on deals.
+              </p>
 
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                  flexWrap: 'wrap',
-                  marginBottom: 18,
-                }}
-              >
-                <div>
-                  <h1
-                    style={{
-                      fontSize: 24,
-                      fontWeight: 800,
-                      letterSpacing: '-.025em',
-                      margin: '0 0 4px',
-                    }}
-                  >
-                    Client requests matched to Klo Tech
-                  </h1>
-                  <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: 0 }}>
-                    Sent in 5-minute waves to verified partners in your categories. Zero commission on deals.
-                  </p>
-                </div>
-                <button
-                  className="btn b2 sm"
-                  onClick={() => setS((prev) => ({ ...prev, capModalOpen: true }))}
-                >
-                  My categories ({S.capabilities.length})
-                </button>
-              </div>
-
-              {/* Filter & search bar */}
               <div
                 style={{
                   display: 'flex',
@@ -1271,24 +1278,30 @@ export function XpoPartnerApp({
                   justifyContent: 'space-between',
                   gap: 12,
                   flexWrap: 'wrap',
-                  marginBottom: 18,
+                  marginBottom: 14,
                 }}
               >
-                <div className="seg-group">
+                <div className="tabs">
                   <button
-                    className={S.filterTab === 'matched' ? 'on' : ''}
+                    type="button"
+                    className="tb"
+                    aria-selected={S.filterTab === 'matched'}
                     onClick={() => setS((prev) => ({ ...prev, filterTab: 'matched' }))}
                   >
                     Matched ({S.opportunities.filter((o) => o.matched).length})
                   </button>
                   <button
-                    className={S.filterTab === 'all' ? 'on' : ''}
+                    type="button"
+                    className="tb"
+                    aria-selected={S.filterTab === 'all'}
                     onClick={() => setS((prev) => ({ ...prev, filterTab: 'all' }))}
                   >
                     All requests ({S.opportunities.length})
                   </button>
                   <button
-                    className={S.filterTab === 'overseas' ? 'on' : ''}
+                    type="button"
+                    className="tb"
+                    aria-selected={S.filterTab === 'overseas'}
                     onClick={() => setS((prev) => ({ ...prev, filterTab: 'overseas' }))}
                   >
                     Overseas USD ({S.opportunities.filter((o) => o.isOverseas).length})
@@ -1297,88 +1310,41 @@ export function XpoPartnerApp({
 
                 <input
                   className="inp"
-                  style={{ maxWidth: 280, width: '100%' }}
+                  style={{ maxWidth: 260, width: '100%', minHeight: 38, fontSize: 13.5 }}
                   placeholder="Search keyword, city or ID"
                   value={S.search}
                   onChange={(e) => setS((prev) => ({ ...prev, search: e.target.value }))}
                 />
               </div>
 
-              {/* Feed cards */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {filteredOpps.filter((o) => !(incomingCount > 0 && o.id === 'req-1' && o.myReplyStatus === 'client_requested')).map((o) => (
-                  <div
-                    key={o.id}
-                    className="rowb"
-                    style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 10 }}
-                    onClick={() => openOpp(o.id)}
-                  >
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        gap: 8,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                          {o.ref}
-                        </span>
-                        <span className="chip">{o.cat}</span>
-                        {o.isOverseas && <span className="chip p">Overseas · USD</span>}
-                      </div>
-
-                      <div>
-                        {o.myReplyStatus === 'client_requested' && (
-                          <span className="chip r">
-                            <span className="pdot" style={{ background: '#C8102E' }} />
-                            Client requested your contact
-                          </span>
-                        )}
-                        {o.myReplyStatus === 'sent_waiting' && (
-                          <span className="chip b">Reply sent · Waiting on client</span>
-                        )}
-                        {o.myReplyStatus === 'connected' && (
-                          <span className="chip g">Connected with {o.clientName}</span>
-                        )}
-                        {o.myReplyStatus === 'none' && o.waveBadge && (
-                          <span className="chip a">{o.waveBadge}</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>{o.title}</div>
-                      <div style={{ fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55 }}>{o.brief}</div>
-                    </div>
-
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        paddingTop: 8,
-                        borderTop: '1px solid var(--ln)',
-                        fontSize: 12.5,
-                        color: 'var(--tx3)',
-                        flexWrap: 'wrap',
-                        gap: 8,
-                      }}
-                    >
-                      <div>
-                        📍 {o.loc} · ⏱ {o.when} · 💰 <b style={{ color: 'var(--tx)' }}>{o.budget}</b> · Posted{' '}
-                        {o.posted}
-                      </div>
-                      <span style={{ fontWeight: 700, color: 'var(--tx)' }}>
-                        {o.myReplyStatus === 'none' ? 'View & send reply →' : 'Open details →'}
-                      </span>
-                    </div>
+              {/* Single Action Needed Card if a client unlocked partner details */}
+              {incomingCount > 0 && (
+                <div className="card attn" style={{ marginBottom: 14 }}>
+                  <div className="head" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                    <span className="chip c-r">Action needed</span>
+                    <span className="sp" />
+                    <span className="mono mute3">XPO-REQ-40971</span>
                   </div>
-                ))}
+                  <b style={{ fontSize: 15 }}>Test Traders (Pavan) used 1 view to see your details</b>
+                  <span className="mute" style={{ fontSize: 13.5 }}>
+                    Confirm to share your phone &amp; WhatsApp and unlock their direct number.
+                  </span>
+                  <div className="row" style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                    <button className="btn sm red" onClick={() => acceptClientRequest('req-1')}>
+                      Accept &amp; share contact
+                    </button>
+                    <button className="btn sm ghost" onClick={() => openOpp('req-1')}>
+                      Review request
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Feed Cards (Clean Entity Widgets) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {filteredOpps
+                  .filter((o) => !(incomingCount > 0 && o.id === 'req-1' && o.myReplyStatus === 'client_requested'))
+                  .map((o) => renderLeadCard(o))}
               </div>
             </div>
           )}
@@ -1386,250 +1352,141 @@ export function XpoPartnerApp({
           {/* SCREEN 2: OPPORTUNITY DETAIL */}
           {S.screen === 'opp' && activeOpp && (
             <div className="app-page">
-              <button type="button" className="bl only-sm" style={{ marginBottom: 6, paddingLeft: 0 }} onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}>← Matched requests</button>
-              <div style={{ marginBottom: 18 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-                  <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                    {activeOpp.ref}
-                  </span>
+              <button
+                type="button"
+                className="btn ghost sm"
+                style={{ alignSelf: 'flex-start', marginBottom: 12, padding: '0 4px', color: 'var(--tx2)' }}
+                onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}
+              >
+                ← All requests
+              </button>
+
+              {/* Main Card */}
+              <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 14 }}>
+                <div className="head" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                  <span className="mono mute3">{activeOpp.ref}</span>
                   <span className="chip">{activeOpp.cat}</span>
-                  <span className="chip g">✓ Verified Business</span>
-                  {activeOpp.isOverseas && <span className="chip p">Overseas · USD</span>}
+                  {activeOpp.isOverseas && <span className="chip c-b">Overseas · USD</span>}
+                  <span className="sp" />
+                  {activeOpp.myReplyStatus === 'connected' && <span className="chip c-g">Connected</span>}
+                  {activeOpp.myReplyStatus === 'sent_waiting' && <span className="chip c-a">Reply sent</span>}
+                  {activeOpp.myReplyStatus === 'client_requested' && <span className="chip c-r">Action needed</span>}
                 </div>
-                <h1
-                  style={{
-                    fontSize: 24,
-                    fontWeight: 800,
-                    letterSpacing: '-.025em',
-                    margin: '0 0 6px',
-                  }}
-                >
-                  {activeOpp.title}
-                </h1>
-                <div style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                  📍 {activeOpp.loc} · Needed: <b>{activeOpp.when}</b> · Budget: <b>{activeOpp.budget}</b> · Posted{' '}
-                  {activeOpp.posted}
-                </div>
-              </div>
 
-              {/* 4-Stage Opportunity Progress Bar (Mirrors Client Request Detail) */}
-              <div className="card" style={{ padding: 20, marginBottom: 18 }}>
-                {(() => {
-                  const stageIdx =
-                    activeOpp.myReplyStatus === 'connected'
-                      ? 3
-                      : activeOpp.myReplyStatus === 'client_requested'
-                      ? 2
-                      : activeOpp.myReplyStatus === 'sent_waiting'
-                      ? 1
-                      : 0;
-                  const stages = [
-                    '1. Wave 1 Offer',
-                    '2. Reply Sent',
-                    '3. Client Unlocked',
-                    '4. Connected',
-                  ];
-                  return (
-                    <>
-                      <div
-                        style={{
-                          display: 'grid',
-                          gridTemplateColumns: 'repeat(4, 1fr)',
-                          gap: 8,
-                          marginBottom: 10,
-                        }}
-                      >
-                        {stages.map((label, idx) => {
-                          const active = idx <= stageIdx;
-                          return (
-                            <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                              <span
-                                style={{
-                                  height: 6,
-                                  borderRadius: 99,
-                                  background:
-                                    idx === 3 && stageIdx === 3
-                                      ? '#16A34A'
-                                      : active
-                                      ? 'var(--inv)'
-                                      : 'var(--sf3)',
-                                }}
-                              />
-                              <span
-                                style={{
-                                  fontSize: 12,
-                                  fontWeight: idx === stageIdx ? 800 : 600,
-                                  color: active ? 'var(--tx)' : 'var(--tx3)',
-                                }}
-                              >
-                                {label}
-                              </span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                        {stageIdx === 0 &&
-                          'Matched to Klo Tech in Wave 1. Send your 2-line pitch and timeline to claim a slot.'}
-                        {stageIdx === 1 &&
-                          'Your pitch is with the client. You will be alerted on WhatsApp the moment they unlock your reply.'}
-                        {stageIdx === 2 &&
-                          'Client spent 1 view to unlock your reply! Accept below to exchange direct phone & WhatsApp numbers.'}
-                        {stageIdx === 3 &&
-                          'Both sides agreed — direct phone, WhatsApp, and email are unlocked with zero commission.'}
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-
-              {/* Client specification card */}
-              <div className="card" style={{ padding: 20, marginBottom: 18 }}>
-                <div className="lbl" style={{ marginBottom: 6 }}>
-                  Client brief
-                </div>
-                <p style={{ fontSize: 14.5, lineHeight: 1.6, margin: '0 0 14px', color: 'var(--tx)' }}>
+                <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{activeOpp.title}</h2>
+                <span className="mute" style={{ fontSize: 13.5, lineHeight: 1.55 }}>
                   {activeOpp.brief}
-                </p>
-                <div
-                  style={{
-                    paddingTop: 12,
-                    borderTop: '1px solid var(--ln)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: 8,
-                    fontSize: 12.5,
-                    color: 'var(--tx2)',
-                  }}
-                >
-                  <span>
-                    Posted by:{' '}
-                    <b>
-                      {activeOpp.myReplyStatus === 'connected'
-                        ? `${activeOpp.clientName} · ${activeOpp.clientCompany}`
-                        : activeOpp.clientLabel}
-                    </b>
-                  </span>
-                  <span>Zero platform commission · Direct settlement</span>
+                </span>
+
+                <div className="meta row" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <span className="chip">📍 {activeOpp.loc}</span>
+                  <span className="chip">⏱ {activeOpp.when}</span>
+                  <span className="chip">💰 {activeOpp.budget}</span>
+                  <span className="chip">Posted {activeOpp.posted}</span>
                 </div>
               </div>
 
-              {/* Status-dependent action card */}
-              {activeOpp.myReplyStatus === 'client_requested' && (
-                <div
-                  className="card"
-                  style={{
-                    padding: 22,
-                    borderLeft: '4px solid #C8102E',
-                    marginBottom: 18,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                    <span className="chip r">Client unlocked your reply</span>
-                  </div>
-                  <h3 style={{ fontSize: 17, fontWeight: 800, margin: '0 0 6px' }}>
-                    {activeOpp.clientCompany} ({activeOpp.clientName}) wants to speak with you
-                  </h3>
-                  <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 16px', lineHeight: 1.55 }}>
-                    They spent 1 view to see your reply. Accept to share your contact details and unlock{' '}
-                    {activeOpp.clientName}&apos;s direct WhatsApp and phone number. If you decline, their view is
-                    refunded.
-                  </p>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <button className="btn b1" onClick={() => acceptClientRequest(activeOpp.id)}>
-                      Accept &amp; unlock client contact
-                    </button>
-                    <button className="btn b2" onClick={() => declineClientRequest(activeOpp.id)}>
-                      Decline (refunds client&apos;s view)
-                    </button>
-                  </div>
-                </div>
-              )}
-
+              {/* State: Connected */}
               {activeOpp.myReplyStatus === 'connected' && (
-                <div
-                  className="card"
-                  style={{
-                    padding: 22,
-                    borderLeft: '4px solid #16A34A',
-                    marginBottom: 18,
-                  }}
-                >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                    <span className="chip g">✓ Connected with client</span>
+                <div className="card" style={{ borderColor: 'var(--g)', padding: 18, marginBottom: 14 }}>
+                  <div className="row" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <span className="chip c-g">✓ Connected with client</span>
+                    <span className="mono mute3">{activeOpp.clientCompany}</span>
                   </div>
-                  <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 4 }}>
-                    {activeOpp.clientName} · {activeOpp.clientCompany}
+                  <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>
+                    {activeOpp.clientName}
                   </div>
-                  <div style={{ fontSize: 13.5, color: 'var(--tx2)', marginBottom: 14 }}>
-                    Phone: <span className="mono">{activeOpp.clientPhone}</span> · Email:{' '}
-                    <span className="mono">{activeOpp.clientEmail}</span>
+                  <div style={{ fontSize: 13.5, color: 'var(--tx2)', marginBottom: 12 }}>
+                    Phone: <span className="mono">{activeOpp.clientPhone}</span> · Email: <span className="mono">{activeOpp.clientEmail}</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <div className="row" style={{ display: 'flex', gap: 8 }}>
                     <a
-                      className="btn b4"
-                      href={`https://wa.me/${activeOpp.clientPhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-                        `Hi ${activeOpp.clientName}, reaching out from Klo Tech via XPO regarding "${activeOpp.title}" (${activeOpp.ref}).`
-                      )}`}
+                      className="btn sm red"
+                      href={`https://wa.me/${activeOpp.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${activeOpp.clientName}, reaching out from Klo Tech via XPO regarding "${activeOpp.title}" (${activeOpp.ref}).`)}`}
                       target="_blank"
                       rel="noreferrer"
+                      style={{ textDecoration: 'none' }}
                     >
                       Message on WhatsApp
                     </a>
-                    <a className="btn b2" href={`tel:${activeOpp.clientPhone}`}>
+                    <a
+                      className="btn sm"
+                      href={`tel:${activeOpp.clientPhone}`}
+                      style={{ textDecoration: 'none' }}
+                    >
                       Call {activeOpp.clientPhone}
                     </a>
                   </div>
                 </div>
               )}
 
-              {activeOpp.myReplyStatus === 'sent_waiting' && (
-                <div className="card" style={{ padding: 20, marginBottom: 18 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                    <span className="chip b">Reply sent · Waiting on client</span>
-                    <span style={{ fontSize: 12, color: 'var(--tx3)' }}>{activeOpp.repliedAt}</span>
+              {/* State: Client Requested Contact */}
+              {activeOpp.myReplyStatus === 'client_requested' && (
+                <div className="card attn" style={{ padding: 18, marginBottom: 14 }}>
+                  <div className="head" style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                    <span className="chip c-r">Action needed</span>
                   </div>
-                  <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>Your note to the client:</div>
-                  <div
-                    style={{
-                      padding: 12,
-                      borderRadius: 9,
-                      background: 'var(--sf2)',
-                      border: '1px solid var(--ln)',
-                      fontSize: 13.5,
-                      color: 'var(--tx2)',
-                    }}
-                  >
-                    “{activeOpp.myPitch}”
-                  </div>
-                  <div style={{ fontSize: 12.5, color: 'var(--tx3)', marginTop: 8 }}>
-                    Proposed timeline: <b>{activeOpp.myTimeline}</b> · Indicative quote: <b>{activeOpp.myQuote}</b>
+                  <b style={{ fontSize: 15 }}>{activeOpp.clientCompany || 'Client'} used 1 view to see your details</b>
+                  <span className="mute" style={{ fontSize: 13.5, margin: '4px 0 10px', display: 'block' }}>
+                    Confirm to share your phone &amp; WhatsApp and unlock their direct number.
+                  </span>
+                  <div className="row" style={{ display: 'flex', gap: 8 }}>
+                    <button className="btn sm red" onClick={() => acceptClientRequest(activeOpp.id)}>
+                      Accept &amp; share contact
+                    </button>
+                    <button className="btn sm ghost" onClick={() => declineClientRequest(activeOpp.id)}>
+                      Decline
+                    </button>
                   </div>
                 </div>
               )}
 
-              {activeOpp.myReplyStatus === 'none' && (
-                <div className="card" style={{ padding: 22 }}>
-                  <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>
-                    Can Klo Tech take this on?
+              {/* State: Reply Sent · Waiting */}
+              {activeOpp.myReplyStatus === 'sent_waiting' && (
+                <div className="card" style={{ padding: 18, marginBottom: 14 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                    <span className="chip c-a">Reply sent · Waiting on client</span>
+                    <span className="mono mute3">{activeOpp.repliedAt}</span>
                   </div>
-                  <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 16px', lineHeight: 1.55 }}>
-                    Send a short 2-line note with your relevant experience and timeline. Sending a reply uses{' '}
-                    <b>1 reply credit</b> ({S.credits} left). Your phone number stays private until both sides agree
-                    to connect.
-                  </p>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    <button className="btn b1" onClick={() => openReplySheet(activeOpp.id)}>
-                      {S.credits > 0 ? 'Send a reply · uses 1 reply' : 'Get Partner Plan to reply'}
-                    </button>
+                  <span className="mute" style={{ fontSize: 13.5 }}>
+                    The client has your reply. You will be told here when they want to connect.
+                  </span>
+                  {activeOpp.myPitch && (
+                    <div style={{ marginTop: 10, padding: 12, borderRadius: 10, background: 'var(--sf2)', border: '1px solid var(--ln)', fontStyle: 'italic', fontSize: 13.5 }}>
+                      “{activeOpp.myPitch}”
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* State: New (Reply Composer) */}
+              {activeOpp.myReplyStatus === 'none' && (
+                <div className="card" style={{ padding: 20 }}>
+                  <span className="lbl" style={{ marginBottom: 6, display: 'block' }}>Your reply</span>
+                  <textarea
+                    className="inp"
+                    rows={3}
+                    placeholder="Your quote and a short pitch — why you fit this request"
+                    value={S.pitchDraft}
+                    onChange={(e) => setS((prev) => ({ ...prev, pitchDraft: e.target.value }))}
+                    style={{ resize: 'vertical', minHeight: 88, padding: '12px 14px', lineHeight: 1.5, marginBottom: 12 }}
+                  />
+                  <div className="row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                     <button
-                      className="btn b2"
-                      onClick={() => setS((prev) => ({ ...prev, screen: 'feed' }))}
+                      className="btn red sm"
+                      onClick={() => {
+                        if (!S.pitchDraft.trim()) {
+                          toast('warn', 'Short pitch required', 'Write at least a couple sentences on how you fit this request.');
+                          return;
+                        }
+                        submitReply(activeOpp.id);
+                      }}
                     >
-                      Back to matched requests
+                      Send reply · 1 free
                     </button>
+                    <span className="mute3" style={{ fontSize: 12.5 }}>
+                      {S.credits} free replies left
+                    </span>
                   </div>
                 </div>
               )}
@@ -1639,96 +1496,67 @@ export function XpoPartnerApp({
           {/* SCREEN 3: MY REPLIES */}
           {S.screen === 'replies' && (
             <div className="app-page">
-              <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>My replies</h1>
-              <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
-                Every client request Klo Tech has replied to.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {repliesList.map((r) => (
-                  <div
-                    key={r.id}
-                    className="rowb"
-                    onClick={() => openOpp(r.id)}
-                  >
-                    <div style={{ minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                        <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                          {r.ref}
-                        </span>
-                        <span style={{ fontSize: 15, fontWeight: 700 }}>{r.title}</span>
-                      </div>
-                      <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                        “{r.myPitch}”
-                      </div>
-                    </div>
-                    <div style={{ flexShrink: 0 }}>
-                      {r.myReplyStatus === 'client_requested' && (
-                        <span className="chip r">Client requested contact</span>
-                      )}
-                      {r.myReplyStatus === 'sent_waiting' && (
-                        <span className="chip b">Waiting on client</span>
-                      )}
-                      {r.myReplyStatus === 'connected' && <span className="chip g">Connected</span>}
-                      {r.myReplyStatus === 'declined' && <span className="chip">Declined</span>}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <span className="lbl" style={{ margin: '0 2px 10px', display: 'block' }}>
+                My replies ({repliesList.length})
+              </span>
+              {repliesList.length === 0 ? (
+                <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--tx2)' }}>
+                  No replies yet.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {repliesList.map((r) => renderLeadCard(r))}
+                </div>
+              )}
             </div>
           )}
 
           {/* SCREEN 4: CONNECTED CLIENTS */}
           {S.screen === 'conn' && (
             <div className="app-page">
-              <h1 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 4px' }}>Connected clients</h1>
-              <p style={{ fontSize: 13.5, color: 'var(--tx2)', margin: '0 0 20px' }}>
-                Direct client contacts you&apos;ve unlocked. Reach out on WhatsApp or phone — zero commission.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {connectedList.map((c) => (
-                  <div key={c.id} className="card" style={{ padding: 20 }}>
-                    <div
-                      style={{
-                        display: 'flex',
-                        alignItems: 'flex-start',
-                        justifyContent: 'space-between',
-                        gap: 16,
-                        flexWrap: 'wrap',
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                          <span className="chip g">✓ Connected</span>
-                          <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                            {c.ref}
-                          </span>
+              <span className="lbl" style={{ margin: '0 2px 10px', display: 'block' }}>
+                Connected clients ({connectedList.length})
+              </span>
+              {connectedList.length === 0 ? (
+                <div className="card" style={{ padding: 32, textAlign: 'center', color: 'var(--tx2)' }}>
+                  No connected clients yet.
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {connectedList.map((c) => (
+                    <div key={c.id} className="card" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                      <div className="row" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <span className="sq">✓</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <b style={{ fontSize: 15 }}>{c.clientName} · {c.clientCompany}</b>
+                          <div className="mute" style={{ fontSize: 12.5, marginTop: 2 }}>
+                            {c.title} · {c.budget}
+                          </div>
                         </div>
-                        <div style={{ fontSize: 17, fontWeight: 800 }}>{c.clientCompany}</div>
-                        <div style={{ fontSize: 13.5, color: 'var(--tx2)', marginBottom: 6 }}>
-                          {c.clientName} · {c.loc} · For: <b>{c.title}</b>
-                        </div>
-                        <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                          Phone: <span className="mono">{c.clientPhone}</span> · Email:{' '}
-                          <span className="mono">{c.clientEmail}</span>
-                        </div>
+                        <span className="chip c-g">{c.when}</span>
                       </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      <div className="row" style={{ display: 'flex', gap: 8 }}>
                         <a
-                          className="btn b4 sm"
-                          href={`https://wa.me/${c.clientPhone.replace(/[^0-9]/g, '')}`}
+                          className="btn sm red"
+                          href={`https://wa.me/${c.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${c.clientName}, connecting from Klo Tech via XPO regarding "${c.title}" (${c.ref}).`)}`}
                           target="_blank"
                           rel="noreferrer"
+                          style={{ textDecoration: 'none' }}
                         >
-                          WhatsApp
+                          Message on WhatsApp
                         </a>
-                        <a className="btn b2 sm" href={`tel:${c.clientPhone}`}>
-                          Call
+                        <a
+                          className="btn sm"
+                          href={`tel:${c.clientPhone}`}
+                          style={{ textDecoration: 'none' }}
+                        >
+                          Call {c.clientPhone}
                         </a>
                       </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 

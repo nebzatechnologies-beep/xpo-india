@@ -8,6 +8,13 @@
   --primary-glow: rgba(200, 16, 46, 0.16);
 
   --aln: #F1D29B;
+  --red: #C8102E;
+  --red2: #A50D26;
+  --g: #1D7A45;
+  --b: #1F5FBF;
+  --a: #8A5A00;
+  --shadow: 0 1px 2px rgba(20,23,28,.04), 0 6px 20px -12px rgba(20,23,28,.14);
+  --shadow2: 0 18px 44px -14px rgba(20,23,28,.4);
   --bg: #F6F6F4;
   --sf: #FFFFFF;
   --sf2: #FBFBFA;
@@ -58,6 +65,13 @@
 
 .xt.dark {
   --aln: #6B5221;
+  --red: #C8102E;
+  --red2: #A50D26;
+  --g: #8FD9A8;
+  --b: #A9C2F5;
+  --a: #F3C77A;
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 26px -14px rgba(0,0,0,.7);
+  --shadow2: 0 22px 50px -16px rgba(0,0,0,.75);
   --bg: #0F1012;
   --sf: #1A1C20;
   --sf2: #202227;
@@ -1856,4 +1870,171 @@ section.band {
   z-index: 35;
   background: transparent;
   border: 0;
+}
+
+/* User reference entity widget styling */
+.c-g { background: var(--gbg) !important; color: var(--gtx) !important; }
+.c-b { background: var(--bbg) !important; color: var(--btx) !important; }
+.c-a { background: var(--abg) !important; color: var(--atx) !important; }
+.c-r { background: var(--rbg) !important; color: var(--rtx) !important; }
+.mute3 { color: var(--tx3) !important; }
+
+.card.req,
+button.card.req,
+div.card.req {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  background: var(--sf);
+  border: 1px solid var(--ln);
+  border-radius: 16px;
+  padding: 18px;
+  box-shadow: var(--shadow);
+  width: 100%;
+  box-sizing: border-box;
+  transition: transform 0.1s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+.card.req:hover {
+  background: var(--sf);
+  border-color: var(--ln2);
+  box-shadow: 0 4px 16px -4px rgba(20,23,28,.1);
+}
+.card.req.attn,
+.card.attn {
+  border-color: color-mix(in srgb, var(--red) 35%, transparent) !important;
+  background: linear-gradient(0deg, var(--sf), var(--sf)) !important;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--red) 10%, transparent), var(--shadow) !important;
+}
+
+.req .head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+.req h3 {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--tx);
+}
+.req .meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.req .foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px solid var(--ln);
+  padding-top: 10px;
+  margin-top: 2px;
+  width: 100%;
+}
+
+.rep {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--ln);
+  border-radius: 14px;
+  padding: 14px;
+  background: var(--sf);
+  box-sizing: border-box;
+}
+
+.sq {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--sf2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex: 0 0 40px;
+  color: var(--g);
+}
+
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--ln);
+  padding-bottom: 2px;
+}
+.tb {
+  border: 0;
+  background: none;
+  min-height: 40px;
+  padding: 0 12px;
+  border-bottom: 2.5px solid transparent;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--tx2);
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.12s ease, border-color 0.12s ease;
+}
+.tb:hover {
+  color: var(--tx);
+}
+.tb[aria-selected="true"] {
+  color: var(--tx) !important;
+  border-bottom-color: var(--red) !important;
+}
+
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.kpi {
+  background: var(--sf);
+  border: 1px solid var(--ln);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: var(--shadow);
+}
+.kpi b {
+  display: block;
+  font-size: 24px;
+  letter-spacing: -0.02em;
+}
+.kpi span {
+  font-size: 12.5px;
+  color: var(--tx2);
+}
+
+.btn.red {
+  background: var(--red) !important;
+  border-color: var(--red) !important;
+  color: #fff !important;
+}
+.btn.red:hover {
+  background: var(--red2) !important;
+}
+.btn.ink {
+  background: var(--inv) !important;
+  border-color: var(--inv) !important;
+  color: #fff !important;
+}
+.btn.sm {
+  min-height: 34px !important;
+  padding: 0 12px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
+}
+.btn.ghost {
+  border-color: transparent !important;
+  background: transparent !important;
+  color: var(--tx) !important;
+}
+.btn.ghost:hover {
+  background: var(--sf2) !important;
 }

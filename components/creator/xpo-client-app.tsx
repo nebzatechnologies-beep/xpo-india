@@ -683,6 +683,79 @@ export function XpoClientApp({
 
   // Dynamic simulation events for Prototype Controls
   const waitingPartner = r?.partners.find((p) => p.st === 'waiting');
+  
+  const renderReqCard = (id: string, attn: boolean) => {
+    const item = reqs[id];
+    if (!item) return null;
+    const isInterested = item.status === 'interested' || (item.partners && item.partners.length > 0);
+    const act = isInterested
+      ? `Review ${item.partners.length} replies`
+      : 'Open details';
+
+    let statusText = 'Finding · ~15 min';
+    let statusClass = 'c-b';
+    if (isInterested) {
+      statusText = `${item.partners.length} interested`;
+      statusClass = 'c-g';
+    } else if (item.status === 'held') {
+      statusText = 'Being checked';
+      statusClass = 'c-a';
+    } else if (item.status === 'closed') {
+      statusText = 'Closed';
+      statusClass = '';
+    } else if (item.status === 'nomatch') {
+      statusText = 'No match yet';
+      statusClass = 'c-a';
+    }
+
+    const timeDisplay = item.posted ? item.posted.replace(/^posted\s+/i, '') : 'Today';
+
+    return (
+      <div
+        key={id}
+        role="button"
+        tabIndex={0}
+        className={`card req${attn ? ' attn' : ''}`}
+        onClick={() => go('req', id)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            go('req', id);
+          }
+        }}
+      >
+        <div className="head">
+          <span className="mono mute3">{item.code}</span>
+          <span className="chip">{item.cat}</span>
+          <span className="sp" />
+          <span className={`chip ${statusClass}`}>{statusText}</span>
+        </div>
+
+        <h3>{item.title}</h3>
+        <span className="mute" style={{ fontSize: 13, lineHeight: 1.5 }}>
+          {item.spec}
+        </span>
+
+        <div className="meta">
+          <span className="chip">📍 {item.loc}</span>
+          <span className="chip">⏱ {item.timeline}</span>
+          <span className="chip">💰 {item.budget}</span>
+        </div>
+
+        <div className="foot">
+          <span className="mono mute3">{timeDisplay}</span>
+          <span className="sp" />
+          <span
+            className={`btn sm ${attn ? 'b1 red' : 'ghost'}`}
+            style={{ pointerEvents: 'none' }}
+          >
+            {act} →
+          </span>
+        </div>
+      </div>
+    );
+  };
+
   const isSim = forceMobileSim;
 
   return (
@@ -1422,197 +1495,56 @@ export function XpoClientApp({
           {/* 2. HOME / NEW REQUIREMENT */}
           {screen === 'home' && (
             <>
-              {/* Action needed highlight banner (matches Partner App balance) */}
-              {reqs.r1 && reqs.r1.partners.some((p) => p.st === 'locked') && (
-                <div
-                  className="card"
-                  style={{
-                    padding: '16px 20px',
-                    borderLeft: '4px solid #C8102E',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: 16,
-                    flexWrap: 'wrap',
-                  }}
-                >
-                  <div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                      <span className="chip r">Action needed</span>
-                      <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                        {reqs.r1.code}
-                      </span>
-                    </div>
-                    <div style={{ fontSize: 15, fontWeight: 800 }}>
-                      {reqs.r1.partners.length} verified partners replied to &ldquo;{reqs.r1.title}&rdquo;
-                    </div>
-                    <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                      Read their notes and timelines, then unlock a partner to share phone &amp; WhatsApp numbers.
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      className="btn b1 sm"
-                      onClick={() => go('req', 'r1')}
-                    >
-                      Review {reqs.r1.partners.length} replies
-                    </button>
-                    <button
-                      type="button"
-                      className="btn b2 sm"
-                      onClick={() => go('requests')}
-                    >
-                      All requests
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              <section
-                style={{
-                  display: 'flex',
-                  alignItems: 'flex-end',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                  flexWrap: 'wrap',
-                }}
-              >
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                  <h1
-                    style={{
-                      margin: 0,
-                      fontSize: 24,
-                      fontWeight: 800,
-                      letterSpacing: '-0.025em',
-                    }}
-                  >
-                    {order.length ? 'What do you need, Pavan?' : 'Post your first requirement'}
-                  </h1>
-                  <span style={{ color: 'var(--tx2)', fontSize: 13.5 }}>
-                    One sentence is enough. Sent in 5-minute waves to verified partners · Zero commission.
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  className="btn b2 sm hide-sm"
-                  onClick={() => go('requests')}
-                >
-                  My requests ({order.length})
-                </button>
-              </section>
-
-              {/* Mobile 1-tap composer bar (Board 2 — Client mobile core loop) */}
-              <button
-                type="button"
-                className="ask only-sm"
-                aria-haspopup="dialog"
-                onClick={() => setSheet('compose')}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A4F59" strokeWidth="2.2" aria-hidden="true">
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="m20 20-3.5-3.5" />
-                </svg>
-                <span style={{ flex: 1, textAlign: 'left' }}>Describe what you need…</span>
-                <span className="askmic" aria-hidden="true">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                    <rect x="9" y="3" width="6" height="11" rx="3" />
-                    <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-                  </svg>
-                </span>
-              </button>
-
-              <section
-                className="card hide-sm"
-                style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}
-              >
-                <label htmlFor="ask" className="lbl">
-                  Your requirement
-                </label>
+              {/* Reference-aligned Compose Box */}
+              <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>
+                  {order.length ? 'What do you need, Pavan?' : 'Post your first requirement'}
+                </h2>
                 <textarea
-                  id="ask"
+                  id="comp"
                   rows={3}
                   value={ask}
                   onChange={(e) => {
                     setAsk(e.target.value);
                     setAskErr(false);
                   }}
-                  aria-describedby="ask-help"
-                  placeholder="What do you need, where, by when — and budget if you know it"
-                  style={{
-                    resize: 'vertical',
-                    border: `1.5px solid ${askErr ? '#C8102E' : 'var(--ln2)'}`,
-                    borderRadius: 12,
-                    padding: 14,
-                    font: "500 16px 'Plus Jakarta Sans', sans-serif",
-                    lineHeight: '24px',
-                    background: 'var(--sf)',
-                    color: 'var(--tx)',
-                  }}
+                  className="inp"
+                  placeholder="Describe what you need…"
+                  style={{ resize: 'vertical', minHeight: 88, lineHeight: 1.5, padding: '12px 14px' }}
                 />
                 {askErr && (
-                  <span
-                    id="ask-help"
-                    role="alert"
-                    style={{ fontSize: 13, color: 'var(--rtx)' }}
-                  >
+                  <span role="alert" style={{ fontSize: 13, color: 'var(--rtx)' }}>
                     Add a little more: what you need, where, and by when.
                   </span>
                 )}
-                <div
-                  style={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: 'space-between',
-                    gap: 12,
-                    alignItems: 'center',
-                  }}
-                >
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <span style={{ fontSize: 13, color: 'var(--tx2)' }}>Examples:</span>
+                <div className="row" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  {['Corrugated boxes, Pune', 'GST filing, 3 entities', 'Office fit-out in Gurugram'].map((ex) => (
                     <button
+                      key={ex}
                       type="button"
                       className="chipb"
                       onClick={() => {
-                        setAsk('10,000 printed 3-ply corrugated boxes delivered to Pune in 2 weeks');
+                        setAsk(ex === 'Corrugated boxes, Pune'
+                          ? '10,000 printed 3-ply corrugated boxes delivered to Pune in 2 weeks'
+                          : ex === 'GST filing, 3 entities'
+                          ? 'Monthly GST filing and books for 3 entities in Bengaluru'
+                          : 'Office fit-out for 4,000 sq ft in Gurugram, start next month');
                         setAskErr(false);
                       }}
                     >
-                      Corrugated boxes, Pune
+                      {ex}
                     </button>
-                    <button
-                      type="button"
-                      className="chipb"
-                      onClick={() => {
-                        setAsk('Monthly GST filing and books for 3 entities in Bengaluru');
-                        setAskErr(false);
-                      }}
-                    >
-                      GST filing, 3 entities
-                    </button>
-                    <button
-                      type="button"
-                      className="chipb"
-                      onClick={() => {
-                        setAsk('Office fit-out for 4,000 sq ft in Gurugram, start next month');
-                        setAskErr(false);
-                      }}
-                    >
-                      Office fit-out, Gurugram
-                    </button>
-                  </div>
-                  <button type="button" className="btn b1" onClick={handleMakeDraft}>
+                  ))}
+                </div>
+                <div className="row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                  <button type="button" className="btn b1 red" onClick={handleMakeDraft}>
                     Continue
                   </button>
+                  <span className="mute3" style={{ fontSize: 12.5 }}>
+                    Goes out in 5-minute waves to verified partners · zero commission
+                  </span>
                 </div>
-              </section>
+              </div>
 
               {/* STEP 2: CHECK BEFORE POSTING */}
               {drafted && draft && (
@@ -1655,42 +1587,21 @@ export function XpoClientApp({
                       />
                     </label>
                     <label className="fld">
-                      Sector
-                      <select
-                        className="inp"
-                        value={draft.sector}
-                        onChange={(e) => setDraft({ ...draft, sector: e.target.value })}
-                      >
-                        <option>{draft.sector}</option>
-                        <option>Technology &amp; Software</option>
-                        <option>Manufacturing &amp; Industrial Supply</option>
-                        <option>Finance, Legal &amp; HR Advisory</option>
-                        <option>Construction, Interiors &amp; EPC</option>
-                        <option>Design, Branding &amp; Digital Growth</option>
-                      </select>
-                    </label>
-                    <label className="fld">
                       Category
                       <select
                         className="inp"
                         value={draft.cat}
                         onChange={(e) => setDraft({ ...draft, cat: e.target.value })}
                       >
-                        <option>{draft.cat}</option>
+                        <option>Web &amp; Mobile Development</option>
+                        <option>Industrial Packaging &amp; Raw Materials</option>
+                        <option>Performance Marketing &amp; SEO</option>
+                        <option>Solar &amp; Electrical EPC</option>
+                        <option>Commercial Interiors &amp; Fit-Out</option>
                       </select>
                     </label>
                     <label className="fld">
-                      Subcategory
-                      <select
-                        className="inp"
-                        value={draft.sub}
-                        onChange={(e) => setDraft({ ...draft, sub: e.target.value })}
-                      >
-                        <option>{draft.sub}</option>
-                      </select>
-                    </label>
-                    <label className="fld">
-                      Work / delivery location
+                      Location
                       <input
                         className="inp"
                         value={draft.loc}
@@ -1711,7 +1622,7 @@ export function XpoClientApp({
                       </select>
                     </label>
                     <label className="fld">
-                      Estimated budget (optional)
+                      Budget
                       <input
                         className="inp"
                         value={draft.budget}
@@ -1719,29 +1630,15 @@ export function XpoClientApp({
                       />
                     </label>
                     <label className="fld" style={{ gridColumn: '1 / -1' }}>
-                      Scope &amp; specifications
+                      Details / specifications
                       <textarea
                         className="inp"
                         rows={3}
                         value={draft.spec}
                         onChange={(e) => setDraft({ ...draft, spec: e.target.value })}
-                        style={{ padding: '12px 14px', lineHeight: '22px' }}
+                        style={{ resize: 'vertical' }}
                       />
-                      <span style={{ fontWeight: 500, fontSize: 12.5, color: 'var(--tx2)' }}>
-                        No phone numbers, please.
-                      </span>
                     </label>
-                    <div className="fld" style={{ gridColumn: '1 / -1' }}>
-                      <span>Drawings or specs (optional)</span>
-                      <button
-                        type="button"
-                        className="btn b2"
-                        style={{ alignSelf: 'flex-start', borderStyle: 'dashed' }}
-                        onClick={() => setToast('File attachment ready')}
-                      >
-                        Attach PDF, image or CAD
-                      </button>
-                    </div>
                   </div>
                   <div
                     style={{
@@ -1765,7 +1662,7 @@ export function XpoClientApp({
                       </button>
                       <button
                         type="button"
-                        className="btn b1"
+                        className="btn b1 red"
                         onClick={() => handlePostDraft()}
                       >
                         Post free
@@ -1775,120 +1672,50 @@ export function XpoClientApp({
                 </section>
               )}
 
-              {/* RECENT REQUESTS */}
-              <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <div
-                  style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'baseline',
-                  }}
-                >
-                  <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>Recent requests</h2>
-                  <button
-                    type="button"
-                    className="btn bl"
-                    onClick={() => go('requests')}
-                  >
-                    See all
-                  </button>
-                </div>
-
-                {order.length === 0 ? (
-                  <div
-                    className="card"
-                    style={{
-                      padding: 28,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 6,
-                    }}
-                  >
-                    <b style={{ fontSize: 16 }}>No requests yet</b>
-                    <span style={{ fontSize: 14.5, lineHeight: '22px', color: 'var(--tx2)' }}>
-                      Partners usually reply within 15 minutes.
-                    </span>
+              {/* Needs You (Attention Card - No duplicate banner!) */}
+              {(() => {
+                const needsYouId = order.find(
+                  (id) => reqs[id]?.status === 'interested' || reqs[id]?.partners?.some((p) => p.st === 'locked')
+                );
+                if (!needsYouId) return null;
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
+                    <span className="lbl" style={{ margin: '4px 2px 0' }}>Needs you</span>
+                    {renderReqCard(needsYouId, true)}
                   </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {order.slice(0, 3).map((id) => {
-                      const item = reqs[id];
-                      const st = statusOf(item);
-                      return (
-                        <div
-                          key={id}
-                          role="button"
-                          tabIndex={0}
-                          className="rowb"
-                          style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 10 }}
-                          onClick={() => go('req', id)}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              go('req', id);
-                            }
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              width: '100%',
-                              gap: 8,
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                              <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                                {item.code}
-                              </span>
-                              <span className="chip">{item.cat}</span>
-                            </div>
-                            <span className="chip" style={st.cs}>
-                              {st.l}
-                            </span>
-                          </div>
+                );
+              })()}
 
-                          <div>
-                            <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>
-                              {item.title}
-                            </div>
-                            <div style={{ fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55 }}>
-                              {item.spec}
-                            </div>
-                          </div>
+              {/* Recent Requests Section */}
+              {(() => {
+                const needsYouId = order.find(
+                  (id) => reqs[id]?.status === 'interested' || reqs[id]?.partners?.some((p) => p.st === 'locked')
+                );
+                const recentList = order.filter((id) => id !== needsYouId).slice(0, 3);
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', margin: '4px 2px 0' }}>
+                      <span className="lbl">Recent requests</span>
+                      <button
+                        type="button"
+                        className="btn bl sm"
+                        onClick={() => go('requests')}
+                        style={{ padding: 0 }}
+                      >
+                        See all ({order.length}) →
+                      </button>
+                    </div>
 
-                          <div
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'space-between',
-                              width: '100%',
-                              paddingTop: 8,
-                              borderTop: '1px solid var(--ln)',
-                              fontSize: 12.5,
-                              color: 'var(--tx3)',
-                              flexWrap: 'wrap',
-                              gap: 8,
-                            }}
-                          >
-                            <div>
-                              📍 {item.loc} · ⏱ {item.timeline} · 💰{' '}
-                              <b style={{ color: 'var(--tx)' }}>{item.budget}</b> · {item.posted}
-                            </div>
-                            <span style={{ fontWeight: 700, color: 'var(--tx)' }}>
-                              {item.partners.length > 0
-                                ? `Review ${item.partners.length} replies →`
-                                : 'Open details →'}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
+                    {recentList.length === 0 && !needsYouId ? (
+                      <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--tx2)' }}>
+                        No requests yet. Describe what you need above to get matched.
+                      </div>
+                    ) : (
+                      recentList.map((id) => renderReqCard(id, false))
+                    )}
                   </div>
-                )}
-              </section>
+                );
+              })()}
             </>
           )}
 
@@ -1902,11 +1729,12 @@ export function XpoClientApp({
                   justifyContent: 'space-between',
                   alignItems: 'flex-end',
                   gap: 16,
+                  marginBottom: 8,
                 }}
               >
                 <div>
                   <h1 style={{ margin: '0 0 4px', fontSize: 24, fontWeight: 800, letterSpacing: '-0.025em' }}>
-                    My requests
+                    My requests ({order.length})
                   </h1>
                   <p style={{ margin: 0, fontSize: 13.5, color: 'var(--tx2)' }}>
                     Track 5-minute partner waves, review pitches, and unlock verified contacts.
@@ -1914,7 +1742,7 @@ export function XpoClientApp({
                 </div>
                 <button
                   type="button"
-                  className="btn b1 sm"
+                  className="btn b1 red sm"
                   onClick={() => {
                     go('home');
                     setDrafted(false);
@@ -1931,9 +1759,10 @@ export function XpoClientApp({
                   justifyContent: 'space-between',
                   gap: 12,
                   flexWrap: 'wrap',
+                  marginBottom: 10,
                 }}
               >
-                <div className="seg-group" role="tablist" aria-label="Filter">
+                <div className="tabs">
                   {(
                     [
                       ['active', `Active (${order.filter((id) => isActiveReq(id)).length})`],
@@ -1945,7 +1774,7 @@ export function XpoClientApp({
                       key={key}
                       type="button"
                       role="tab"
-                      className={filter === key ? 'on' : ''}
+                      className="tb"
                       aria-selected={filter === key}
                       onClick={() => setFilter(key)}
                     >
@@ -1956,7 +1785,7 @@ export function XpoClientApp({
 
                 <input
                   className="inp"
-                  style={{ maxWidth: 280, width: '100%' }}
+                  style={{ maxWidth: 280, width: '100%', minHeight: 38, fontSize: 13.5 }}
                   placeholder="Search keyword, city or ID"
                   value={reqSearch}
                   onChange={(e) => setReqSearch(e.target.value)}
@@ -1964,85 +1793,15 @@ export function XpoClientApp({
               </div>
 
               {listedIds.length === 0 ? (
-                <div className="card" style={{ padding: 24, fontSize: 14.5, color: 'var(--tx2)' }}>
+                <div className="card" style={{ padding: 28, fontSize: 14.5, color: 'var(--tx2)', textAlign: 'center' }}>
                   Nothing matching your filter.
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {listedIds.map((id) => {
                     const item = reqs[id];
-                    const st = statusOf(item);
-                    return (
-                      <div
-                        key={id}
-                        role="button"
-                        tabIndex={0}
-                        className="rowb"
-                        style={{ alignItems: 'flex-start', flexDirection: 'column', gap: 10 }}
-                        onClick={() => go('req', id)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.preventDefault();
-                            go('req', id);
-                          }
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            gap: 8,
-                            flexWrap: 'wrap',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                            <span className="mono" style={{ fontSize: 12, color: 'var(--tx3)' }}>
-                              {item.code}
-                            </span>
-                            <span className="chip">{item.cat}</span>
-                          </div>
-                          <span className="chip" style={st.cs}>
-                            {st.l}
-                          </span>
-                        </div>
-
-                        <div>
-                          <div style={{ fontSize: 16, fontWeight: 800, marginBottom: 4 }}>
-                            {item.title}
-                          </div>
-                          <div style={{ fontSize: 13.5, color: 'var(--tx2)', lineHeight: 1.55 }}>
-                            {item.spec}
-                          </div>
-                        </div>
-
-                        <div
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'space-between',
-                            width: '100%',
-                            paddingTop: 8,
-                            borderTop: '1px solid var(--ln)',
-                            fontSize: 12.5,
-                            color: 'var(--tx3)',
-                            flexWrap: 'wrap',
-                            gap: 8,
-                          }}
-                        >
-                          <div>
-                            📍 {item.loc} · ⏱ {item.timeline} · 💰{' '}
-                            <b style={{ color: 'var(--tx)' }}>{item.budget}</b> · {item.posted}
-                          </div>
-                          <span style={{ fontWeight: 700, color: 'var(--tx)' }}>
-                            {item.partners.length > 0
-                              ? `Review ${item.partners.length} replies →`
-                              : 'Open details →'}
-                          </span>
-                        </div>
-                      </div>
-                    );
+                    const isAttn = item.status === 'interested' || (item.partners && item.partners.some((p) => p.st === 'locked'));
+                    return renderReqCard(id, isAttn);
                   })}
                 </div>
               )}
@@ -2054,106 +1813,84 @@ export function XpoClientApp({
             <>
               <button
                 type="button"
-                className="btn bl"
+                className="btn ghost sm"
                 onClick={() => go('requests')}
-                style={{ alignSelf: 'flex-start', color: 'var(--tx2)', padding: 0 }}
+                style={{ alignSelf: 'flex-start', padding: '0 4px', color: 'var(--tx2)' }}
               >
                 ← My requests
               </button>
 
-              <section
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  justifyContent: 'space-between',
-                  gap: 16,
-                  alignItems: 'flex-start',
-                }}
-              >
-                <div
-                  style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 8,
-                    minWidth: 0,
-                    flex: '1 1 440px',
-                  }}
-                >
-                  <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
-                    <span className="mono" style={{ color: 'var(--tx2)' }}>
-                      {r.code} · {r.posted}
+              {/* Main Request Card */}
+              {(() => {
+                const isInterested = r.status === 'interested' || (r.partners && r.partners.length > 0);
+                let statusText = 'Finding · ~15 min';
+                let statusClass = 'c-b';
+                if (isInterested) {
+                  statusText = `${r.partners.length} interested`;
+                  statusClass = 'c-g';
+                } else if (r.status === 'held') {
+                  statusText = 'Being checked';
+                  statusClass = 'c-a';
+                } else if (r.status === 'closed') {
+                  statusText = 'Closed';
+                  statusClass = '';
+                } else if (r.status === 'nomatch') {
+                  statusText = 'No match yet';
+                  statusClass = 'c-a';
+                }
+
+                const timeDisplay = r.posted ? r.posted.replace(/^posted\s+/i, '') : 'Today';
+
+                return (
+                  <div className="card" style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                    <div className="head" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                      <span className="mono mute3">{r.code}</span>
+                      <span className="chip">{r.cat}</span>
+                      <span className="sp" />
+                      <span className={`chip ${statusClass}`}>{statusText}</span>
+                    </div>
+
+                    <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>{r.title}</h2>
+                    <span className="mute" style={{ fontSize: 13.5, lineHeight: 1.55 }}>
+                      {r.spec}
                     </span>
-                    <span className="chip" style={statusOf(r).cs}>
-                      {statusOf(r).l}
-                    </span>
+
+                    <div className="meta row" style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      <span className="chip">📍 {r.loc}</span>
+                      <span className="chip">⏱ {r.timeline}</span>
+                      <span className="chip">💰 {r.budget}</span>
+                      <span className="chip">{timeDisplay}</span>
+                    </div>
+
+                    {!['closed', 'held'].includes(r.status) && (
+                      <div className="row" style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                        <button
+                          type="button"
+                          className="btn sm"
+                          onClick={() => {
+                            setEditing((e) => !e);
+                            setCloseDlg(false);
+                          }}
+                        >
+                          {editing ? 'Cancel edit' : 'Edit details'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn sm ghost"
+                          onClick={() => {
+                            setCloseDlg(true);
+                            setEditing(false);
+                          }}
+                        >
+                          Close request
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <h1
-                    style={{
-                      margin: 0,
-                      fontSize: 28,
-                      fontWeight: 800,
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    {r.title}
-                  </h1>
-                  <span style={{ fontSize: 14.5, color: 'var(--tx2)' }}>
-                    {r.cat} › {r.sub} · {r.loc} · {r.timeline} · {r.budget}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 14.5,
-                      lineHeight: '22px',
-                      color: 'var(--tx2)',
-                      maxWidth: 760,
-                    }}
-                  >
-                    {r.spec}
-                  </span>
-                </div>
+                );
+              })()}
 
-                {!['closed', 'held'].includes(r.status) && (
-                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      className="btn b2"
-                      onClick={() => {
-                        setEditing((e) => !e);
-                        setCloseDlg(false);
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn b2"
-                      onClick={() => {
-                        setCloseDlg(true);
-                        setEditing(false);
-                      }}
-                    >
-                      Close request
-                    </button>
-                  </div>
-                )}
-
-                {r.status === 'closed' && (
-                  <button
-                    type="button"
-                    className="btn b2"
-                    onClick={() => {
-                      setDraft({ ...r });
-                      setDrafted(true);
-                      setScreen('home');
-                      setToast('Copied into a new draft — check and post');
-                    }}
-                  >
-                    Post again
-                  </button>
-                )}
-              </section>
-
-              {/* Inline Edit Request Card */}
+              {/* Inline Edit Form */}
               {editing && (
                 <section
                   className="card"
@@ -2162,7 +1899,6 @@ export function XpoClientApp({
                     display: 'grid',
                     gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                     gap: 14,
-                    borderColor: 'var(--tx)',
                   }}
                 >
                   <label className="fld" style={{ gridColumn: '1 / -1' }}>
@@ -2188,7 +1924,6 @@ export function XpoClientApp({
                       value={r.timeline}
                       onChange={(e) => updateReq(rid, { timeline: e.target.value })}
                     >
-                      <option>{r.timeline}</option>
                       <option>Urgent (24-48 Hours)</option>
                       <option>Immediate (Within 7 Days)</option>
                       <option>Within 2-4 Weeks</option>
@@ -2203,45 +1938,26 @@ export function XpoClientApp({
                       onChange={(e) => updateReq(rid, { budget: e.target.value })}
                     />
                   </label>
-                  <span
-                    style={{
-                      gridColumn: '1 / -1',
-                      fontSize: 13,
-                      color: 'var(--atx)',
-                      background: 'var(--abg)',
-                      padding: '10px 12px',
-                      borderRadius: 10,
-                    }}
-                  >
-                    Partners who replied will see the change.
-                  </span>
-                  <div
-                    style={{
-                      gridColumn: '1 / -1',
-                      display: 'flex',
-                      gap: 8,
-                      justifyContent: 'flex-end',
-                    }}
-                  >
-                    <button
-                      type="button"
-                      className="btn b2"
-                      onClick={() => setEditing(false)}
-                    >
-                      Cancel
+                  <label className="fld" style={{ gridColumn: '1 / -1' }}>
+                    Specifications
+                    <textarea
+                      className="inp"
+                      rows={3}
+                      value={r.spec}
+                      onChange={(e) => updateReq(rid, { spec: e.target.value })}
+                      style={{ resize: 'vertical' }}
+                    />
+                  </label>
+                  <div style={{ gridColumn: '1 / -1', display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                    <button type="button" className="btn b2 sm" onClick={() => setEditing(false)}>
+                      Done
                     </button>
                     <button
                       type="button"
-                      className="btn b3"
+                      className="btn b1 red sm"
                       onClick={() => {
-                        const wasRej = r.status === 'rejected';
-                        if (wasRej) updateReq(rid, { status: 'held' });
                         setEditing(false);
-                        setToast(
-                          wasRej
-                            ? 'Resubmitted · being checked again'
-                            : 'Saved · partners who replied can see the change'
-                        );
+                        setToast('Saved · partners who replied can see the change');
                       }}
                     >
                       Save changes
@@ -2261,11 +1977,10 @@ export function XpoClientApp({
                     display: 'flex',
                     flexDirection: 'column',
                     gap: 12,
-                    borderColor: 'var(--tx)',
                   }}
                 >
-                  <b style={{ fontSize: 17 }}>Close this request?</b>
-                  <span style={{ fontSize: 14, color: 'var(--tx2)' }}>
+                  <b style={{ fontSize: 16 }}>Close this request?</b>
+                  <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
                     New partners stop receiving it.
                   </span>
                   <div
@@ -2303,14 +2018,14 @@ export function XpoClientApp({
                   <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
                     <button
                       type="button"
-                      className="btn b2"
+                      className="btn b2 sm"
                       onClick={() => setCloseDlg(false)}
                     >
                       Keep open
                     </button>
                     <button
                       type="button"
-                      className="btn b3"
+                      className="btn b1 red sm"
                       onClick={() => {
                         updateReq(
                           rid,
@@ -2326,519 +2041,118 @@ export function XpoClientApp({
                 </section>
               )}
 
-              {/* 4-Stage Progress Bar */}
-              {(() => {
-                const conn = r.partners.some((p) => p.st === 'connected');
-                const n = r.partners.length;
-                const ph =
-                  r.status === 'held' || r.status === 'rejected'
-                    ? 0
-                    : conn || r.status === 'closed'
-                    ? 3
-                    : n > 0
-                    ? 2
-                    : 1;
-                const stepDefs = [
-                  ['Posted', r.posted.replace('posted ', '')],
-                  ['Finding partners', r.status === 'held' ? 'after review' : 'waves of 3, 5 min each'],
-                  [n ? `${n} interested` : 'Interested', n ? 'choose whom to unlock' : 'usually within 15 min'],
-                  ['Connected', conn ? 'numbers shared' : 'after they accept'],
-                ];
-                const lineMap: Record<string, string> = {
-                  held: 'Waiting for review.',
-                  rejected: 'Edit and resubmit to try again.',
-                  nomatch: `No yes after ${r.wave} waves.`,
-                  finding: 'Sent to 3 partners. More follow every 5 minutes.',
-                  closed: `Closed · ${r.closedReason || ''}`,
-                };
-                const statusLine = conn
-                  ? "Connected. Close the request when you're done."
-                  : lineMap[r.status] || '';
-
-                return (
-                  <section
-                    className="card"
-                    aria-label="Progress"
-                    style={{
-                      padding: '20px 24px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 14,
-                    }}
-                  >
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
-                        gap: 8,
-                      }}
-                    >
-                      {stepDefs.map(([t, d], i) => (
-                        <div key={t} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                          <div
-                            style={{
-                              height: 6,
-                              borderRadius: 99,
-                              background:
-                                i < ph ? 'var(--inv)' : i === ph ? '#C8102E' : 'var(--ln)',
-                            }}
-                          />
-                          <b
-                            style={{
-                              fontSize: 13.5,
-                              color: i <= ph ? 'var(--tx)' : 'var(--tx2)',
-                            }}
-                          >
-                            {t}
-                          </b>
-                          <span style={{ fontSize: 12.5, color: 'var(--tx2)' }}>{d}</span>
-                        </div>
-                      ))}
-                    </div>
-                    {statusLine && (
-                      <span style={{ fontSize: 14, lineHeight: '21px', color: 'var(--tx2)' }}>
-                        {statusLine}
-                      </span>
-                    )}
-                  </section>
-                );
-              })()}
-
-              {/* Moderation / Edge-case Banners */}
+              {/* Moderation / Edge Cases */}
               {r.status === 'held' && (
                 <section
                   className="card"
                   style={{
-                    padding: 22,
+                    padding: 18,
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: 8,
+                    gap: 6,
                     borderColor: 'var(--aln)',
                   }}
                 >
-                  <b style={{ fontSize: 17 }}>Being checked by XPO</b>
-                  <span style={{ fontSize: 14.5, lineHeight: '22px', color: 'var(--tx2)' }}>
+                  <b style={{ fontSize: 16 }}>Being checked by XPO</b>
+                  <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
                     A reviewer checks some posts first. We&apos;ll notify you.
                   </span>
                 </section>
               )}
 
-              {r.status === 'rejected' && (
-                <section
-                  className="card"
-                  style={{
-                    padding: 22,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 10,
-                    borderColor: 'var(--rln)',
-                  }}
-                >
-                  <b style={{ fontSize: 17 }}>This request needs changes</b>
-                  <span style={{ fontSize: 14.5, lineHeight: '22px', color: 'var(--tx2)' }}>
-                    Note: &quot;Betting and gambling services can&apos;t be listed.&quot; Edit and resubmit.
-                  </span>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      type="button"
-                      className="btn b1"
-                      onClick={() => setEditing(true)}
-                    >
-                      Edit and resubmit
-                    </button>
-                    <button
-                      type="button"
-                      className="btn b2"
-                      onClick={() => setCloseDlg(true)}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </section>
-              )}
+              {/* Interested Partners Section (Clean Entity Widgets from Reference) */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 4 }}>
+                <span className="lbl" style={{ margin: '4px 2px' }}>
+                  {r.partners && r.partners.length > 0
+                    ? `${r.partners.length} verified partner${r.partners.length === 1 ? '' : 's'} interested`
+                    : 'Waiting for partner replies'}
+                </span>
 
-              {r.status === 'nomatch' && (
-                <section
-                  className="card"
-                  style={{
-                    padding: 22,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    borderColor: 'var(--aln)',
-                  }}
-                >
-                  <b style={{ fontSize: 17 }}>No partner is free for this yet</b>
-                  <span style={{ fontSize: 14.5, lineHeight: '22px', color: 'var(--tx2)' }}>
-                    All matching partners in {r.loc} were offered it.
-                  </span>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    <button
-                      type="button"
-                      className="btn b1"
-                      onClick={() =>
-                        updateReq(
-                          rid,
-                          {
-                            status: 'finding',
-                            loc: `${r.loc} + All-India`,
-                            wave: r.wave + 1,
-                          },
-                          'Now offered to partners across India'
-                        )
-                      }
-                    >
-                      Offer it across India
-                    </button>
-                    <button
-                      type="button"
-                      className="btn b2"
-                      onClick={() =>
-                        updateReq(
-                          rid,
-                          { status: 'finding', wave: r.wave + 1 },
-                          "We'll keep offering it as partners become free"
-                        )
-                      }
-                    >
-                      Keep looking here
-                    </button>
-                    <button
-                      type="button"
-                      className="btn b2"
-                      onClick={() => setEditing(true)}
-                    >
-                      Edit details
-                    </button>
+                {!r.partners || r.partners.length === 0 ? (
+                  <div className="card" style={{ padding: 24, textAlign: 'center', color: 'var(--tx2)', fontSize: 13.5 }}>
+                    Sent in 5-minute waves to verified partners in {r.cat}. Partners usually reply within 15 minutes.
                   </div>
-                </section>
-              )}
+                ) : (
+                  r.partners.map((p) => {
+                    const isConnected = p.st === 'connected';
+                    const isWaiting = p.st === 'waiting';
+                    const isUnlocked = p.st === 'unlocked' || isConnected;
 
-              {/* Interested Partners Section */}
-              {(r.partners.length > 0 || r.status === 'finding' || r.status === 'interested') && (
-                <section style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      justifyContent: 'space-between',
-                      alignItems: 'baseline',
-                      gap: 8,
-                    }}
-                  >
-                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 800 }}>
-                      {r.partners.length
-                        ? `Interested partners · ${r.partners.length} of 3`
-                        : 'Interested partners'}
-                    </h2>
-                    <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                      Numbers shared after they accept
-                    </span>
-                  </div>
-
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                      gap: 14,
-                    }}
-                  >
-                    {r.partners.map((p) => {
-                      const unl = p.st !== 'locked';
-                      return (
-                        <article
-                          key={p.id}
-                          className="card"
-                          style={{
-                            padding: 20,
-                            display: 'flex',
-                            flexDirection: 'column',
-                            gap: 12,
-                            borderColor:
-                              p.st === 'connected'
-                                ? 'var(--gln)'
-                                : p.st === 'waiting'
-                                ? 'var(--aln)'
-                                : undefined,
-                          }}
-                        >
-                          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            <span
-                              style={{
-                                width: 46,
-                                height: 46,
-                                borderRadius: 12,
-                                background: p.st === 'connected' ? 'var(--gbg)' : 'var(--sf3)',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                fontWeight: 800,
-                                color: 'var(--tx2)',
-                              }}
-                            >
-                              {p.real.charAt(0)}
-                            </span>
-                            <div
-                              style={{
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: 2,
-                                minWidth: 0,
-                              }}
-                            >
-                              <b style={{ fontSize: 16 }}>
-                                {unl ? `${p.real} · ${p.city}` : p.masked}
-                              </b>
-                              <span
-                                style={{
-                                  fontSize: 13,
-                                  fontWeight: 700,
-                                  color: p.verified ? '#1D7A45' : 'var(--tx2)',
-                                }}
-                              >
-                                {p.verified
-                                  ? `Verified · ${unl ? 'GST checked' : 'serves Pan-India'}`
-                                  : 'Phone verified'}
+                    return (
+                      <div key={p.id} className="rep">
+                        <div className="row" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <span className="sq">✓</span>
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <b style={{ fontSize: 14.5 }}>
+                              {isUnlocked ? p.real : 'Verified partner'}
+                            </b>
+                            <div style={{ marginTop: 2 }}>
+                              <span className="chip c-g" style={{ fontSize: 11.5, minHeight: 22 }}>
+                                GST verified · reply received
                               </span>
                             </div>
                           </div>
+                        </div>
 
-                          <p
-                            style={{
-                              margin: 0,
-                              fontSize: 14.5,
-                              lineHeight: '22px',
-                              color: 'var(--tx2)',
-                            }}
-                          >
+                        {p.pitch && (
+                          <div style={{ fontSize: 13.5, color: 'var(--tx2)', fontStyle: 'italic', lineHeight: 1.5 }}>
                             {p.pitch}
-                          </p>
-
-                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                            {p.tags.map((t) => (
-                              <span
-                                key={t}
-                                className="chip"
-                                style={{ background: 'var(--sf3)', color: 'var(--tx2)' }}
-                              >
-                                {t}
-                              </span>
-                            ))}
                           </div>
+                        )}
 
-                          {unl && (
-                            <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                              {p.details}
-                            </span>
-                          )}
-
-                          {p.st === 'locked' && (
-                            credits > 0 ? (
-                              <div
-                                style={{
-                                  marginTop: 'auto',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 6,
-                                }}
-                              >
-                                <button
-                                  type="button"
-                                  className="btn b3"
-                                  onClick={() =>
-                                    updatePartner(
-                                      rid,
-                                      p.id,
-                                      'waiting',
-                                      `Profile unlocked · connection request sent to ${p.real}`,
-                                      true
-                                    )
-                                  }
-                                >
-                                  Unlock &amp; connect
-                                </button>
-                                <span
-                                  style={{
-                                    fontSize: 12.5,
-                                    color: 'var(--tx2)',
-                                    textAlign: 'center',
-                                  }}
-                                >
-                                  {free > 0
-                                    ? `Uses 1 of your ${free} free views`
-                                    : `Uses 1 of your ${plan} plan views`}
-                                </span>
-                              </div>
-                            ) : (
-                              <div
-                                style={{
-                                  marginTop: 'auto',
-                                  display: 'flex',
-                                  flexDirection: 'column',
-                                  gap: 6,
-                                }}
-                              >
-                                <button
-                                  type="button"
-                                  className="btn b1"
-                                  onClick={() => {
-                                    setCo('choose');
-                                    setCoAfter({ rid, pid: p.id });
-                                  }}
-                                >
-                                  Get Client Plan to unlock
-                                </button>
-                                <span
-                                  style={{
-                                    fontSize: 12.5,
-                                    color: 'var(--tx2)',
-                                    textAlign: 'center',
-                                  }}
-                                >
-                                  You&apos;ve used your 5 free views ·{' '}
-                                  {india ? '₹299 / month + GST' : '$9.99 / month'}
-                                </span>
-                              </div>
-                            )
-                          )}
-
-                          {p.st === 'waiting' && (
-                            <>
-                              <span
-                                className="chip"
-                                style={{
-                                  background: 'var(--abg)',
-                                  color: 'var(--atx)',
-                                  alignSelf: 'flex-start',
-                                  marginTop: 'auto',
-                                }}
-                              >
-                                Waiting for {p.real} to accept
-                              </span>
-                              <button
-                                type="button"
-                                className="btn bl"
-                                onClick={() =>
-                                  updatePartner(
-                                    rid,
-                                    p.id,
-                                    'unlocked',
-                                    'Request withdrawn · profile stays unlocked'
-                                  )
-                                }
-                                style={{ alignSelf: 'flex-start', padding: 0 }}
-                              >
-                                Withdraw request
-                              </button>
-                            </>
-                          )}
-
-                          {p.st === 'connected' && (
-                            <>
-                              <span
-                                className="chip"
-                                style={{
-                                  background: 'var(--gbg)',
-                                  color: 'var(--gtx)',
-                                  alignSelf: 'flex-start',
-                                  marginTop: 'auto',
-                                }}
-                              >
-                                Connected · {p.phone}
-                              </span>
-                              <div
-                                style={{
-                                  display: 'grid',
-                                  gridTemplateColumns: '1fr 1fr',
-                                  gap: 8,
-                                }}
-                              >
-                                <a
-                                  href={`https://wa.me/${p.phone.replace(/\D/g, '')}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="btn b3"
-                                >
-                                  Message
-                                </a>
-                                <a href={`tel:${p.phone}`} className="btn b2">
-                                  Call
-                                </a>
-                              </div>
-                            </>
-                          )}
-
-                          {p.st === 'unlocked' && (
+                        {isConnected ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 4 }}>
+                            <span className="chip c-g">Connected · Direct: {p.phone}</span>
+                            <a
+                              href={`tel:${p.phone}`}
+                              className="btn sm"
+                              style={{ textDecoration: 'none' }}
+                            >
+                              Call
+                            </a>
+                            <a
+                              href={`https://wa.me/${p.phone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
+                                `Hi ${p.real}, connecting via XPO regarding "${r.title}" (${r.code}).`
+                              )}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="btn sm ink"
+                              style={{ textDecoration: 'none' }}
+                            >
+                              WhatsApp
+                            </a>
+                          </div>
+                        ) : isWaiting ? (
+                          <div className="chip c-a" style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                            Request sent · number shared when they accept
+                          </div>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 4 }}>
                             <button
                               type="button"
-                              className="btn b3"
+                              className="btn sm ink"
                               onClick={() =>
                                 updatePartner(
                                   rid,
                                   p.id,
                                   'waiting',
-                                  `Connection request sent to ${p.real} · no extra view used`
+                                  `Profile unlocked · connection request sent to ${p.real}`,
+                                  true
                                 )
                               }
-                              style={{ marginTop: 'auto' }}
                             >
-                              Ask to connect · free
+                              Unlock &amp; connect · 1 view
                             </button>
-                          )}
-
-                          {p.st === 'declined' && (
-                            <>
-                              <span
-                                className="chip"
-                                style={{
-                                  background: 'var(--sf3)',
-                                  color: 'var(--tx2)',
-                                  alignSelf: 'flex-start',
-                                }}
-                              >
-                                {p.real} can&apos;t take this on
-                              </span>
-                              <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                                Their profile stays unlocked for you.
-                              </span>
-                            </>
-                          )}
-                        </article>
-                      );
-                    })}
-
-                    {r.status !== 'closed' && r.partners.length < 3 && (
-                      <article
-                        style={{
-                          border: '1.5px dashed var(--ln2)',
-                          borderRadius: 16,
-                          padding: 20,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 8,
-                          justifyContent: 'center',
-                          minHeight: 160,
-                        }}
-                      >
-                        <b style={{ fontSize: 15 }}>
-                          {r.partners.length
-                            ? `Slot ${r.partners.length + 1} open`
-                            : 'Waiting for the first yes'}
-                        </b>
-                        <span
-                          style={{
-                            fontSize: 14,
-                            lineHeight: '21px',
-                            color: 'var(--tx2)',
-                          }}
-                        >
-                          We&apos;ll notify you when someone says yes.
-                        </span>
-                      </article>
-                    )}
-                  </div>
-                </section>
-              )}
+                            <span className="mute3" style={{ fontSize: 12 }}>
+                              {free > 0 ? `${free} free views left` : 'Uses 1 plan view'}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
             </>
           )}
 
@@ -4092,7 +3406,8 @@ export function XpoClientApp({
             <div aria-hidden="true" style={{ display: 'flex', gap: 6 }}>
               {[0, 1, 2].map((idx) => {
                 const cur = sheet === 'compose' ? 0 : sheet === 'review' ? 1 : 2;
-                return (
+
+  return (
                   <span
                     key={idx}
                     style={{
