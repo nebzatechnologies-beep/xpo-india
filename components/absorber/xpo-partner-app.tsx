@@ -992,31 +992,7 @@ export function XpoPartnerApp({
               )}
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative', zIndex: 40 }}>
-              {!hideSimToolbar && (
-                <a
-                  href={getXpoWhatsAppBotUrl('partner')}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="pill hide-sm"
-                  style={{ textDecoration: 'none', color: 'var(--tx)' }}
-                  title="Redirect to WhatsApp with Dummy XPO India Chatbot"
-                >
-                  <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
-                  <span>💬 XPO WhatsApp Bot</span>
-                </a>
-              )}
-              {S.screen !== 'billing' && (
-                <button
-                  className="pill"
-                  onClick={() => setS((prev) => ({ ...prev, screen: 'billing' }))}
-                  title="Each reply to a client request uses 1 reply credit"
-                >
-                  <span className="pdot" style={{ background: creditDot }} />
-                  <span>{creditLabel}</span>
-                </button>
-              )}
-
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 40 }}>
               <button
                 className="ib"
                 aria-label="Notifications"
@@ -1845,180 +1821,50 @@ export function XpoPartnerApp({
 
               {/* TAB 3: ACCOUNT & PLAN */}
               {S.screen === 'billing' && (
-                <>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                      gap: 16,
-                      marginBottom: 18,
-                    }}
-                  >
-                    <section
-                      className="card"
-                      style={{
-                        padding: 24,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 12,
-                      }}
-                    >
-                      <span className="lbl">Partner replies</span>
-                      <b style={{ fontSize: 30 }}>
-                        {S.plan === 'active'
-                          ? `${S.credits} of 50 plan replies left`
-                          : `${S.credits} of 3 free replies left`}
-                      </b>
-                      <span
-                        style={{
-                          height: 8,
-                          borderRadius: 99,
-                          background: 'var(--sf3)',
-                          overflow: 'hidden',
-                          display: 'block',
-                        }}
-                      >
-                        <span
-                          style={{
-                            display: 'block',
-                            height: '100%',
-                            background: 'var(--inv)',
-                            width: `${Math.min(100, (S.plan === 'active' ? S.credits / 50 : S.credits / 3) * 100)}%`,
-                          }}
-                        />
-                      </span>
-                      <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                        Used only when you send a pitch to a matched client request. Zero commission on deals.
-                      </span>
-                    </section>
+            <div className="app-page" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="kpis">
+                <div className="kpi">
+                  <b>{S.credits}</b>
+                  <span>Free replies left</span>
+                </div>
+                <div className="kpi">
+                  <b>{S.opportunities.filter((o) => o.myReplyStatus === 'none').length}</b>
+                  <span>New matched</span>
+                </div>
+                <div className="kpi">
+                  <b>{connectedList.length}</b>
+                  <span>Connected</span>
+                </div>
+              </div>
 
-                    <section
-                      className="card"
-                      style={{
-                        padding: 24,
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: 12,
-                        borderColor: 'var(--tx)',
-                      }}
-                    >
-                      <span className="lbl">XPO Partner Plan</span>
-                      {S.plan === 'active' ? (
-                        <>
-                          <b style={{ fontSize: 22 }}>Active · renews 4 Dec 2026</b>
-                          <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                            {S.country === 'IN'
-                              ? '₹999 + 18% GST (₹1,178.82) a month · 50 replies'
-                              : '$19.99 a month · 50 replies'}
-                          </span>
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 'auto' }}>
-                            <button
-                              className="btn b2"
-                              onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }))}
-                            >
-                              Change payment method
-                            </button>
-                            <button
-                              className="btn bl"
-                              onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'cancel' } }))}
-                            >
-                              Cancel plan
-                            </button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <b style={{ fontSize: 30 }}>
-                            {S.country === 'IN' ? '₹999 / month + GST' : '$19.99 / month'}
-                          </b>
-                          <span style={{ fontSize: 13.5, color: 'var(--tx2)' }}>
-                            50 partner replies a month · Priority Wave 1 alerts · cancel any time
-                          </span>
-                          <button
-                            className="btn b1"
-                            onClick={() => setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }))}
-                          >
-                            Get Partner Plan
-                          </button>
-                        </>
-                      )}
-                    </section>
-                  </div>
+              <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <span className="lbl">How replies work</span>
+                <span className="mute" style={{ fontSize: 13.5, lineHeight: 1.55 }}>
+                  You get matched leads in your categories for free, with zero commission on deals. Each reply you send uses one free reply. You have {S.credits} free replies left.
+                </span>
+                <button
+                  type="button"
+                  className="btn red"
+                  style={{ alignSelf: 'flex-start' }}
+                  onClick={() => {
+                    setS((prev) => ({ ...prev, sheet: { type: 'checkout' } }));
+                  }}
+                >
+                  Get more replies
+                </button>
+              </div>
 
-                  <section className="card" style={{ overflowX: 'auto', marginBottom: 18 }}>
-                    <div
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr',
-                        minWidth: 540,
-                      }}
-                    >
-                      <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
-                        Activity
-                      </div>
-                      <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
-                        Change
-                      </div>
-                      <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
-                        Date
-                      </div>
-                      {[
-                        ...(S.plan === 'active'
-                          ? [{ a: 'Partner Plan started · Razorpay UPI AutoPay', c: '+50 plan replies', d: '4 Nov, 11:20' }]
-                          : []),
-                        { a: 'Replied to XPO-REQ-41299 (Shopify Plus migration)', c: '−1 reply', d: 'Today, 10:15' },
-                        { a: 'Replied to XPO-REQ-40971 (E-commerce website)', c: '−1 reply', d: 'Yesterday, 16:15' },
-                        { a: 'Starter partner grant', c: '+5 free replies', d: '28 Oct, 09:30' },
-                      ].map((row, idx) => (
-                        <React.Fragment key={idx}>
-                          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--ln)', fontSize: 13.5 }}>
-                            {row.a}
-                          </div>
-                          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--ln)', fontSize: 13.5 }}>
-                            {row.c}
-                          </div>
-                          <div style={{ padding: '12px 18px', borderTop: '1px solid var(--ln)', fontSize: 13.5 }}>
-                            {row.d}
-                          </div>
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  </section>
+              <div className="card flat" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 6, background: 'var(--sf2)', border: '1px solid var(--ln)' }}>
+                <span className="lbl">Need a hand?</span>
+                <span className="mute" style={{ fontSize: 13.5 }}>
+                  Support: +91 40 4917 2200 · support@xpoindia.com
+                </span>
+              </div>
+            </div>
+          )}
 
-                  {S.plan === 'active' && (
-                    <section
-                      className="card"
-                      style={{
-                        padding: '18px 20px',
-                        display: 'flex',
-                        flexWrap: 'wrap',
-                        justifyContent: 'space-between',
-                        gap: 10,
-                        alignItems: 'center',
-                      }}
-                    >
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        <b>Invoice XPO-INV-2611-0118</b>
-                        <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                          {S.country === 'IN'
-                            ? '₹1,178.82 incl. GST ₹179.82 · 4 Nov 2026 · Razorpay'
-                            : '$19.99 · 4 Nov 2026 · PayPal'}
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        className="btn b2"
-                        onClick={() => toast('ok', 'Invoice XPO-INV-2611-0118 downloaded')}
-                      >
-                        Download PDF
-                      </button>
-                    </section>
-                  )}
-                </>
-              )}
-
-              {/* TAB 4: SETTINGS & CATEGORIES */}
-              {S.screen === 'settings' && (
+          {/* TAB 4: SETTINGS & CATEGORIES */}
+          {S.screen === 'settings' && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   <div className="card" style={{ padding: 22 }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, gap: 12, flexWrap: 'wrap' }}>

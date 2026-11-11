@@ -1047,14 +1047,12 @@ export function XpoClientApp({
             )}
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, position: 'relative', zIndex: 40 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, position: 'relative', zIndex: 40 }}>
             <button
               type="button"
-              className="btn b1 sm hide-sm"
+              className="btn b1 red sm hide-sm"
               onClick={handleNewRequirement}
               style={{
-                background: '#C8102E',
-                color: '#fff',
                 borderRadius: 10,
                 minHeight: 36,
                 padding: '0 14px',
@@ -1064,35 +1062,6 @@ export function XpoClientApp({
             >
               + New requirement
             </button>
-            {!hideSimToolbar && (
-              <a
-                href={getXpoWhatsAppBotUrl('client')}
-                target="_blank"
-                rel="noreferrer"
-                className="pill hide-sm"
-                style={{ textDecoration: 'none', color: 'var(--tx)' }}
-                title="Redirect to WhatsApp with Dummy XPO India Chatbot"
-              >
-                <span style={{ width: 8, height: 8, borderRadius: 99, background: '#16A34A' }} />
-                <span>💬 XPO WhatsApp Bot</span>
-              </a>
-            )}
-            {screen !== 'billing' && (
-              <button
-                type="button"
-                className="pill"
-                onClick={() => go('billing')}
-                aria-label={`Plan and credits: ${planOn ? `${plan} plan views` : `${free} free views`}`}
-              >
-                <span
-                  className="pdot"
-                  style={{ background: credits > 0 ? '#16A34A' : '#D97706' }}
-                />
-                <span>
-                  {planOn ? `${plan} plan views left` : `${free} free views left`}
-                </span>
-              </button>
-            )}
 
             <button
               type="button"
@@ -2376,250 +2345,49 @@ export function XpoClientApp({
 
           {/* 7. ACCOUNT — PLAN & BILLING */}
           {screen === 'billing' && (
-            <>
-              <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>Account</h1>
-              <div
-                role="tablist"
-                aria-label="Account"
-                style={{
-                  display: 'flex',
-                  flexWrap: 'wrap',
-                  gap: 4,
-                  padding: 4,
-                  background: 'var(--sf3)',
-                  borderRadius: 12,
-                  alignSelf: 'flex-start',
-                }}
-              >
-                {(
-                  [
-                    ['profile', 'Profile'],
-                    ['verify', 'Verification'],
-                    ['billing', 'Account & Plan'],
-                    ['settings', 'Settings & notifications'],
-                    ['help', 'Help & privacy'],
-                  ] as const
-                ).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    role="tab"
-                    className="seg"
-                    aria-selected={screen === key}
-                    onClick={() => go(key)}
-                    style={
-                      screen === key
-                        ? {
-                            background: 'var(--sf)',
-                            color: 'var(--tx)',
-                            boxShadow: '0 1px 2px rgba(0,0,0,.08)',
-                          }
-                        : { background: 'transparent', color: 'var(--tx2)' }
-                    }
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                  gap: 16,
-                }}
-              >
-                <section
-                  className="card"
-                  style={{
-                    padding: 24,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                  }}
-                >
-                  <span className="lbl">Partner profile views</span>
-                  <b style={{ fontSize: 32 }}>
-                    {planOn
-                      ? `${plan} of 30 plan views left`
-                      : `${free} of 5 free views left`}
-                  </b>
-                  <span
-                    style={{
-                      height: 8,
-                      borderRadius: 99,
-                      background: 'var(--sf3)',
-                      overflow: 'hidden',
-                      display: 'block',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'block',
-                        height: '100%',
-                        background: 'var(--inv)',
-                        width: `${(planOn ? plan / 30 : free / 5) * 100}%`,
-                      }}
-                    />
-                  </span>
-                  <span style={{ fontSize: 14, lineHeight: '21px', color: 'var(--tx2)' }}>
-                    Used only when you unlock a partner.
-                  </span>
-                </section>
-
-                <section
-                  className="card"
-                  style={{
-                    padding: 24,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: 12,
-                    borderColor: 'var(--tx)',
-                  }}
-                >
-                  <span className="lbl">XPO Client Plan</span>
-                  {planOn ? (
-                    <>
-                      <b style={{ fontSize: 22 }}>Active · renews 2 Dec 2026</b>
-                      <span style={{ fontSize: 14, color: 'var(--tx2)' }}>
-                        {india
-                          ? '₹299 + 18% GST (₹352.82) a month'
-                          : '$9.99 a month'}{' '}
-                        · paid with {methodName}
-                      </span>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button
-                          type="button"
-                          className="btn b2"
-                          onClick={() => setCo('choose')}
-                        >
-                          Change payment method
-                        </button>
-                        <button
-                          type="button"
-                          className="btn bl"
-                          onClick={() => {
-                            setPlanOn(false);
-                            setToast('Plan cancellation scheduled for period end');
-                            postMarketplaceAction('client.update_account', { planOn: false }).catch(() => {});
-                          }}
-                        >
-                          Cancel plan
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <b style={{ fontSize: 32 }}>
-                        {india ? '₹299 / month + GST' : '$9.99 / month'}
-                      </b>
-                      <span style={{ fontSize: 14, lineHeight: '21px' }}>
-                        30 views a month · cancel any time
-                      </span>
-                      <button
-                        type="button"
-                        className="btn b1"
-                        onClick={() => {
-                          setCo('choose');
-                          setCoAfter(null);
-                        }}
-                      >
-                        Get Client Plan
-                      </button>
-                      <span style={{ fontSize: 12.5, color: 'var(--tx2)' }}>
-                        {india
-                          ? 'Razorpay (UPI AutoPay, cards) or PayPal · GST invoice'
-                          : 'Billed in US$ through PayPal'}
-                      </span>
-                    </>
-                  )}
-                </section>
-              </div>
-
-              <section className="card" style={{ overflowX: 'auto' }}>
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: '2fr 1fr 1fr',
-                    minWidth: 560,
-                  }}
-                >
-                  <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
-                    Activity
-                  </div>
-                  <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
-                    Change
-                  </div>
-                  <div className="lbl" style={{ padding: '12px 18px', background: 'var(--sf2)' }}>
-                    Date
-                  </div>
-                  {ledger.map((l, idx) => (
-                    <React.Fragment key={idx}>
-                      <div
-                        style={{
-                          padding: '12px 18px',
-                          borderTop: '1px solid var(--ln)',
-                          fontSize: 14,
-                        }}
-                      >
-                        {l.a}
-                      </div>
-                      <div
-                        style={{
-                          padding: '12px 18px',
-                          borderTop: '1px solid var(--ln)',
-                          fontSize: 14,
-                        }}
-                      >
-                        {l.c}
-                      </div>
-                      <div
-                        style={{
-                          padding: '12px 18px',
-                          borderTop: '1px solid var(--ln)',
-                          fontSize: 14,
-                        }}
-                      >
-                        {l.d}
-                      </div>
-                    </React.Fragment>
-                  ))}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <div className="kpis">
+                <div className="kpi">
+                  <b>{planOn ? plan : free}</b>
+                  <span>Free views left</span>
                 </div>
-              </section>
+                <div className="kpi">
+                  <b>{order.length}</b>
+                  <span>Active requests</span>
+                </div>
+                <div className="kpi">
+                  <b>{connectedPartners.length}</b>
+                  <span>Connections</span>
+                </div>
+              </div>
 
-              {planOn && (
-                <section
-                  className="card"
-                  style={{
-                    padding: '18px 20px',
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    justifyContent: 'space-between',
-                    gap: 10,
-                    alignItems: 'center',
+              <div className="card" style={{ padding: 22, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <span className="lbl">How views work</span>
+                <span className="mute" style={{ fontSize: 13.5, lineHeight: 1.55 }}>
+                  Posting a requirement is free and XPO takes no commission. Each time you unlock a partner to connect, it uses one view. You have {planOn ? plan : free} {planOn ? 'plan' : 'free'} views left.
+                </span>
+                <button
+                  type="button"
+                  className="btn red"
+                  style={{ alignSelf: 'flex-start' }}
+                  onClick={() => {
+                    setCo('choose');
+                    setToast('Upgrade flow — select a client plan');
                   }}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <b>Invoice XPO-INV-2611-0042</b>
-                    <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-                      {india
-                        ? `₹352.82 incl. GST ₹53.82 · 2 Nov 2026 · ${methodName}`
-                        : '$9.99 · 2 Nov 2026 · PayPal'}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn b2"
-                    onClick={() => setToast('Invoice XPO-INV-2611-0042 downloaded')}
-                  >
-                    Download PDF
-                  </button>
-                </section>
-              )}
-            </>
+                  Get more views
+                </button>
+              </div>
+
+              <div className="card flat" style={{ padding: 18, display: 'flex', flexDirection: 'column', gap: 6, background: 'var(--sf2)', border: '1px solid var(--ln)' }}>
+                <span className="lbl">Need a hand?</span>
+                <span className="mute" style={{ fontSize: 13.5 }}>
+                  Support: +91 40 4917 2200 · support@xpoindia.com
+                </span>
+              </div>
+            </div>
           )}
 
-          {/* 8. ACCOUNT — PROFILE */}
           {screen === 'profile' && (
             <>
               <h1 style={{ margin: 0, fontSize: 28, fontWeight: 800 }}>Account</h1>
