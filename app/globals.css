@@ -2038,3 +2038,319 @@ div.card.req {
 .btn.ghost:hover {
   background: var(--sf2) !important;
 }
+
+/* ===== Redesign Reference Classes (Shell, Popover, Sidebar, Topbar) ===== */
+.side .lg {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  margin-bottom: 10px;
+}
+.side .lg .rolechip {
+  margin-left: 10px;
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--red);
+  background: var(--rbg);
+  padding: 3px 8px;
+  border-radius: 7px;
+}
+.nv {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: none;
+  border-radius: 11px;
+  padding: 0 13px;
+  min-height: 44px;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--tx2);
+  text-align: left;
+  width: 100%;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+  font-family: inherit;
+}
+.nv:hover {
+  background: var(--sf2);
+  color: var(--tx);
+}
+.nv[aria-current="page"],
+.nv.active {
+  background: var(--inv) !important;
+  color: #fff !important;
+}
+.xt.dark .nv[aria-current="page"],
+.xt.dark .nv.active {
+  background: #EDEEF0 !important;
+  color: #15171C !important;
+}
+.nv svg {
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.nv .n {
+  margin-left: auto;
+  background: var(--red);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  min-width: 20px;
+  height: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+}
+.nv[aria-current="page"] .n,
+.nv.active .n {
+  background: #fff;
+  color: var(--red);
+}
+
+.hbtn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1.5px solid var(--ln2);
+  background: var(--sf);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+  color: var(--tx);
+  transition: background .12s ease;
+}
+.hbtn:hover {
+  background: var(--sf2);
+}
+.hbtn svg {
+  width: 19px;
+  height: 19px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.hn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background: var(--red);
+  color: #fff;
+  border-radius: 999px;
+  font-size: 10.5px;
+  font-weight: 800;
+  min-width: 17px;
+  height: 17px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+  box-shadow: 0 0 0 2px var(--sf);
+}
+
+.avbtn {
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 35;
+  border: 0;
+  background: transparent;
+  cursor: default;
+}
+
+.pop {
+  position: absolute;
+  top: 60px;
+  right: 0;
+  z-index: 45;
+  width: 320px;
+  max-width: calc(100vw - 32px);
+  background: var(--sf);
+  border: 1px solid var(--ln);
+  border-radius: 16px;
+  box-shadow: var(--shadow2);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: pop .12s ease-out;
+}
+@keyframes pop {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.pop .ph {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 8px 10px 10px;
+  border-bottom: 1px solid var(--ln);
+  margin-bottom: 4px;
+}
+.pop .ph b {
+  display: block;
+  font-size: 14.5px;
+}
+.pop .ph span {
+  font-size: 12px;
+  color: var(--tx3);
+}
+
+.al {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  border: 0;
+  background: none;
+  border-radius: 11px;
+  padding: 10px;
+  width: 100%;
+  cursor: pointer;
+  font-family: inherit;
+}
+.al:hover {
+  background: var(--sf2);
+}
+.al .t {
+  font-size: 11px;
+  color: var(--tx3);
+  font-weight: 700;
+}
+.al span {
+  font-size: 13.5px;
+  color: var(--tx);
+  line-height: 1.4;
+}
+
+.mrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 0;
+  background: none;
+  border-radius: 11px;
+  padding: 11px 10px;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--tx);
+  cursor: pointer;
+  font-family: inherit;
+}
+.mrow:hover {
+  background: var(--sf2);
+}
+.mrow svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: .7;
+}
+.mrow .sp {
+  margin-left: auto;
+}
+
+.planbox {
+  margin: 2px 4px 6px;
+  padding: 12px;
+  border-radius: 12px;
+  background: var(--sf2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sw {
+  position: relative;
+  width: 42px;
+  height: 25px;
+  border-radius: 999px;
+  background: var(--ln2);
+  border: 0;
+  flex: 0 0 42px;
+  padding: 0;
+  margin-left: auto;
+  cursor: pointer;
+}
+.sw::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left .15s;
+}
+.sw[aria-checked="true"] {
+  background: var(--g);
+}
+.sw[aria-checked="true"]::after {
+  left: 20px;
+}
+
+.rep {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid var(--ln);
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.sq {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--sf2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  flex: 0 0 40px;
+}
+
+.empty {
+  border: 1.5px dashed var(--ln2);
+  border-radius: 16px;
+  padding: 30px;
+  text-align: center;
+  color: var(--tx2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
+}
