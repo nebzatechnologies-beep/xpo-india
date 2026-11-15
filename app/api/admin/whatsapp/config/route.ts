@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { z } from 'zod';
 import { requireSuperadmin } from '@/lib/auth/server-session';
+import { FieldValue } from 'firebase-admin/firestore';
 import { requireFirestore } from '@/lib/firebase/admin';
 import { recordAuditLog } from '@/lib/services/audit';
 import { handleApiError, jsonOk } from '@/lib/utils/api-handler';
@@ -62,7 +63,22 @@ export async function POST(request: NextRequest) {
     };
 
     await Promise.all([
-      db.doc('platform_settings/whatsapp_config').set(updated, { merge: true }),
+      // SECURITY: platform_settings/* is world-readable (see firestore.rules).
+      // Persist only non-secret display config here; secrets live solely in
+      // platform_credentials/live. Delete any previously-leaked secret fields.
+      db.doc('platform_settings/whatsapp_config').set(
+        {
+          phoneNumberId: updated.phoneNumberId,
+          businessAccountId: updated.wabaId,
+          wabaId: updated.wabaId,
+          displayPhoneNumber: updated.displayPhoneNumber,
+          verifyToken: FieldValue.delete(),
+          accessToken: FieldValue.delete(),
+          appSecret: FieldValue.delete(),
+          updatedAt: updated.updatedAt,
+        },
+        { merge: true }
+      ),
       db.doc('platform_credentials/live').set(
         {
           whatsapp: {
