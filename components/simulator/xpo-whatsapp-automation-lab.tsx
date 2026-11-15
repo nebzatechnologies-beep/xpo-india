@@ -80,13 +80,19 @@ const ALL_18_STATES: { id: WaStateId; group: string; label: string; desc: string
 
 export function XpoWhatsAppAutomationLab({
   compact = false,
+  initialViewMode,
+  forcedRole,
   onOpenMobileSimulator,
 }: {
   compact?: boolean;
+  initialViewMode?: 'dual' | 'client' | 'partner';
+  forcedRole?: 'client' | 'partner';
   onOpenMobileSimulator?: (role: 'client' | 'partner') => void;
 }) {
   const [liveState, setLiveState] = useState<SharedMarketplaceState | null>(null);
-  const [viewMode, setViewMode] = useState<'dual' | 'client' | 'partner'>(compact ? 'dual' : 'dual');
+  const [viewMode, setViewMode] = useState<'dual' | 'client' | 'partner'>(
+    forcedRole || initialViewMode || (compact ? 'dual' : 'dual')
+  );
   const [clientWaState, setClientWaState] = useState<WaStateId>('ACTIVE');
   const [partnerWaState, setPartnerWaState] = useState<WaStateId>('OFFER_SENT');
   const [activeStep, setActiveStep] = useState<number>(1);
@@ -357,6 +363,141 @@ export function XpoWhatsAppAutomationLab({
   };
 
   // ============================================================================
+  // Direct State Machine Programmer & Scenario Injector
+  // ============================================================================
+  const programBotState = (targetPersona: 'client' | 'partner', newState: WaStateId) => {
+    if (targetPersona === 'partner') {
+      const prev = partnerWaState;
+      setPartnerWaState(newState);
+      syncWaStatesToFirestore(clientWaState, newState);
+      addLog({
+        direction: 'STATE_TRANSITION',
+        summary: `[State Programmer] Programmed Partner Bot state: ${prev} → ${newState}`,
+        stateFrom: prev,
+        stateTo: newState,
+        payload: { programmedBy: 'Partner Simulator', newState },
+      });
+      if (newState === 'OFFER_SENT') {
+        setCurrentWave(1);
+        setWaveSeconds(waveWindowSeconds);
+        setWaveRunning(true);
+        appendMsg({
+          persona: 'partner',
+          sender: 'bot',
+          header: '⚡ NEW WAVE 1 LEAD · 5 MIN WINDOW',
+          templateName: 'opportunity_alert (Meta Cloud API)',
+          text: 'Match Score: *98% (Verified)*\nRef: *XPO-REQ-41208*\n*Requirement:* 10,000 printed 3-ply corrugated boxes\n*Category:* Packaging & Printing\n*Location:* Pune\n*Timeline:* Within 2-4 Weeks\n*Budget:* ₹1,80,000\n*Specs:* 3-ply, 12 x 10 x 8 in, 2-colour logo print, delivered to Pune warehouse.\n\n⏱ *5-Minute Wave 1 Clock started on delivery.*\nOffered to only 3 matched partners in Wave 1. Pass costs 0 credits.',
+          buttons: [
+            { id: 'p_claim_quote', label: '✓ Interested · Send Quote (1 Reply)', tone: 'primary' },
+            { id: 'p_pass_offer', label: '✕ Pass (0 Credits)', tone: 'default' },
+          ],
+        });
+      } else if (newState === 'CLAIM_CONFIRMED') {
+        appendMsg({
+          persona: 'partner',
+          sender: 'bot',
+          header: '✓ Quote Delivered to Client',
+          text: 'Your quote for *XPO-REQ-41208* was delivered to the buyer. You will receive an instant WhatsApp alert when they unlock your direct profile.',
+        });
+      } else if (newState === 'CONNECTION_PENDING' || newState === 'PARTNER_VIEW_UNLOCKED') {
+        appendMsg({
+          persona: 'partner',
+          sender: 'bot',
+          header: '🔔 CLIENT UNLOCKED YOUR PROFILE',
+          templateName: 'consent_request',
+          text: 'Buyer *Pavan* (*Test Traders*, Hyderabad) unlocked your profile on *XPO-REQ-41208* using 1 view credit!\n\nDo you consent to share your direct phone & WhatsApp number?',
+          buttons: [
+            { id: 'p_accept_conn', label: '✓ Accept & Share Direct Contact', tone: 'primary' },
+            { id: 'p_decline_conn', label: '✕ Decline', tone: 'danger' },
+          ],
+        });
+      } else if (newState === 'CONNECTED') {
+        appendMsg({
+          persona: 'partner',
+          sender: 'bot',
+          header: '🤝 MUTUAL CONNECTION COMPLETE',
+          templateName: 'contact_revealed',
+          text: 'Mutual consent confirmed! Here are the client contact details:\n\n• Name: *Pavan Kumar*\n• Company: *Test Traders*\n• City: *Hyderabad*\n• Direct Phone: *+91 98490 12345*\n• WhatsApp: https://wa.me/919849012345\n\nConnect directly — XPO charges 0% commission on orders!',
+        });
+      } else if (newState === 'RENEWAL_REQUIRED') {
+        appendMsg({
+          persona: 'partner',
+          sender: 'bot',
+          header: '⚠️ FREE REPLIES EXHAUSTED',
+          templateName: 'billing_renewal',
+          text: 'You have used all 3 free monthly replies.\n\nTo continue receiving and claiming high-intent B2B leads, renew your subscription:\n• Starter: ₹999/mo (15 replies)\n• Pro: ₹2,499/mo (50 replies)\n\nTap to renew instantly via UPI AutoPay:\nhttps://xpoindia.com/dashboard/partner/plan',
+        });
+      } else if (newState === 'PAUSED_OR_OPTED_OUT') {
+        appendMsg({
+          persona: 'partner',
+          sender: 'bot',
+          header: '🛑 NOTIFICATIONS PAUSED',
+          text: 'You have unsubscribed from automated lead alerts. Outbound messages are suppressed. Reply *START* anytime to re-enable lead matching.',
+        });
+      } else if (newState === 'SUPPORT_REVIEW') {
+        appendMsg({
+          persona: 'partner',
+          sender: 'bot',
+          header: '👨‍💼 ESCALATED TO COORDINATOR',
+          text: 'Your query has been escalated to an XPO Human Coordinator (+91 40 4917 2200). A representative will assist you shortly.',
+        });
+      }
+    } else {
+      const prev = clientWaState;
+      setClientWaState(newState);
+      syncWaStatesToFirestore(newState, partnerWaState);
+      addLog({
+        direction: 'STATE_TRANSITION',
+        summary: `[State Programmer] Programmed Client Bot state: ${prev} → ${newState}`,
+        stateFrom: prev,
+        stateTo: newState,
+        payload: { programmedBy: 'Client Simulator', newState },
+      });
+      if (newState === 'NEW_CONTACT') {
+        appendMsg({
+          persona: 'client',
+          sender: 'bot',
+          header: '👋 Welcome to XPO India',
+          text: 'Welcome to XPO India B2B Marketplace on WhatsApp!\n\nAre you looking to *Buy / Procure* or *Sell / Supply* services?',
+          buttons: [
+            { id: 'c_role_buyer', label: '🛍️ I want to Buy / Post Requirements', tone: 'primary' },
+            { id: 'c_role_supplier', label: '🏭 I am a Supplier / Partner', tone: 'default' },
+          ],
+        });
+      } else if (newState === 'ACTIVE') {
+        appendMsg({
+          persona: 'client',
+          sender: 'bot',
+          header: '✓ Ready to Post Requirements',
+          text: 'Hello *Pavan* (*Test Traders*, Hyderabad)!\n\n• Posting requirements is *100% Free*\n• Remaining Free Partner Views: *4*\n\nType your requirement or tap an example below:',
+          buttons: [
+            { id: 'c_sample_boxes', label: '📦 10,000 Corrugated Boxes (Pune)', tone: 'primary' },
+            { id: 'c_sample_erp', label: '💻 Custom Pharma ERP (Mumbai)', tone: 'default' },
+          ],
+        });
+      } else if (newState === 'CLIENT_POST_REQ_CONFIRM') {
+        appendMsg({
+          persona: 'client',
+          sender: 'bot',
+          header: '📋 Please Confirm Requirement Draft',
+          text: '*Requirement:* 10,000 printed 3-ply corrugated boxes\n*Category:* Packaging & Printing\n*Location:* Pune\n*Timeline:* Within 2-4 Weeks\n*Budget:* ₹1,80,000\n\nReady to dispatch to Wave 1 matched suppliers?',
+          buttons: [
+            { id: 'c_confirm_post', label: '✓ Confirm & Post Free', tone: 'primary' },
+            { id: 'c_cancel_draft', label: '✕ Cancel Draft', tone: 'danger' },
+          ],
+        });
+      } else if (newState === 'CONNECTED') {
+        appendMsg({
+          persona: 'client',
+          sender: 'bot',
+          header: '🤝 PARTNER CONNECTED',
+          text: 'Partner *Klo Tech* (Pune) has confirmed mutual consent!\n\n• Representative: *Rajesh Sharma*\n• Phone: *+91 91234 56789*\n• WhatsApp: https://wa.me/919123456789\n• Quoted: ₹1,72,000 (10 days delivery)\n\nConnect directly on WhatsApp or call now.',
+        });
+      }
+    }
+  };
+
+  // ============================================================================
   // Parse natural language / Hinglish requirement on WhatsApp
   // ============================================================================
   const handleClientNaturalLanguage = async (rawText: string) => {
@@ -384,8 +525,8 @@ export function XpoWhatsAppAutomationLab({
       }),
     }).catch(() => {});
 
-    // 0. Check if Superadmin has paused all WhatsApp automation globally
-    if (waConfig?.autoPaused) {
+    // 0. Check if Superadmin has paused all WhatsApp automation globally (only blocks in live dual mode)
+    if (waConfig?.autoPaused && !forcedRole) {
       addLog({
         direction: 'STATE_TRANSITION',
         summary: 'Master Automation Paused by Superadmin → Queued for Coordinator',
@@ -1081,8 +1222,8 @@ export function XpoWhatsAppAutomationLab({
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-      {waConfig?.autoPaused && (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: '100%', overflowX: 'hidden', boxSizing: 'border-box' }}>
+      {waConfig?.autoPaused && !forcedRole && (
         <div
           style={{
             padding: '12px 16px',
@@ -1140,15 +1281,24 @@ export function XpoWhatsAppAutomationLab({
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              {forcedRole === 'partner' ? (
+                <span className="chip" style={{ background: '#1E3A8A', color: '#fff', fontWeight: 800 }}>
+                  🤖 PARTNER BOT SIMULATOR
+                </span>
+              ) : forcedRole === 'client' ? (
+                <span className="chip" style={{ background: '#14532D', color: '#fff', fontWeight: 800 }}>
+                  🤖 CLIENT BOT SIMULATOR
+                </span>
+              ) : null}
               <span
                 className="chip"
                 style={{
-                  background: waConfig?.autoPaused ? '#FEE2E2' : '#E3F2E8',
-                  color: waConfig?.autoPaused ? '#991B1B' : '#14532D',
+                  background: waConfig?.autoPaused && !forcedRole ? '#FEE2E2' : '#E3F2E8',
+                  color: waConfig?.autoPaused && !forcedRole ? '#991B1B' : '#14532D',
                   fontWeight: 800,
                 }}
               >
-                {waConfig?.autoPaused
+                {waConfig?.autoPaused && !forcedRole
                   ? '⏸ Master Bot Paused by Superadmin'
                   : '● Meta WhatsApp Cloud API · Live 18-State Engine'}
               </span>
@@ -1157,80 +1307,321 @@ export function XpoWhatsAppAutomationLab({
               </span>
             </div>
             <b style={{ fontSize: 19 }}>
-              End-to-End WhatsApp Automation &amp; 5-Minute Wave Matching Simulator
+              {forcedRole === 'partner'
+                ? 'XPO Partner WhatsApp Bot Simulator & State Programmer'
+                : forcedRole === 'client'
+                ? 'XPO Client WhatsApp Bot Simulator & State Programmer'
+                : 'End-to-End WhatsApp Automation & 5-Minute Wave Matching Simulator'}
             </b>
             <span style={{ fontSize: 13, color: 'var(--tx2)' }}>
-              Click any step below or chat inside the Client &amp; Partner WhatsApp phones — every action &amp; Superadmin flow setting updates live across all workspaces.
+              {forcedRole === 'partner'
+                ? 'End-to-End WhatsApp Bot Simulator for Suppliers: 5-minute Wave alerts, quote submissions, consent unlocks, and live state machine overrides.'
+                : forcedRole === 'client'
+                ? 'End-to-End WhatsApp Bot Simulator for Buyers: Natural language requirement intake, AI specs parser, Wave 1 dispatch, partner quotes, and 1-view unlocks.'
+                : 'Click any step below or chat inside the Client & Partner WhatsApp phones — every action & Superadmin flow setting updates live across all workspaces.'}
             </span>
           </div>
 
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-            <div
-              style={{
-                display: 'inline-flex',
-                gap: 4,
-                padding: 3,
-                borderRadius: 10,
-                background: 'var(--sf3)',
-              }}
-            >
-              {(
-                [
-                  ['dual', 'Both Phones'],
-                  ['client', 'Client WA'],
-                  ['partner', 'Partner WA'],
-                ] as const
-              ).map(([mId, mLabel]) => (
-                <button
-                  key={mId}
-                  type="button"
-                  onClick={() => setViewMode(mId)}
-                  style={{
-                    minHeight: 30,
-                    padding: '0 10px',
-                    borderRadius: 7,
-                    border: 0,
-                    background: viewMode === mId ? 'var(--inv)' : 'transparent',
-                    color: viewMode === mId ? '#fff' : 'var(--tx2)',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                  }}
-                >
-                  {mLabel}
-                </button>
-              ))}
-            </div>
-            {onOpenMobileSimulator ? (
+            {forcedRole === 'partner' ? (
               <>
-                <button
-                  type="button"
-                  className="btn b2 sm"
-                  onClick={() => onOpenMobileSimulator('client')}
-                >
-                  📱 Open Client Mobile App
-                </button>
-                <button
-                  type="button"
-                  className="btn b2 sm"
-                  onClick={() => onOpenMobileSimulator('partner')}
-                >
-                  📱 Open Partner Mobile App
-                </button>
+                <Link href="/simulator/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  🤖 Switch to Client Bot Sim →
+                </Link>
+                <Link href="/simulator?view=dual" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  📱 Dual Studio
+                </Link>
+                <Link href="/dashboard/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  ← Partner Workspace
+                </Link>
+              </>
+            ) : forcedRole === 'client' ? (
+              <>
+                <Link href="/simulator/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  🤖 Switch to Partner Bot Sim →
+                </Link>
+                <Link href="/simulator?view=dual" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  📱 Dual Studio
+                </Link>
+                <Link href="/dashboard/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  ← Client Workspace
+                </Link>
               </>
             ) : (
-              <Link href="/simulator" className="btn b2 sm" style={{ textDecoration: 'none' }}>
-                📱 Open Full Mobile + WhatsApp Studio →
-              </Link>
+              <>
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    gap: 4,
+                    padding: 3,
+                    borderRadius: 10,
+                    background: 'var(--sf3)',
+                  }}
+                >
+                  {(
+                    [
+                      ['dual', 'Both Phones'],
+                      ['client', 'Client WA'],
+                      ['partner', 'Partner WA'],
+                    ] as const
+                  ).map(([mId, mLabel]) => (
+                    <button
+                      key={mId}
+                      type="button"
+                      onClick={() => setViewMode(mId)}
+                      style={{
+                        minHeight: 30,
+                        padding: '0 10px',
+                        borderRadius: 7,
+                        border: 0,
+                        background: viewMode === mId ? 'var(--inv)' : 'transparent',
+                        color: viewMode === mId ? '#fff' : 'var(--tx2)',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      {mLabel}
+                    </button>
+                  ))}
+                </div>
+                {onOpenMobileSimulator ? (
+                  <>
+                    <button
+                      type="button"
+                      className="btn b2 sm"
+                      onClick={() => onOpenMobileSimulator('client')}
+                    >
+                      📱 Open Client Mobile App
+                    </button>
+                    <button
+                      type="button"
+                      className="btn b2 sm"
+                      onClick={() => onOpenMobileSimulator('partner')}
+                    >
+                      📱 Open Partner Mobile App
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link href="/simulator/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                      🤖 Partner Sim
+                    </Link>
+                    <Link href="/simulator/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                      🤖 Client Sim
+                    </Link>
+                  </>
+                )}
+              </>
             )}
           </div>
         </div>
+
+        {/* Dedicated State Programmer Bar for Partner */}
+        {forcedRole === 'partner' && (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: 14,
+              background: 'var(--sf2)',
+              border: '1.5px solid #1E3A8A',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <b style={{ fontSize: 14, color: '#1E3A8A' }}>⚡ Partner Bot State Machine Programmer</b>
+                <span className="chip" style={{ background: '#DBEAFE', color: '#1E3A8A', fontWeight: 800, fontSize: 11 }}>
+                  Current State: {partnerWaState}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx2)' }}>Program State Directly:</label>
+                <select
+                  value={partnerWaState}
+                  onChange={(e) => programBotState('partner', e.target.value as WaStateId)}
+                  style={{
+                    height: 32,
+                    padding: '0 8px',
+                    borderRadius: 8,
+                    border: '1px solid var(--ln)',
+                    background: 'var(--sf)',
+                    color: 'var(--tx)',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {ALL_18_STATES.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.label} — {st.desc.slice(0, 35)}...
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { l: '⚡ Wave 1 Alert', st: 'OFFER_SENT' as WaStateId },
+                {
+                  l: '⏱ 5-Min Timer Expiry',
+                  custom: () => {
+                    setWaveSeconds(0);
+                    setWaveRunning(false);
+                    setCurrentWave(2);
+                    appendMsg({
+                      persona: 'partner',
+                      sender: 'system',
+                      header: '⏱ WAVE 1 EXPIRED · 5:00 ELAPSED',
+                      text: 'Wave 1 response window expired (300s). Offer escalated to Wave 2 suppliers. 0 credits deducted.',
+                    });
+                    addLog({
+                      direction: 'STATE_TRANSITION',
+                      summary: '5-Minute Wave 1 Offer Window expired → Wave 2 partner pool engaged',
+                      stateFrom: 'OFFER_SENT',
+                      stateTo: 'ACTIVE',
+                      payload: { wave: 1, elapsedSeconds: 300, autoEscalated: true },
+                    });
+                  },
+                },
+                { l: '💰 Submit Quote ₹1.72L', st: 'CLAIM_CONFIRMED' as WaStateId },
+                { l: '🔓 Client Unlocks Profile', st: 'PARTNER_VIEW_UNLOCKED' as WaStateId },
+                { l: '🤝 Request Contact Consent', st: 'CONNECTION_PENDING' as WaStateId },
+                { l: '✓ Numbers Revealed', st: 'CONNECTED' as WaStateId },
+                { l: '💳 Quota Depleted (Renewal)', st: 'RENEWAL_REQUIRED' as WaStateId },
+                { l: '🛑 Partner STOP', st: 'PAUSED_OR_OPTED_OUT' as WaStateId },
+                { l: '👨‍💼 Coordinator Escalation', st: 'SUPPORT_REVIEW' as WaStateId },
+              ].map((btn, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    if (btn.custom) btn.custom();
+                    else if (btn.st) programBotState('partner', btn.st);
+                  }}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 8,
+                    border: partnerWaState === btn.st ? '1.5px solid #1E3A8A' : '1px solid var(--ln)',
+                    background: partnerWaState === btn.st ? '#1E3A8A' : 'var(--sf)',
+                    color: partnerWaState === btn.st ? '#fff' : 'var(--tx)',
+                    fontWeight: 700,
+                    fontSize: 11.5,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {btn.l}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Dedicated State Programmer Bar for Client */}
+        {forcedRole === 'client' && (
+          <div
+            style={{
+              padding: '12px 16px',
+              borderRadius: 14,
+              background: 'var(--sf2)',
+              border: '1.5px solid #14532D',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <b style={{ fontSize: 14, color: '#14532D' }}>⚡ Client Bot State Machine Programmer</b>
+                <span className="chip" style={{ background: '#DCFCE7', color: '#14532D', fontWeight: 800, fontSize: 11 }}>
+                  Current State: {clientWaState}
+                </span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <label style={{ fontSize: 12, fontWeight: 700, color: 'var(--tx2)' }}>Program State Directly:</label>
+                <select
+                  value={clientWaState}
+                  onChange={(e) => programBotState('client', e.target.value as WaStateId)}
+                  style={{
+                    height: 32,
+                    padding: '0 8px',
+                    borderRadius: 8,
+                    border: '1px solid var(--ln)',
+                    background: 'var(--sf)',
+                    color: 'var(--tx)',
+                    fontWeight: 700,
+                    fontSize: 12,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {ALL_18_STATES.map((st) => (
+                    <option key={st.id} value={st.id}>
+                      {st.label} — {st.desc.slice(0, 35)}...
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              {[
+                { l: '👋 Inbound "Hi"', st: 'NEW_CONTACT' as WaStateId },
+                { l: '👤 Role Selection', st: 'ROLE_SELECTION' as WaStateId },
+                { l: '📝 Client Onboarding', st: 'CLIENT_ONBOARDING' as WaStateId },
+                { l: '✅ Core Ready (Active)', st: 'ACTIVE' as WaStateId },
+                {
+                  l: '📦 Text Boxes Req (Pune)',
+                  custom: () =>
+                    handleClientNaturalLanguage(
+                      'Need 10,000 printed 3-ply corrugated boxes in Pune within 2 weeks, budget ₹1,80,000'
+                    ),
+                },
+                {
+                  l: '💻 Text ERP Req (Mumbai)',
+                  custom: () =>
+                    handleClientNaturalLanguage(
+                      'Need custom ERP & Tally inventory sync for 12 warehouses in Mumbai within 3 weeks, budget ₹4.5L'
+                    ),
+                },
+                { l: '📋 Confirm Draft & Wave 1', st: 'CLIENT_POST_REQ_CONFIRM' as WaStateId },
+                { l: '🎉 Partner Quote Delivered', st: 'CLAIM_CONFIRMED' as WaStateId },
+                { l: '🔓 Unlock Partner (1 View)', st: 'PARTNER_VIEW_UNLOCKED' as WaStateId },
+                { l: '🤝 Numbers Revealed', st: 'CONNECTED' as WaStateId },
+                { l: '🛑 Client STOP', st: 'PAUSED_OR_OPTED_OUT' as WaStateId },
+              ].map((btn, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => {
+                    if (btn.custom) btn.custom();
+                    else if (btn.st) programBotState('client', btn.st);
+                  }}
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: 8,
+                    border: clientWaState === btn.st ? '1.5px solid #14532D' : '1px solid var(--ln)',
+                    background: clientWaState === btn.st ? '#14532D' : 'var(--sf)',
+                    color: clientWaState === btn.st ? '#fff' : 'var(--tx)',
+                    fontWeight: 700,
+                    fontSize: 11.5,
+                    cursor: 'pointer',
+                  }}
+                >
+                  {btn.l}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* 5-Stage Interactive Playbook Bar */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
             gap: 10,
           }}
         >
@@ -1401,10 +1792,11 @@ export function XpoWhatsAppAutomationLab({
         style={{
           display: 'grid',
           gridTemplateColumns: compact
-            ? 'repeat(auto-fit, minmax(340px, 1fr))'
-            : 'repeat(auto-fit, minmax(360px, 1fr))',
+            ? 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))'
+            : 'repeat(auto-fit, minmax(min(100%, 350px), 1fr))',
           gap: 18,
           alignItems: 'start',
+          maxWidth: '100%',
         }}
       >
         {/* PHONE 1: CLIENT WHATSAPP BOT */}
@@ -1418,6 +1810,8 @@ export function XpoWhatsAppAutomationLab({
               border: '3px solid #2D3139',
               display: 'flex',
               flexDirection: 'column',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
             }}
           >
             {/* Phone Status Bar */}
@@ -1727,6 +2121,8 @@ export function XpoWhatsAppAutomationLab({
               border: '3px solid #2D3139',
               display: 'flex',
               flexDirection: 'column',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
             }}
           >
             {/* Phone Status Bar */}
@@ -2054,7 +2450,7 @@ export function XpoWhatsAppAutomationLab({
         )}
 
         {/* RIGHT PANEL: 18-STATE MACHINE MAP & WEBHOOK PAYLOAD LOG */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: '100%', minWidth: 0, boxSizing: 'border-box' }}>
           <section className="card" style={{ padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <b style={{ fontSize: 15 }}>18-State Conversation State Machine</b>
@@ -2065,7 +2461,7 @@ export function XpoWhatsAppAutomationLab({
             <div
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(155px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 140px), 1fr))',
                 gap: 6,
                 maxHeight: 265,
                 overflowY: 'auto',

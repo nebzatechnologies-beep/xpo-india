@@ -826,7 +826,7 @@ body {
 .pm[aria-checked="true"] .pmr {
   border: 6px solid #C8102E;
 }
-.bar {
+.legacy-meter-bar {
   height: 8px;
   border-radius: 4px;
   background: var(--sf3);

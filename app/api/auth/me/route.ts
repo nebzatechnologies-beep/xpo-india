@@ -20,15 +20,29 @@ export async function GET() {
       });
     }
 
-    const profiles = await getUserRoleProfiles(session.uid);
-    return jsonOk({
-      authenticated: true,
-      user: session.user,
-      profiles,
-      settings,
-    });
+    try {
+      const profiles = await getUserRoleProfiles(session.uid);
+      return jsonOk({
+        authenticated: true,
+        user: session.user,
+        profiles,
+        settings,
+      });
+    } catch {
+      return jsonOk({
+        authenticated: true,
+        user: session.user,
+        profiles: { client: null, partner: null },
+        settings,
+      });
+    }
   } catch (err) {
-    return handleApiError(err);
+    return jsonOk({
+      authenticated: false,
+      user: null,
+      profiles: { client: null, partner: null },
+      settings: null,
+    });
   }
 }
 

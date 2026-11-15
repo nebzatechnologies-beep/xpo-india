@@ -1,8 +1,12 @@
-'use client';
-
 import React from 'react';
-import { XpoClientApp } from '@/components/creator/xpo-client-app';
+import type { Metadata } from 'next';
+import { XpoUnifiedWorkspace } from '@/components/absorber/xpo-unified-workspace';
+
+export const metadata: Metadata = {
+  title: 'XPO India — Client Workspace',
+  description: 'Verified client requirement workspace with 5-minute wave matching.',
+};
 
 export default function ClientOverviewPage() {
-  return <XpoClientApp initialScreen="home" />;
+  return <XpoUnifiedWorkspace initialRole="client" initialScreen="home" />;
 }

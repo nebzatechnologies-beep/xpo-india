@@ -55,57 +55,66 @@ export const DEFAULT_PLATFORM_SETTINGS: PlatformSettingsBundle = {
 };
 
 export async function getPlatformSettings(): Promise<PlatformSettingsBundle> {
-  const db = requireFirestore();
-  const ref = db.doc(SETTINGS_DOC_PATH);
-  const snap = await ref.get();
+  try {
+    const db = requireFirestore();
+    const ref = db.doc(SETTINGS_DOC_PATH);
+    const snap = await ref.get();
 
-  if (!snap.exists) {
-    const seeded: PlatformSettingsBundle = {
-      ...DEFAULT_PLATFORM_SETTINGS,
-      updatedAt: new Date().toISOString(),
+    if (!snap.exists) {
+      const seeded: PlatformSettingsBundle = {
+        ...DEFAULT_PLATFORM_SETTINGS,
+        updatedAt: new Date().toISOString(),
+      };
+      try {
+        await ref.set(seeded, { merge: true });
+      } catch {
+        // ignore seed error in read-only / unauthenticated environment
+      }
+      return seeded;
+    }
+
+    const data = snap.data() as Partial<PlatformSettingsBundle>;
+    return {
+      roles: {
+        clientEnabled:
+          typeof data.roles?.clientEnabled === 'boolean'
+            ? data.roles.clientEnabled
+            : DEFAULT_PLATFORM_SETTINGS.roles.clientEnabled,
+        partnerEnabled:
+          typeof data.roles?.partnerEnabled === 'boolean'
+            ? data.roles.partnerEnabled
+            : DEFAULT_PLATFORM_SETTINGS.roles.partnerEnabled,
+      },
+      leadDistribution: {
+        ...DEFAULT_PLATFORM_SETTINGS.leadDistribution,
+        ...(data.leadDistribution || {}),
+      },
+      subscriptions: {
+        ...DEFAULT_PLATFORM_SETTINGS.subscriptions,
+        ...(data.subscriptions || {}),
+      },
+      moderation: {
+        autoApproveCleanRequirements:
+          typeof data.moderation?.autoApproveCleanRequirements === 'boolean'
+            ? data.moderation.autoApproveCleanRequirements
+            : DEFAULT_PLATFORM_SETTINGS.moderation.autoApproveCleanRequirements,
+        requirePartnerKycForClaims:
+          typeof data.moderation?.requirePartnerKycForClaims === 'boolean'
+            ? data.moderation.requirePartnerKycForClaims
+            : DEFAULT_PLATFORM_SETTINGS.moderation.requirePartnerKycForClaims,
+        launchGeographyScope:
+          data.moderation?.launchGeographyScope ||
+          DEFAULT_PLATFORM_SETTINGS.moderation.launchGeographyScope,
+        blockedKeywords: Array.isArray(data.moderation?.blockedKeywords)
+          ? data.moderation.blockedKeywords
+          : DEFAULT_PLATFORM_SETTINGS.moderation.blockedKeywords,
+      },
+      updatedAt: data.updatedAt || DEFAULT_PLATFORM_SETTINGS.updatedAt,
     };
-    await ref.set(seeded, { merge: true });
-    return seeded;
+  } catch (err) {
+    console.warn('[getPlatformSettings] Failed to fetch settings, using defaults:', err);
+    return DEFAULT_PLATFORM_SETTINGS;
   }
-
-  const data = snap.data() as Partial<PlatformSettingsBundle>;
-  return {
-    roles: {
-      clientEnabled:
-        typeof data.roles?.clientEnabled === 'boolean'
-          ? data.roles.clientEnabled
-          : DEFAULT_PLATFORM_SETTINGS.roles.clientEnabled,
-      partnerEnabled:
-        typeof data.roles?.partnerEnabled === 'boolean'
-          ? data.roles.partnerEnabled
-          : DEFAULT_PLATFORM_SETTINGS.roles.partnerEnabled,
-    },
-    leadDistribution: {
-      ...DEFAULT_PLATFORM_SETTINGS.leadDistribution,
-      ...(data.leadDistribution || {}),
-    },
-    subscriptions: {
-      ...DEFAULT_PLATFORM_SETTINGS.subscriptions,
-      ...(data.subscriptions || {}),
-    },
-    moderation: {
-      autoApproveCleanRequirements:
-        typeof data.moderation?.autoApproveCleanRequirements === 'boolean'
-          ? data.moderation.autoApproveCleanRequirements
-          : DEFAULT_PLATFORM_SETTINGS.moderation.autoApproveCleanRequirements,
-      requirePartnerKycForClaims:
-        typeof data.moderation?.requirePartnerKycForClaims === 'boolean'
-          ? data.moderation.requirePartnerKycForClaims
-          : DEFAULT_PLATFORM_SETTINGS.moderation.requirePartnerKycForClaims,
-      launchGeographyScope:
-        data.moderation?.launchGeographyScope ||
-        DEFAULT_PLATFORM_SETTINGS.moderation.launchGeographyScope,
-      blockedKeywords: Array.isArray(data.moderation?.blockedKeywords)
-        ? data.moderation.blockedKeywords
-        : DEFAULT_PLATFORM_SETTINGS.moderation.blockedKeywords,
-    },
-    updatedAt: data.updatedAt || DEFAULT_PLATFORM_SETTINGS.updatedAt,
-  };
 }
 
 export async function updatePlatformSettings(

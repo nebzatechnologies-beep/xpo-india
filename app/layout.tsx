@@ -18,7 +18,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'XPO India — End-to-End Client & Partner Workspace',
+  title: 'XPO India — Client & Partner Workspace',
   description:
     'Tell us what you need in plain words. We match up to 10 verified Indian businesses in 5-minute waves and connect you directly on WhatsApp.',
 };

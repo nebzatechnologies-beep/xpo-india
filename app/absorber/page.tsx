@@ -1,8 +1,5 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import React from 'react';
-import { XpoPartnerApp } from '@/components/absorber/xpo-partner-app';
-
-export default function AbsorberRootPage() {
-  return <XpoPartnerApp initialScreen="feed" />;
+export default function AbsorberRedirectPage() {
+  redirect('/dashboard/partner');
 }

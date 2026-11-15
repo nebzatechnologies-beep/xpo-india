@@ -248,11 +248,11 @@ function LoginContent() {
                       onChange={(e) => setCountryCode(e.target.value)}
                       className="px-3 py-2.5 rounded-xl border border-[#D1D5DB] bg-white text-sm font-medium"
                     >
-                      <option value="+91">🇮🇳 +91</option>
-                      <option value="+1">🇺🇸 +1</option>
-                      <option value="+44">🇬🇧 +44</option>
-                      <option value="+971">🇦🇪 +971</option>
-                      <option value="+65">🇸🇬 +65</option>
+                      <option value="+91">🇮🇳 +91 (India)</option>
+                      <option value="+1">🇺🇸 +1 (US)</option>
+                      <option value="+44">🇬🇧 +44 (UK)</option>
+                      <option value="+971">🇦🇪 +971 (UAE)</option>
+                      <option value="+65">🇸🇬 +65 (SG)</option>
                     </select>
                     <input
                       type="tel"

@@ -1,8 +1,12 @@
-'use client';
-
 import React from 'react';
-import { XpoPartnerApp } from '@/components/absorber/xpo-partner-app';
+import type { Metadata } from 'next';
+import { XpoUnifiedWorkspace } from '@/components/absorber/xpo-unified-workspace';
+
+export const metadata: Metadata = {
+  title: 'XPO India — Partner Workspace',
+  description: 'Verified partner workspace for high-intent business leads.',
+};
 
 export default function PartnerOverviewPage() {
-  return <XpoPartnerApp initialScreen="feed" />;
+  return <XpoUnifiedWorkspace initialRole="partner" initialScreen="reqs" />;
 }
