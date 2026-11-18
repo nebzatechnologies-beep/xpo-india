@@ -1479,13 +1479,6 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
           💬 XPO WhatsApp Bot
         </a>
 
-        <button
-          className="sbtn"
-          onClick={() => setMenu(menu === 'whatsappDemo' ? 'none' : 'whatsappDemo')}
-        >
-          Demo Automation &amp; Creds
-        </button>
-
         <span className="sp" />
 
         <button
@@ -1705,53 +1698,6 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
             </div>
           )}
 
-          {menu === 'whatsappDemo' && (
-            <div className="pop" style={{ width: '420px', maxWidth: 'calc(100vw - 32px)' }} role="dialog">
-              <div className="ph">
-                <b>Demo WhatsApp Automation &amp; Test Creds</b>
-                <span className="sp" />
-                <button className="btn sm ghost" onClick={() => setMenu('none')}>✕</button>
-              </div>
-              <div style={{ padding: '8px 4px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '13px' }}>
-                <div>
-                  <span className="lbl">Demo WhatsApp Number:</span>
-                  <div className="mono" style={{ background: 'var(--sf2)', padding: '6px 8px', borderRadius: '6px', marginTop: '2px' }}>
-                    +91 40 4917 2200 (XPO WhatsApp Chatbot)
-                  </div>
-                </div>
-                <div>
-                  <span className="lbl">Demo Client Account:</span>
-                  <div className="mono" style={{ background: 'var(--sf2)', padding: '6px 8px', borderRadius: '6px', marginTop: '2px' }}>
-                    pavan.client@testtraders.com · 4 free views
-                  </div>
-                </div>
-                <div>
-                  <span className="lbl">Demo Partner Account:</span>
-                  <div className="mono" style={{ background: 'var(--sf2)', padding: '6px 8px', borderRadius: '6px', marginTop: '2px' }}>
-                    klotech.partner@xpoindia.com · 3 free replies
-                  </div>
-                </div>
-                <div>
-                  <span className="lbl">WhatsApp Bot Conversation Flow:</span>
-                  <div style={{ background: 'var(--sf2)', padding: '8px', borderRadius: '8px', marginTop: '2px', lineHeight: '1.4' }}>
-                    <p style={{ margin: '0 0 4px' }}><b>Bot:</b> &quot;Namaste Pavan! Requirement XPO-REQ-41208 is live. 3 verified partners are reviewing.&quot;</p>
-                    <p style={{ margin: '0 0 4px' }}><b>Partner:</b> Klo Tech replies with ₹1,80,000 quote.</p>
-                    <p style={{ margin: 0 }}><b>Bot:</b> &quot;Klo Tech replied! Tap here to review &amp; connect directly.&quot;</p>
-                  </div>
-                </div>
-                <a
-                  href={WHATSAPP_BOT_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn red sm full"
-                  style={{ textDecoration: 'none', textAlign: 'center', marginTop: '4px' }}
-                >
-                  Open WhatsApp Chatbot Now →
-                </a>
-              </div>
-            </div>
-          )}
-
           {/* Page Body */}
           <div className="page">
             {role === 'client' ? (
@@ -1807,25 +1753,9 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
                 </button>
               );
             })}
-            {/* Quick Role Switch in Mobile Tab Bar */}
-            <button
-              type="button"
-              onClick={() => handleRoleSwitch(role === 'client' ? 'partner' : 'client')}
-              title={"Switch to " + (role === 'client' ? 'Partner' : 'Client')}
-              style={{ color: 'var(--red)' }}
-            >
-              {icons.switchRole}
-              <span>{role === 'client' ? 'Partner' : 'Client'}</span>
-            </button>
           </nav>
         </div>
       </div>
-
-      {/* Floating Review Mode Button */}
-      <button className="revbtn" onClick={() => setRev(!rev)}>
-        <span className="dot" />
-        {rev ? 'Hide changes' : 'Show what changed'}
-      </button>
 
       {/* Toast Notification */}
       {toastMsg && (
