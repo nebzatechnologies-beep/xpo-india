@@ -1,7 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireFirestore } from '@/lib/firebase/admin';
+import {
+  extractRequirementEntitiesDeterministically,
+  resolveTaxonomyFromNaturalLanguage,
+} from '@/lib/agent/taxonomy-resolver';
 import type { ClientReqItem, PartnerReply } from '@/components/creator/xpo-client-app';
 import type { PartnerOpportunity, PartnerScreenId } from '@/components/absorber/xpo-partner-app';
+
+/**
+ * Derive category / city / budget / timeline from the requirement's own text
+ * using the same deterministic parser + taxonomy resolver the WhatsApp engine
+ * uses, so the web workspace stops relying on client-sent defaults
+ * (e.g. "Hyderabad" / "Quotes invited" / "General Trade").
+ */
+async function deriveRequirementFields(reqItem: ClientReqItem, rawMessage?: string) {
+  const rawText = String(rawMessage ?? reqItem.spec ?? reqItem.title ?? '').trim();
+  const ent = rawText
+    ? extractRequirementEntitiesDeterministically(rawText, reqItem.loc || undefined)
+    : null;
+
+  let tax: Awaited<ReturnType<typeof resolveTaxonomyFromNaturalLanguage>> | null = null;
+  if (rawText) {
+    try {
+      tax = await resolveTaxonomyFromNaturalLanguage(rawText);
+    } catch {
+      tax = null;
+    }
+  }
+
+  const loc =
+    (ent?.workLocation && ent.workLocation !== 'Pan India' ? ent.workLocation : null) ||
+    reqItem.loc ||
+    ent?.workLocation ||
+    'Pan India';
+  const budget = ent?.estimatedBudget || reqItem.budget || 'Quotes invited';
+  const timeline = reqItem.timeline || ent?.timeline || 'Within 2-4 Weeks';
+  const cat =
+    (tax && tax.confidence !== 'low' && tax.category?.name ? tax.category.name : null) ||
+    reqItem.cat ||
+    'General Trade';
+  const sector =
+    (tax && tax.confidence !== 'low' && tax.sector?.name ? tax.sector.name : null) ||
+    reqItem.sector ||
+    'General';
+  const title = reqItem.title || ent?.title || 'Business requirement';
+
+  return { title, loc, budget, timeline, cat, sector };
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -686,7 +731,6 @@ async function getOrInitMarketplaceState(): Promise<SharedMarketplaceState> {
 
 export async function GET() {
   try {
-    const db = requireFirestore();
     const state = await getOrInitMarketplaceState();
     return NextResponse.json({
       success: true,
@@ -727,7 +771,19 @@ export async function POST(request: NextRequest) {
         const key = payload?.key || payload?.reqKey;
         const reqItem = (payload?.requirement || payload?.req) as ClientReqItem | undefined;
         if (key && reqItem && reqItem.code) {
-          state.client.reqs[key] = reqItem;
+          // Parse category / city / budget / timeline server-side with the real
+          // engine, so the web workspace no longer relies on client-sent defaults.
+          const derived = await deriveRequirementFields(reqItem, payload?.rawMessage);
+          const normalizedReq: ClientReqItem = {
+            ...reqItem,
+            title: derived.title,
+            loc: derived.loc,
+            budget: derived.budget,
+            timeline: derived.timeline,
+            cat: derived.cat,
+            sector: derived.sector,
+          };
+          state.client.reqs[key] = normalizedReq;
           if (!state.client.order.includes(key)) {
             state.client.order.unshift(key);
           }
@@ -739,16 +795,16 @@ export async function POST(request: NextRequest) {
           // Add to Superadmin customReqs list
           const adminReqEntry = {
             id: reqItem.code,
-            title: reqItem.title,
+            title: derived.title,
             clientName: 'Pavan',
             clientCompany: 'Test Traders',
-            cat: reqItem.cat || 'Web & Mobile Development',
-            city: reqItem.loc || 'Hyderabad',
-            budget: reqItem.budget || 'Quotes invited',
-            timeline: reqItem.timeline || 'Within 2-4 Weeks',
+            cat: derived.cat,
+            city: derived.loc,
+            budget: derived.budget,
+            timeline: derived.timeline,
             status: (isHeld ? 'held' : 'wave1') as 'held' | 'wave1',
             posted: 'just now',
-            desc: reqItem.spec || reqItem.title,
+            desc: reqItem.spec || derived.title,
           };
           const existingAdminIdx = state.admin.customReqs.findIndex((r) => r.id === reqItem.code);
           if (existingAdminIdx >= 0) {
@@ -767,25 +823,25 @@ export async function POST(request: NextRequest) {
               state.partner.opportunities.unshift({
                 id: oppId,
                 ref: reqItem.code,
-                title: reqItem.title,
-                cat: reqItem.cat || 'Web & Mobile Development',
-                loc: reqItem.loc || 'Hyderabad',
-                when: reqItem.timeline || 'Within 2-4 Weeks',
-                budget: reqItem.budget || 'Quotes invited',
+                title: derived.title,
+                cat: derived.cat,
+                loc: derived.loc,
+                when: derived.timeline,
+                budget: derived.budget,
                 posted: 'Just now',
-                clientLabel: `Verified business · ${reqItem.loc || 'Hyderabad'}`,
+                clientLabel: `Verified business · ${derived.loc}`,
                 clientName: 'Pavan',
                 clientCompany: 'Test Traders',
                 clientPhone: '+91 98490 00112',
                 clientEmail: 'pavan@testtraders.in',
                 waveBadge: 'WAVE 1 · NEW',
                 matched: true,
-                brief: reqItem.spec || reqItem.title,
+                brief: reqItem.spec || derived.title,
                 myReplyStatus: 'none',
               });
               state.partner.notifs.unshift({
                 id: 'n-' + Date.now(),
-                text: `New Wave 1 match: "${reqItem.title}" in ${reqItem.loc || 'Hyderabad'} (${reqItem.code})`,
+                text: `New Wave 1 match: "${derived.title}" in ${derived.loc} (${reqItem.code})`,
                 time: 'Just now',
                 unread: true,
                 targetScreen: 'opp',
@@ -794,7 +850,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Persist to Firestore requirements collection
+          // Persist to Firestore requirements collection (parsed server-side)
           await db.collection('requirements').doc(reqItem.code).set(
             {
               id: reqItem.code,
@@ -803,17 +859,17 @@ export async function POST(request: NextRequest) {
               clientUid: 'local-superadmin',
               clientName: 'Pavan',
               clientBusinessName: 'Test Traders',
-              title: reqItem.title,
-              specifications: reqItem.spec || reqItem.title,
-              description: reqItem.spec || reqItem.title,
-              sectorName: reqItem.sector || 'Technology & Software',
-              categoryName: reqItem.cat || 'Web & Mobile Development',
-              workLocation: reqItem.loc || 'Hyderabad',
-              city: reqItem.loc || 'Hyderabad',
+              title: derived.title,
+              specifications: reqItem.spec || derived.title,
+              description: reqItem.spec || derived.title,
+              sectorName: derived.sector,
+              categoryName: derived.cat,
+              workLocation: derived.loc,
+              city: derived.loc,
               country: 'India',
-              timeline: reqItem.timeline || 'Within 2-4 Weeks',
-              estimatedBudget: reqItem.budget || 'Quotes invited',
-              budgetLabel: reqItem.budget || 'Quotes invited',
+              timeline: derived.timeline,
+              estimatedBudget: derived.budget,
+              budgetLabel: derived.budget,
               status: isHeld ? 'under_review' : 'active',
               moderationStatus: isHeld ? 'pending_review' : 'approved',
               distributionStatus: isHeld ? 'paused' : 'active_matching',
