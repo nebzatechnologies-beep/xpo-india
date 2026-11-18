@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense, useRef, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -54,6 +54,8 @@ function RegisterContent() {
   const [phoneInput, setPhoneInput] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otpCode, setOtpCode] = useState('');
+  const [fullPhoneSent, setFullPhoneSent] = useState('');
+  const [resendIn, setResendIn] = useState(0);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -93,6 +95,36 @@ function RegisterContent() {
     router.push(`/onboarding?role=${selectedRole}`);
   }
 
+  // Count down the resend cooldown.
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setTimeout(() => setResendIn((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendIn]);
+
+  function composeFullPhone() {
+    const digits = phoneInput.replace(/[^\d]/g, '');
+    return phoneInput.trim().startsWith('+') ? phoneInput.trim() : `${countryCode}${digits}`;
+  }
+
+  async function requestOtp(fullPhone: string) {
+    const auth = getClientAuth();
+    // Always use a fresh invisible reCAPTCHA so resend works reliably.
+    try {
+      recaptchaRef.current?.clear();
+    } catch {
+      // Ignore clear errors
+    }
+    recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-register-container', {
+      size: 'invisible',
+    });
+    const result = await signInWithPhoneNumber(auth, fullPhone, recaptchaRef.current);
+    confirmationRef.current = result;
+    setFullPhoneSent(fullPhone);
+    setOtpSent(true);
+    setResendIn(30);
+  }
+
   async function handleSendPhoneOtp(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -102,20 +134,7 @@ function RegisterContent() {
     }
     try {
       setSubmitting(true);
-      const auth = getClientAuth();
-      if (!recaptchaRef.current) {
-        recaptchaRef.current = new RecaptchaVerifier(auth, 'recaptcha-register-container', {
-          size: 'invisible',
-        });
-      }
-      const digits = phoneInput.replace(/[^\d]/g, '');
-      const fullPhone = phoneInput.trim().startsWith('+')
-        ? phoneInput.trim()
-        : `${countryCode}${digits}`;
-
-      const result = await signInWithPhoneNumber(auth, fullPhone, recaptchaRef.current);
-      confirmationRef.current = result;
-      setOtpSent(true);
+      await requestOtp(composeFullPhone());
     } catch (err) {
       try {
         recaptchaRef.current?.clear();
@@ -127,6 +146,34 @@ function RegisterContent() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleResendOtp() {
+    if (resendIn > 0 || submitting) return;
+    setError(null);
+    try {
+      setSubmitting(true);
+      setOtpCode('');
+      await requestOtp(fullPhoneSent || composeFullPhone());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to resend OTP');
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  function handleChangeNumber() {
+    setOtpSent(false);
+    setOtpCode('');
+    setResendIn(0);
+    setError(null);
+    confirmationRef.current = null;
+    try {
+      recaptchaRef.current?.clear();
+    } catch {
+      // Ignore clear errors
+    }
+    recaptchaRef.current = null;
   }
 
   async function handleConfirmOtp(e: React.FormEvent) {
@@ -329,26 +376,53 @@ function RegisterContent() {
               </form>
             ) : (
               <form onSubmit={handleConfirmOtp} className="space-y-4">
+                <p className="text-xs text-[#6B7280]">
+                  We sent a 6-digit code to{' '}
+                  <span className="font-semibold text-[#15171C]">{fullPhoneSent}</span>.{' '}
+                  <button
+                    type="button"
+                    onClick={handleChangeNumber}
+                    className="font-semibold text-[#C8102E] hover:underline"
+                  >
+                    Change number
+                  </button>
+                </p>
                 <div>
                   <label className="block text-xs font-semibold mb-1">Enter 6-Digit OTP</label>
                   <input
                     type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
                     required
                     maxLength={6}
                     value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/[^\d]/g, ''))}
                     placeholder="123456"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-[#D1D5DB] text-center tracking-widest text-base font-bold"
                   />
                 </div>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || otpCode.length < 6}
                   className="w-full py-3 rounded-xl bg-[#C8102E] text-white text-sm font-semibold hover:bg-[#c81324] disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                   <span>{submitting ? 'Creating Account...' : 'Complete Registration'}</span>
                 </button>
+                <div className="text-center text-xs text-[#6B7280]">
+                  {resendIn > 0 ? (
+                    <span>Resend OTP in {resendIn}s</span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={submitting}
+                      className="font-semibold text-[#15171C] hover:underline disabled:opacity-50"
+                    >
+                      Resend OTP
+                    </button>
+                  )}
+                </div>
               </form>
             )
           ) : (
