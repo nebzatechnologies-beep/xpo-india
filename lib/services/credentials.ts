@@ -1,3 +1,4 @@
+import { FieldValue } from 'firebase-admin/firestore';
 import { requireFirestore } from '@/lib/firebase/admin';
 import { recordAuditLog } from '@/lib/services/audit';
 import type {
@@ -63,21 +64,20 @@ export async function getPlatformCredentials(): Promise<PlatformCredentialsBundl
       process.env.WHATSAPP_DISPLAY_NUMBER ||
       process.env.NEXT_PUBLIC_WA_BUSINESS_NUMBER ||
       '',
+    // SECURITY: never source secrets from the world-readable platform_settings
+    // (waLegacy) doc — only from platform_credentials/live (waLive) or env.
     accessToken:
       waLive.accessToken ||
-      waLegacy.accessToken ||
       process.env.WHATSAPP_ACCESS_TOKEN ||
       process.env.META_WA_ACCESS_TOKEN ||
       '',
     appSecret:
       waLive.appSecret ||
-      waLegacy.appSecret ||
       process.env.WHATSAPP_APP_SECRET ||
       process.env.META_WA_APP_SECRET ||
       '',
     verifyToken:
       waLive.verifyToken ||
-      waLegacy.verifyToken ||
       process.env.WHATSAPP_VERIFY_TOKEN ||
       process.env.META_WA_VERIFY_TOKEN ||
       'xpo_meta_verify_token',
@@ -279,14 +279,18 @@ export async function updatePlatformCredentials(
 
   await Promise.all([
     db.doc('platform_credentials/live').set(bundle, { merge: true }),
+    // SECURITY: platform_settings/* is world-readable (see firestore.rules).
+    // Only non-secret display config may live here. Secrets (accessToken,
+    // appSecret, verifyToken) live solely in platform_credentials/live
+    // (server-only). Actively delete any previously-leaked secret fields.
     db.doc('platform_settings/whatsapp_config').set(
       {
         phoneNumberId: nextWhatsapp.phoneNumberId,
         businessAccountId: nextWhatsapp.wabaId,
         displayPhoneNumber: nextWhatsapp.displayPhoneNumber,
-        verifyToken: nextWhatsapp.verifyToken,
-        accessToken: nextWhatsapp.accessToken,
-        appSecret: nextWhatsapp.appSecret,
+        verifyToken: FieldValue.delete(),
+        accessToken: FieldValue.delete(),
+        appSecret: FieldValue.delete(),
         updatedAt: nowIso,
       },
       { merge: true }

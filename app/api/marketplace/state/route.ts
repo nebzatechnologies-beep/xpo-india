@@ -1375,12 +1375,13 @@ export async function POST(request: NextRequest) {
             },
             { merge: true }
           ),
+          // SECURITY: platform_settings/* is world-readable — no secrets here
+          // (verifyToken intentionally omitted; it lives in platform_credentials/live).
           db.doc('platform_settings/whatsapp_config').set(
             {
               phoneNumberId: nextGateways.metaPhoneNumberId,
               businessAccountId: nextGateways.metaWabaId,
               wabaId: nextGateways.metaWabaId,
-              verifyToken: nextGateways.metaVerifyToken,
               displayPhoneNumber: nextGateways.metaDisplayPhone,
               updatedAt: now,
             },
