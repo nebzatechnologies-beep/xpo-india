@@ -1,6 +1,10 @@
 import { Metadata } from 'next';
 import { XpoWhatsAppAutomationLab } from '@/components/simulator/xpo-whatsapp-automation-lab';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
 export const metadata: Metadata = {
   title: 'XPO India — Client WhatsApp Bot Simulator & State Programmer',
   description:

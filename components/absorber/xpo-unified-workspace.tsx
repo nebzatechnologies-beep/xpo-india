@@ -235,6 +235,13 @@ export function XpoUnifiedWorkspace({
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  useEffect(() => {
+    // Purge any stale prototype chrome, legacy bars, or review mode indicators
+    const staleElements = document.querySelectorAll('.bar, .revbtn, .anno, [data-anno]');
+    staleElements.forEach((el) => el.remove());
+    document.body.classList.remove('rev');
+  }, []);
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => {
