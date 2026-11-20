@@ -84,6 +84,20 @@ const INITIAL_CREQS: ClientReq[] = [
 
 const INITIAL_LEADS: LeadItem[] = [
   {
+    id: 'XPO-REQ-40971',
+    key: 'l0',
+    cat: 'Web & Mobile Development',
+    badge: 'MATCHED · 1 VIEW UNLOCKED',
+    state: 'new',
+    title: 'E-commerce website for a 5-store retail chain',
+    desc: 'Product catalogue for 5 stores, UPI checkout, store pickup, and stock sync with billing. Test Traders (Pavan) used 1 view to see your details.',
+    city: 'Hyderabad',
+    when: 'Within 2-4 Weeks',
+    budget: '₹2,00,000',
+    time: 'Today, 10:42',
+    tags: ['matched', 'all'],
+  },
+  {
     id: 'XPO-REQ-41208',
     key: 'l1',
     cat: 'Packaging & Printing',
@@ -192,7 +206,9 @@ export function XpoUnifiedWorkspace({
     initialRole === 'partner' && initialScreen ? (initialScreen === 'feed' ? 'reqs' : initialScreen === 'opp' ? 'lead' : initialScreen) : 'reqs'
   );
   const [pfilter, setPfilter] = useState<'matched' | 'all' | 'overseas'>('matched');
-  const [pLeadKey, setPLeadKey] = useState<string>(initialOppId || 'l1');
+  const [pLeadKey, setPLeadKey] = useState<string>(initialOppId || 'l0');
+  const [leadFromScreen, setLeadFromScreen] = useState<'reqs' | 'replies' | 'conn'>('reqs');
+  const [editingReplyLeadKey, setEditingReplyLeadKey] = useState<string | null>(null);
   const [cReqKey, setCReqKey] = useState<string>('r1');
 
   // Demo identities
@@ -204,7 +220,6 @@ export function XpoUnifiedWorkspace({
   const [leads, setLeads] = useState<LeadItem[]>(INITIAL_LEADS);
   const [consentGiven, setConsentGiven] = useState<boolean>(false);
   const [r1Requested, setR1Requested] = useState<boolean>(false);
-  const [r1ReplySent, setR1ReplySent] = useState<boolean>(false);
 
   // New compose text
   const [composeText, setComposeText] = useState<string>('');
@@ -608,6 +623,7 @@ export function XpoUnifiedWorkspace({
         onClick={() => {
           setPLeadKey(l.key);
           setIsEditingReply(false);
+          setLeadFromScreen(ps === 'replies' ? 'replies' : ps === 'conn' ? 'conn' : 'reqs');
           setPs('lead');
         }}
       >
@@ -715,7 +731,24 @@ export function XpoUnifiedWorkspace({
                   className="btn red sm"
                   onClick={async () => {
                     setConsentGiven(true);
-                    showToast('Contact shared. You are connected with Test Traders (Pavan).');
+                    setLeads((prev) =>
+                      prev.map((item) =>
+                        item.id === 'XPO-REQ-40971'
+                          ? {
+                              ...item,
+                              state: 'connected',
+                              statusText: 'Connected with Test Traders (Pavan)',
+                              myReply: {
+                                quote: '₹1,80,000',
+                                timeline: 'Within 2-3 weeks',
+                                pitch: 'Verified full-stack partner specializing in retail e-commerce, UPI integration, and multi-store inventory synchronization.',
+                                repliedAt: 'Today, 10:48',
+                              },
+                            }
+                          : item
+                      )
+                    );
+                    showToast('Contact shared! You are connected with Test Traders (Pavan).');
                     await postMarketplaceAction('partner_consent_share', { client: 'Test Traders (Pavan)' });
                   }}
                 >
@@ -724,8 +757,9 @@ export function XpoUnifiedWorkspace({
                 <button
                   className="btn sm"
                   onClick={() => {
-                    setRole('client');
-                    setCs('req');
+                    setPLeadKey('l0');
+                    setLeadFromScreen('reqs');
+                    setPs('lead');
                   }}
                 >
                   Review request
@@ -741,7 +775,7 @@ export function XpoUnifiedWorkspace({
 
   const renderPartnerLeadDetail = () => {
     const l = leads.find((x) => x.key === pLeadKey) || leads[0];
-    const isSentOrConnected = r1ReplySent || l.state === 'sent' || l.state === 'connected' || !!l.myReply;
+    const isSentOrConnected = l.state === 'sent' || l.state === 'connected' || !!l.myReply;
 
     return (
       <>
@@ -750,10 +784,10 @@ export function XpoUnifiedWorkspace({
           style={{ alignSelf: 'flex-start' }}
           onClick={() => {
             setIsEditingReply(false);
-            setPs('reqs');
+            setPs(leadFromScreen === 'replies' ? 'replies' : leadFromScreen === 'conn' ? 'conn' : 'reqs');
           }}
         >
-          ← All requests
+          {leadFromScreen === 'replies' ? '← Back to My replies' : leadFromScreen === 'conn' ? '← Back to Connected' : '← All requests'}
         </button>
         <div className="card">
           <div className="head" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
@@ -1030,7 +1064,6 @@ export function XpoUnifiedWorkspace({
               <button
                 className="btn red"
                 onClick={async () => {
-                  setR1ReplySent(true);
                   setPartnerReplies((r) => Math.max(0, r - 1));
                   const newReplyData: MyReply = {
                     quote: partnerNewQuote || '₹1,80,000',
@@ -1050,12 +1083,13 @@ export function XpoUnifiedWorkspace({
                         : item
                     )
                   );
-                  showToast('Reply sent to client! You can review or edit it anytime.');
+                  setReplyText('');
+                  showToast('Reply sent to client! You can review or edit it in My replies.');
                   await postMarketplaceAction('partner_send_reply', {
                     leadId: l.id,
-                    quote: partnerNewQuote,
-                    timeline: partnerNewTimeline,
-                    text: replyText,
+                    quote: newReplyData.quote,
+                    timeline: newReplyData.timeline,
+                    text: newReplyData.pitch,
                   });
                 }}
               >
@@ -1072,21 +1106,274 @@ export function XpoUnifiedWorkspace({
   };
 
   const renderPartnerReplies = () => {
-    const list = leads.filter((l) => l.state === 'sent' || l.state === 'connected');
+    const list = leads.filter((l) => l.state === 'sent' || l.state === 'connected' || !!l.myReply);
     return (
       <>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '2px 0 8px 0' }}>
-          <span className="lbl" style={{ margin: 0 }}>
-            My replies ({list.length})
-          </span>
-          <span className="mute3" style={{ fontSize: '12px' }}>
-            Click any lead to review or edit your submitted quote
-          </span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '2px 0 8px 0', flexWrap: 'wrap', gap: '6px' }}>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: 800 }}>My Submitted Replies &amp; Proposals ({list.length})</h2>
+            <span className="mute3" style={{ fontSize: '12.5px' }}>
+              Review, edit, copy, or track client decision status for all your proposals
+            </span>
+          </div>
         </div>
-        <div style={{ padding: '8px 12px', background: 'var(--sf2)', borderRadius: '8px', border: '1px solid var(--ln)', marginBottom: '10px', fontSize: '12.5px', color: 'var(--tx2)' }}>
-          💡 <b>Review your proposals:</b> Tap any lead below to inspect your quoted pricing, delivery timeline, and pitch note, or make edits before the client unlocks.
-        </div>
-        {list.length ? list.map(renderLeadCard) : <div className="empty">No replies yet.</div>}
+
+        {list.length === 0 ? (
+          <div className="empty">
+            <span style={{ fontSize: '24px' }}>💬</span>
+            <b>No proposals submitted yet</b>
+            <span className="mute3" style={{ fontSize: '13px' }}>
+              Browse incoming requests and send your structured quotes to clients.
+            </span>
+            <button className="btn red sm" style={{ marginTop: '10px' }} onClick={() => setPs('reqs')}>
+              Browse Requests
+            </button>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+            {list.map((l) => {
+              const isEditing = editingReplyLeadKey === l.key;
+              const isConnected = l.state === 'connected';
+
+              return (
+                <div
+                  key={l.key}
+                  className="card"
+                  style={{
+                    border: isConnected ? '1.5px solid var(--g)' : '1px solid var(--ln)',
+                    position: 'relative',
+                  }}
+                >
+                  {/* Proposal Card Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="mono mute3">{l.id}</span>
+                      <span className="chip">{l.cat}</span>
+                      <span className="chip">📍 {l.city}</span>
+                    </div>
+                    <span className={"chip " + (isConnected ? 'c-g' : 'c-b')} style={{ fontWeight: 700 }}>
+                      {isConnected ? '🤝 Connected with Client' : '✓ Reply Sent · Awaiting Client'}
+                    </span>
+                  </div>
+
+                  {/* Requirement Title & Context */}
+                  <div>
+                    <h3
+                      style={{ fontSize: '16.5px', fontWeight: 700, cursor: 'pointer' }}
+                      onClick={() => {
+                        setPLeadKey(l.key);
+                        setLeadFromScreen('replies');
+                        setPs('lead');
+                      }}
+                      title="Click to view full requirement details"
+                    >
+                      {l.title} →
+                    </h3>
+                    <span className="mute" style={{ fontSize: '13px', display: 'block', marginTop: '3px' }}>
+                      {l.desc}
+                    </span>
+                  </div>
+
+                  {/* Proposal Details Box */}
+                  {isEditing ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', padding: '12px', background: 'var(--sf2)', borderRadius: '10px' }}>
+                      <span className="lbl" style={{ margin: 0 }}>Edit Your Quote &amp; Delivery Timeline</span>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+                        <div>
+                          <label style={{ fontSize: '11.5px', color: 'var(--tx2)', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
+                            Quoted Amount / Pricing
+                          </label>
+                          <input
+                            className="inp"
+                            value={editQuoteVal}
+                            onChange={(e) => setEditQuoteVal(e.target.value)}
+                            placeholder="e.g. ₹1,80,000 or $9,500"
+                          />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: '11.5px', color: 'var(--tx2)', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
+                            Delivery Timeline
+                          </label>
+                          <input
+                            className="inp"
+                            value={editTimelineVal}
+                            onChange={(e) => setEditTimelineVal(e.target.value)}
+                            placeholder="e.g. 2-3 weeks"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: '11.5px', color: 'var(--tx2)', fontWeight: 600, display: 'block', marginBottom: '3px' }}>
+                          Proposal Pitch &amp; Capability Note
+                        </label>
+                        <textarea
+                          className="inp"
+                          rows={3}
+                          value={editPitchVal}
+                          onChange={(e) => setEditPitchVal(e.target.value)}
+                          placeholder="Update proposal note..."
+                        />
+                      </div>
+                      <div className="row" style={{ marginTop: '4px' }}>
+                        <button
+                          className="btn red sm"
+                          onClick={() => {
+                            const updated: MyReply = {
+                              quote: editQuoteVal || l.myReply?.quote || '₹1,80,000',
+                              timeline: editTimelineVal || l.myReply?.timeline || 'Within 2 weeks',
+                              pitch: editPitchVal || l.myReply?.pitch || '',
+                              repliedAt: l.myReply?.repliedAt || 'Recently',
+                              updatedAt: 'Just now',
+                            };
+                            setLeads((prev) =>
+                              prev.map((item) => (item.key === l.key ? { ...item, myReply: updated } : item))
+                            );
+                            setEditingReplyLeadKey(null);
+                            showToast('Proposal updated successfully!');
+                          }}
+                        >
+                          Save changes
+                        </button>
+                        <button className="btn ghost sm" onClick={() => setEditingReplyLeadKey(null)}>
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
+                          gap: '8px',
+                          marginTop: '4px',
+                        }}
+                      >
+                        <div style={{ padding: '8px 12px', background: 'var(--sf2)', borderRadius: '8px', border: '1px solid var(--ln)' }}>
+                          <span style={{ fontSize: '10.5px', color: 'var(--tx3)', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Your Quoted Price
+                          </span>
+                          <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--g)', marginTop: '2px' }}>
+                            {l.myReply?.quote || '₹1,80,000'}
+                          </div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: 'var(--sf2)', borderRadius: '8px', border: '1px solid var(--ln)' }}>
+                          <span style={{ fontSize: '10.5px', color: 'var(--tx3)', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Delivery Commitment
+                          </span>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--tx)', marginTop: '2px' }}>
+                            ⏱ {l.myReply?.timeline || 'Within 2 weeks'}
+                          </div>
+                        </div>
+                        <div style={{ padding: '8px 12px', background: 'var(--sf2)', borderRadius: '8px', border: '1px solid var(--ln)' }}>
+                          <span style={{ fontSize: '10.5px', color: 'var(--tx3)', textTransform: 'uppercase', fontWeight: 700 }}>
+                            Submitted
+                          </span>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--tx2)', marginTop: '2px' }}>
+                            {l.myReply?.repliedAt || 'Recently'}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: '8px' }}>
+                        <span className="lbl" style={{ margin: '0 0 3px 0' }}>Your Pitch &amp; Proposal Note</span>
+                        <div
+                          style={{
+                            padding: '10px 12px',
+                            background: 'var(--sf2)',
+                            borderRadius: '8px',
+                            border: '1px solid var(--ln)',
+                            fontSize: '13px',
+                            lineHeight: 1.5,
+                            color: 'var(--tx)',
+                          }}
+                        >
+                          {l.myReply?.pitch || (
+                            <span className="mute3">Standard verified interest submitted. Ready to deliver scope upon client unlock.</span>
+                          )}
+                        </div>
+                        {l.myReply?.updatedAt && (
+                          <span className="mute3" style={{ fontSize: '11px', marginTop: '2px', display: 'inline-block' }}>
+                            Last edited: {l.myReply.updatedAt}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Reply Review Actions */}
+                      <div className="row" style={{ marginTop: '10px', flexWrap: 'wrap', gap: '8px' }}>
+                        <button
+                          className="btn sm ghost"
+                          onClick={() => {
+                            setEditingReplyLeadKey(l.key);
+                            setEditQuoteVal(l.myReply?.quote || '');
+                            setEditTimelineVal(l.myReply?.timeline || '');
+                            setEditPitchVal(l.myReply?.pitch || '');
+                          }}
+                        >
+                          ✏️ Edit quote &amp; pitch
+                        </button>
+
+                        <button
+                          className="btn sm ghost"
+                          onClick={() => {
+                            const summary = `XPO Lead: ${l.id} - ${l.title}\nMy Quote: ${l.myReply?.quote || '₹1,80,000'}\nTimeline: ${l.myReply?.timeline || '2 weeks'}\nPitch: ${l.myReply?.pitch || ''}`;
+                            navigator.clipboard?.writeText(summary);
+                            showToast('Proposal details copied to clipboard!');
+                          }}
+                        >
+                          📋 Copy proposal
+                        </button>
+
+                        <a
+                          href={'https://wa.me/914049172200?text=' + encodeURIComponent('Hi XPO India, following up on my reply for requirement ' + l.id + ' (' + l.title + '). Quoted price: ' + (l.myReply?.quote || 'submitted') + '.')}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn sm"
+                          style={{ textDecoration: 'none', background: '#075E54', color: '#fff' }}
+                        >
+                          💬 WhatsApp
+                        </a>
+
+                        <button
+                          className="btn sm ghost"
+                          onClick={() => {
+                            setPLeadKey(l.key);
+                            setLeadFromScreen('replies');
+                            setPs('lead');
+                          }}
+                        >
+                          View requirement →
+                        </button>
+
+                        <span className="sp" />
+
+                        <button
+                          className="btn sm ghost"
+                          style={{ color: 'var(--red)' }}
+                          onClick={() => {
+                            if (confirm('Withdraw your reply for ' + l.id + '? This will restore 1 reply credit.')) {
+                              setLeads((prev) =>
+                                prev.map((item) =>
+                                  item.key === l.key
+                                    ? { ...item, state: 'new', statusText: undefined, myReply: undefined }
+                                    : item
+                                )
+                              );
+                              setPartnerReplies((r) => r + 1);
+                              showToast('Reply withdrawn. 1 credit restored.');
+                            }
+                          }}
+                        >
+                          Withdraw
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
       </>
     );
   };
@@ -1201,7 +1488,7 @@ export function XpoUnifiedWorkspace({
 
   const partnerNav = [
     { k: 'reqs', l: 'Requests', i: 'inbox' as const, n: leads.filter((l) => l.state === 'new').length },
-    { k: 'replies', l: 'Replies', i: 'chat' as const, n: leads.filter((l) => l.state === 'sent' || l.state === 'connected').length },
+    { k: 'replies', l: 'Replies', i: 'chat' as const, n: leads.filter((l) => l.state === 'sent' || l.state === 'connected' || !!l.myReply).length },
     { k: 'conn', l: 'Connected', i: 'link' as const, n: leads.filter((l) => l.state === 'connected').length },
     { k: 'cats', l: 'Categories', i: 'tag' as const },
   ];
