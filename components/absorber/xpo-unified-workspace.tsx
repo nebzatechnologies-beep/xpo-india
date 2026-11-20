@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 
 // Real content & test identities matching the reference prototype
 interface ClientReq {
@@ -183,7 +182,6 @@ export function XpoUnifiedWorkspace({
 }) {
   const [role, setRole] = useState<'client' | 'partner'>(initialRole);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [rev, setRev] = useState<boolean>(false);
   const [toastMsg, setToastMsg] = useState<string>('');
   const [menu, setMenu] = useState<'none' | 'alerts' | 'profile' | 'whatsappDemo'>('none');
 
@@ -220,24 +218,13 @@ export function XpoUnifiedWorkspace({
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
-    if (rev) {
-      document.body.classList.add('rev');
-    } else {
-      document.body.classList.remove('rev');
-    }
-  }, [theme, rev]);
+  }, [theme]);
 
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => {
       setToastMsg((cur) => (cur === msg ? '' : cur));
     }, 2800);
-  };
-
-  // Switch role handler
-  const handleRoleSwitch = (newRole: 'client' | 'partner') => {
-    setMenu('none');
-    setRole(newRole);
   };
 
   // Nav icons (SVG inline paths)
@@ -1448,47 +1435,9 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
       <header className="bar">
         <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <img src="/xpo-logo.png" alt="XPO India" style={{ height: '22px', width: 'auto', objectFit: 'contain' }} />
-          <span>Redesign</span>
         </div>
-
-        <div className="seg" role="group" aria-label="View as">
-          <button
-            aria-pressed={role === 'client'}
-            onClick={() => handleRoleSwitch('client')}
-          >
-            Client
-            <small>Pavan · Test Traders</small>
-          </button>
-          <button
-            aria-pressed={role === 'partner'}
-            onClick={() => handleRoleSwitch('partner')}
-          >
-            Partner
-            <small>Klo Tech</small>
-          </button>
-        </div>
-
-        <a
-          href={WHATSAPP_BOT_URL}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="sbtn"
-          style={{ textDecoration: 'none', background: '#25D366', color: '#0F1115', borderColor: '#25D366' }}
-          title="Direct Dummy XPO WhatsApp Chatbot"
-        >
-          💬 XPO WhatsApp Bot
-        </a>
 
         <span className="sp" />
-
-        <button
-          className={"sbtn " + (rev ? 'hot' : '')}
-          aria-pressed={rev}
-          onClick={() => setRev(!rev)}
-        >
-          <span className="dot" />
-          {rev ? 'Hide changes' : 'Show what changed'}
-        </button>
 
         <button
           className="sbtn"
@@ -1559,27 +1508,6 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Link
-                  href={role === 'partner' ? '/simulator/partner' : '/simulator/client'}
-                  className="btn ghost sm"
-                  style={{
-                    textDecoration: 'none',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '5px',
-                    fontSize: '12px',
-                    padding: '4px 9px',
-                    background: 'var(--sf2)',
-                    border: '1px solid var(--ln)',
-                    borderRadius: '6px',
-                    color: 'var(--tx)',
-                    fontWeight: 600,
-                  }}
-                  title={role === 'partner' ? 'Open Partner WhatsApp Bot Simulator & State Programmer' : 'Open Client WhatsApp Bot Simulator & State Programmer'}
-                >
-                  🤖 {role === 'partner' ? 'Partner Bot Sim' : 'Client Bot Sim'}
-                </Link>
-
                 {role === 'client' && (
                   <button className="btn red sm" onClick={() => setCs('home')}>
                     + New requirement
@@ -1654,28 +1582,6 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
                   Manage plan
                 </button>
               </div>
-              <Link
-                href="/simulator/partner"
-                className="mrow"
-                style={{ textDecoration: 'none', color: 'inherit' }}
-                onClick={() => setMenu('none')}
-              >
-                🤖 Partner Bot Simulator &amp; State Lab
-                <span className="mono" style={{ marginLeft: 'auto', fontSize: '10.5px', color: 'var(--tx3)' }}>
-                  Supplier
-                </span>
-              </Link>
-              <Link
-                href="/simulator/client"
-                className="mrow"
-                style={{ textDecoration: 'none', color: 'inherit' }}
-                onClick={() => setMenu('none')}
-              >
-                🤖 Client Bot Simulator &amp; State Lab
-                <span className="mono" style={{ marginLeft: 'auto', fontSize: '10.5px', color: 'var(--tx3)' }}>
-                  Buyer
-                </span>
-              </Link>
               <button
                 className="mrow"
                 onClick={() => showToast('Need a hand? Call support at ' + SUPPORT_PHONE)}
