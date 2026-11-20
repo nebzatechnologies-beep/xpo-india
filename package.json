@@ -9,7 +9,8 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "seed": "tsx --env-file=.env.local scripts/seed-platform.ts",
-    "test": "tsx --env-file=.env.local scripts/test-automation.ts"
+    "test": "tsx --env-file=.env.local scripts/test-automation.ts",
+    "test:parser": "tsx scripts/test-parser.ts"
   },
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.20",

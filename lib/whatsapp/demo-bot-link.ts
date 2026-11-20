@@ -11,8 +11,8 @@ export const DEMO_META_API_CREDS = {
   metaPhoneNumberId: '109482716503928',
   metaWabaId: '102938475610293',
   metaDisplayPhone: '+91 98490 00112',
-  metaTokenMasked: 'EAAGm0PX4ZCpsBO7xK9demoXPOIndia2026CloudAPIToken99812',
-  metaVerifyToken: 'xpo_india_webhook_secret_2026',
+  metaTokenMasked: '',
+  metaVerifyToken: '',
   webhookCallbackUrl: 'https://xpoindia.com/api/webhooks/whatsapp',
 };
 

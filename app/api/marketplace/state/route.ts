@@ -1,7 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireFirestore } from '@/lib/firebase/admin';
+import {
+  extractRequirementEntitiesDeterministically,
+  resolveTaxonomyFromNaturalLanguage,
+} from '@/lib/agent/taxonomy-resolver';
 import type { ClientReqItem, PartnerReply } from '@/components/creator/xpo-client-app';
 import type { PartnerOpportunity, PartnerScreenId } from '@/components/absorber/xpo-partner-app';
+
+/**
+ * Derive category / city / budget / timeline from the requirement's own text
+ * using the same deterministic parser + taxonomy resolver the WhatsApp engine
+ * uses, so the web workspace stops relying on client-sent defaults
+ * (e.g. "Hyderabad" / "Quotes invited" / "General Trade").
+ */
+async function deriveRequirementFields(reqItem: ClientReqItem, rawMessage?: string) {
+  const rawText = String(rawMessage ?? reqItem.spec ?? reqItem.title ?? '').trim();
+  const ent = rawText
+    ? extractRequirementEntitiesDeterministically(rawText, reqItem.loc || undefined)
+    : null;
+
+  let tax: Awaited<ReturnType<typeof resolveTaxonomyFromNaturalLanguage>> | null = null;
+  if (rawText) {
+    try {
+      tax = await resolveTaxonomyFromNaturalLanguage(rawText);
+    } catch {
+      tax = null;
+    }
+  }
+
+  const loc =
+    (ent?.workLocation && ent.workLocation !== 'Pan India' ? ent.workLocation : null) ||
+    reqItem.loc ||
+    ent?.workLocation ||
+    'Pan India';
+  const budget = ent?.estimatedBudget || reqItem.budget || 'Quotes invited';
+  const timeline = reqItem.timeline || ent?.timeline || 'Within 2-4 Weeks';
+  const cat =
+    (tax && tax.confidence !== 'low' && tax.category?.name ? tax.category.name : null) ||
+    reqItem.cat ||
+    'General Trade';
+  const sector =
+    (tax && tax.confidence !== 'low' && tax.sector?.name ? tax.sector.name : null) ||
+    reqItem.sector ||
+    'General';
+  const title = reqItem.title || ent?.title || 'Business requirement';
+
+  return { title, loc, budget, timeline, cat, sector };
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -156,314 +201,26 @@ function buildInitialMarketplaceState(): SharedMarketplaceState {
   return {
     updatedAt: now,
     client: {
-      free: 4,
+      free: 5,
       plan: 0,
       planOn: false,
-      kyc: 'verified',
+      kyc: 'none',
       seq: 41230,
-      order: ['r1', 'r2', 'r3', 'r4', 'r5'],
-      reqs: {
-        r1: {
-          code: 'XPO-REQ-40971',
-          title: 'E-commerce website for a 5-store retail chain',
-          sector: 'Technology & Software',
-          cat: 'Web & Mobile Development',
-          sub: 'Full-Stack & SaaS Engineering',
-          loc: 'Hyderabad',
-          timeline: 'Within 2-4 Weeks',
-          budget: '₹2,00,000',
-          spec: 'Product catalogue for 5 stores, UPI checkout, store pickup and stock sync with our billing software.',
-          posted: 'posted today, 10:42',
-          status: 'interested',
-          wave: 2,
-          partners: [
-            {
-              id: 'p1',
-              real: 'Klo Tech',
-              masked: 'Software agency · Mumbai',
-              city: 'Mumbai',
-              verified: true,
-              pitch:
-                '"We\'ve shipped 14 D2C stores on Next.js with Razorpay and store pickup. Can start Monday."',
-              tags: ['Next.js', 'Razorpay', 'Replied in 2 min'],
-              details: '6 years · klotech.in · GST verified · serves Pan-India',
-              phone: '+91 56794 24578',
-              st: 'locked',
-            },
-            {
-              id: 'p2',
-              real: 'Srujan Digital',
-              masked: 'Freelancer · Hyderabad',
-              city: 'Hyderabad',
-              verified: false,
-              pitch:
-                '"Shopify and custom apps for retail; I can show two live stores in Hyderabad."',
-              tags: ['Shopify', 'Replied in 4 min'],
-              details: '3 years · portfolio link on profile · phone verified',
-              phone: '+91 98490 11870',
-              st: 'locked',
-            },
-          ],
-        },
-        r2: {
-          code: 'XPO-REQ-41208',
-          title: '10,000 printed 3-ply corrugated boxes',
-          sector: 'Manufacturing & Industrial Supply',
-          cat: 'Industrial Packaging & Raw Materials',
-          sub: 'Corrugated, Flexible & Custom Packaging',
-          loc: 'Pune',
-          timeline: 'Within 2-4 Weeks',
-          budget: 'Quotes invited',
-          spec: '3-ply, 12 x 10 x 8 in, 2-colour logo print, delivered to our Pune warehouse.',
-          posted: 'posted today, 11:05',
-          status: 'finding',
-          wave: 1,
-          partners: [],
-        },
-        r3: {
-          code: 'XPO-REQ-41190',
-          title: 'Marketing for a fantasy sports and betting app',
-          sector: 'Design, Branding & Digital Growth',
-          cat: 'Performance Marketing & SEO',
-          sub: 'Meta, Google Ads & B2B Lead Generation',
-          loc: 'Bengaluru',
-          timeline: 'Immediate (Within 7 Days)',
-          budget: '₹5,00,000',
-          spec: 'Launch campaign across Meta and Google for an app.',
-          posted: 'posted today, 09:12',
-          status: 'held',
-          wave: 0,
-          partners: [],
-        },
-        r4: {
-          code: 'XPO-REQ-40655',
-          title: '50 kW rooftop solar for a warehouse',
-          sector: 'Construction, Interiors & EPC',
-          cat: 'Solar & Electrical EPC',
-          sub: 'Commercial & Industrial Solar Rooftop',
-          loc: 'Nagpur',
-          timeline: 'Flexible / Ongoing Retainer',
-          budget: '₹25,00,000',
-          spec: 'Net-metered rooftop system on a 12,000 sq ft warehouse roof.',
-          posted: 'posted 31 Oct',
-          status: 'nomatch',
-          wave: 3,
-          partners: [],
-        },
-        r5: {
-          code: 'XPO-REQ-39114',
-          title: 'Company website developer',
-          sector: 'Technology & Software',
-          cat: 'Web & Mobile Development',
-          sub: 'Full-Stack & SaaS Engineering',
-          loc: 'Hyderabad',
-          timeline: 'Flexible / Ongoing Retainer',
-          budget: '₹40,000',
-          spec: 'Five-page company website with an enquiry form.',
-          posted: 'posted 28 Oct',
-          status: 'closed',
-          closedReason: 'Found a partner on XPO',
-          wave: 1,
-          partners: [
-            {
-              id: 'p3',
-              real: 'Klo Tech',
-              masked: 'Software agency · Mumbai',
-              city: 'Mumbai',
-              verified: true,
-              pitch: '"Five-page sites in a week, with CMS."',
-              tags: ['Next.js'],
-              details: '6 years · klotech.in',
-              phone: '+91 56794 24578',
-              st: 'connected',
-            },
-          ],
-        },
-      },
+      order: [],
+      reqs: {},
     },
     partner: {
       credits: 3,
       plan: 'free',
-      kyc: 'verified',
-      capabilities: [
-        'Web & Mobile Development',
-        'Shopify & E-commerce',
-        'Custom ERP & Portals',
-        'UI/UX & Frontend',
-        'Packaging & Printing',
-      ],
-      notifs: [
-        {
-          id: 'n1',
-          text: 'Test Traders unlocked your reply on "E-commerce website for a 5-store retail chain" — confirm to share contact',
-          time: '12m ago',
-          unread: true,
-          targetScreen: 'opp',
-          oppId: 'req-1',
-        },
-        {
-          id: 'n2',
-          text: 'New Wave 1 match: "10,000 printed 3-ply corrugated boxes" in Pune',
-          time: '2m ago',
-          unread: true,
-          targetScreen: 'opp',
-          oppId: 'req-2',
-        },
-        {
-          id: 'n3',
-          text: 'Connected with Pavan (Test Traders) on "Company website developer"',
-          time: '11d ago',
-          unread: false,
-          targetScreen: 'conn',
-        },
-      ],
-      opportunities: [
-        {
-          id: 'req-1',
-          ref: 'XPO-REQ-40971',
-          title: 'E-commerce website for a 5-store retail chain',
-          cat: 'Web & Mobile Development',
-          loc: 'Hyderabad',
-          when: 'Within 2-4 Weeks',
-          budget: '₹2,00,000',
-          posted: 'Yesterday',
-          clientLabel: 'Verified retail chain · Hyderabad',
-          clientName: 'Pavan',
-          clientCompany: 'Test Traders',
-          clientPhone: '+91 98490 00112',
-          clientEmail: 'pavan@testtraders.in',
-          waveBadge: 'CLIENT REQUESTED CONTACT',
-          matched: true,
-          brief:
-            'Product catalogue for 5 stores, UPI checkout, store pickup and stock sync with our billing software.',
-          myReplyStatus: 'client_requested',
-          myPitch:
-            "We've shipped 14 D2C stores on Next.js with Razorpay and store pickup. Can start Monday.",
-          myTimeline: '3–4 weeks',
-          myQuote: '₹1,85,000',
-          repliedAt: 'Yesterday · 4:15 PM',
-        },
-        {
-          id: 'req-2',
-          ref: 'XPO-REQ-41208',
-          title: '10,000 printed 3-ply corrugated boxes',
-          cat: 'Packaging & Printing',
-          loc: 'Pune',
-          when: 'Within 2-4 Weeks',
-          budget: 'Quotes invited',
-          posted: '2 min ago',
-          clientLabel: 'Verified trading business · Pune',
-          clientName: 'Pavan',
-          clientCompany: 'Test Traders',
-          clientPhone: '+91 98490 00112',
-          clientEmail: 'pavan@testtraders.in',
-          waveBadge: 'WAVE 1 · NEW',
-          matched: true,
-          brief:
-            '3-ply, 12 x 10 x 8 in, 2-colour logo print, delivered to our Pune warehouse.',
-          myReplyStatus: 'none',
-        },
-        {
-          id: 'req-3',
-          ref: 'XPO-REQ-41302',
-          title: 'Custom ERP & inventory sync for 12 pharmaceutical depots',
-          cat: 'Web & Mobile Development',
-          loc: 'Mumbai',
-          when: 'Within a month',
-          budget: '₹5L – ₹12L',
-          posted: '18 min ago',
-          clientLabel: 'Verified distributor · Mumbai',
-          clientName: 'Vikram Mehta',
-          clientCompany: 'MedLink Pharma Logistics',
-          clientPhone: '+91 98201 44810',
-          clientEmail: 'vikram@medlinkpharma.in',
-          waveBadge: 'MATCHED TO YOU',
-          matched: true,
-          brief:
-            'Need a web & mobile inventory portal connecting 12 state depots with batch-expiry tracking, GST e-invoicing API, and Tally Prime sync.',
-          myReplyStatus: 'none',
-        },
-        {
-          id: 'req-4',
-          ref: 'XPO-REQ-41299',
-          title: 'Shopify Plus migration & headless storefront for D2C apparel brand',
-          cat: 'Web & Mobile Development',
-          loc: 'Dubai, UAE',
-          when: 'Right away (urgent)',
-          budget: '$8,000 – $15,000',
-          posted: '1 hr ago',
-          clientLabel: 'Verified D2C brand · Dubai, UAE',
-          clientName: 'Tariq Al-Mansoor',
-          clientCompany: 'Noor Atelier LLC',
-          clientPhone: '+971 50 482 9910',
-          clientEmail: 'tariq@nooratelier.ae',
-          waveBadge: 'OVERSEAS · USD',
-          isOverseas: true,
-          matched: true,
-          brief:
-            'Migrating from Magento to Shopify Plus with bilingual English/Arabic RTL storefront, multi-currency checkout (AED/SAR/USD), and ERP webhook integration.',
-          myReplyStatus: 'sent_waiting',
-          myPitch:
-            'Delivered 6 Shopify Plus headless storefronts in GCC with full Arabic RTL and multi-currency checkout in 4 weeks.',
-          myTimeline: '4 weeks',
-          myQuote: '$9,500',
-          repliedAt: '35 min ago',
-        },
-        {
-          id: 'req-5',
-          ref: 'XPO-REQ-40655',
-          title: '50 kW rooftop solar for a warehouse',
-          cat: 'Solar & Clean Energy',
-          loc: 'Nagpur',
-          when: 'Flexible / Ongoing Retainer',
-          budget: '₹25,00,000',
-          posted: '6 days ago',
-          clientLabel: 'Verified warehouse operator · Nagpur',
-          clientName: 'Pavan',
-          clientCompany: 'Test Traders',
-          clientPhone: '+91 98490 00112',
-          clientEmail: 'pavan@testtraders.in',
-          matched: false,
-          brief: 'Net-metered rooftop system on a 12,000 sq ft warehouse roof.',
-          myReplyStatus: 'none',
-        },
-        {
-          id: 'req-6',
-          ref: 'XPO-REQ-39114',
-          title: 'Company website developer',
-          cat: 'Web & Mobile Development',
-          loc: 'Hyderabad',
-          when: 'Completed',
-          budget: '₹40,000',
-          posted: '12 days ago',
-          clientLabel: 'Test Traders · Hyderabad',
-          clientName: 'Pavan',
-          clientCompany: 'Test Traders',
-          clientPhone: '+91 98490 00112',
-          clientEmail: 'pavan@testtraders.in',
-          matched: true,
-          brief: 'Five-page company website with an enquiry form.',
-          myReplyStatus: 'connected',
-          myPitch: 'Five-page sites in a week, with CMS.',
-          myTimeline: '1 week',
-          myQuote: '₹38,000',
-          repliedAt: '11 days ago',
-        },
-      ],
+      kyc: 'none',
+      capabilities: [],
+      opportunities: [],
+      notifs: [],
     },
     admin: {
       heldAction: 'none',
-      reqStatuses: {
-        'XPO-REQ-40971': 'active_matching',
-        'XPO-REQ-41208': 'active_matching',
-        'XPO-REQ-41190': 'pending_review',
-        'XPO-REQ-40655': 'active_matching',
-        'XPO-REQ-39114': 'approved',
-      },
-      kycDecisions: {
-        client: 'verified',
-        partner: 'verified',
-      },
+      reqStatuses: {},
+      kycDecisions: {},
       memberKycMap: {},
       contactStageMap: {},
       importedContactsCount: 0,
@@ -496,12 +253,10 @@ function buildInitialMarketplaceState(): SharedMarketplaceState {
           'Hello *{name}*! Welcome to *XPO India* — Verified B2B Requirements & 5-Minute Partner Matching with 0% Commission.',
         waveAlertHeader: '⚡ NEW WAVE 1 LEAD · 5 MIN RESPONSE WINDOW',
         clientWaState: 'ACTIVE',
-        partnerWaState: 'OFFER_SENT',
-        pausedConvos: { W70003: true },
+        partnerWaState: 'IDLE',
+        pausedConvos: {},
         coordinatorMessages: [],
-        customSynonyms: [
-          { word: 'box printing', category: 'Industrial Packaging & Raw Materials', addedAt: '2 Nov' },
-        ],
+        customSynonyms: [],
         ignoredUnmappedWords: [],
         smartFeatures: {
           voice_notes: true,
@@ -523,8 +278,8 @@ function buildInitialMarketplaceState(): SharedMarketplaceState {
           },
           {
             word: 'HELP',
-            does: 'Gives coordinator contact number and WhatsApp support desk link',
-            reply: 'XPO Help Desk: Call/WhatsApp +91 98200 12345 or reply to this chat with your query.',
+            does: 'Gives coordinator contact and WhatsApp support desk link',
+            reply: 'XPO Help Desk: reply to this chat with your query and a coordinator will assist you.',
             enabled: true,
           },
           {
@@ -606,26 +361,17 @@ function buildInitialMarketplaceState(): SharedMarketplaceState {
             a: 'No. Both clients and partners can post requirements, receive lead alerts, reply and connect entirely on WhatsApp or on xpoindia.com.',
           },
         ],
-        history: [
-          { w: '2 Nov, 18:40', who: 'XPO Superadmin', what: 'Added FAQ on overseas use' },
-          { w: '28 Oct, 11:05', who: 'XPO Superadmin', what: 'New hero copy for partners' },
-        ],
+        history: [],
       },
       gateways: {
-        razorpayKeyId: 'rzp_live_9482019481',
-        paypalClientId: 'AY7k8194_live_client',
-        metaPhoneNumberId: '104928172948201',
-        metaWabaId: '918274019284710',
-        metaVerifyToken: 'xpo_india_webhook_secret_2026',
-        metaDisplayPhone: '+91 40 4917 2200',
+        razorpayKeyId: '',
+        paypalClientId: '',
+        metaPhoneNumberId: '',
+        metaWabaId: '',
+        metaVerifyToken: '',
+        metaDisplayPhone: '',
       },
-      auditLogs: [
-        { ts: 'Today, 11:42', op: 'Pavan (Superadmin)', act: 'Reviewed XPO-REQ-40971 wave 2', cat: 'Moderation' },
-        { ts: 'Today, 10:18', op: 'Pavan (Superadmin)', act: 'Opened KYC review for Shree Packaging', cat: 'Members' },
-        { ts: 'Today, 09:12', op: 'System Automations', act: 'Held XPO-REQ-41190 on keyword "betting"', cat: 'Safety' },
-        { ts: 'Yesterday, 17:05', op: 'Pavan (Superadmin)', act: 'Exported 185 contacts to CSV', cat: 'Contacts' },
-        { ts: '28 Oct, 14:20', op: 'Pavan (Superadmin)', act: 'Updated Partner Pro pricing in INR', cat: 'Billing' },
-      ],
+      auditLogs: [],
       customSubcategories: [],
       customReqs: [],
     },
@@ -686,7 +432,6 @@ async function getOrInitMarketplaceState(): Promise<SharedMarketplaceState> {
 
 export async function GET() {
   try {
-    const db = requireFirestore();
     const state = await getOrInitMarketplaceState();
     return NextResponse.json({
       success: true,
@@ -727,7 +472,19 @@ export async function POST(request: NextRequest) {
         const key = payload?.key || payload?.reqKey;
         const reqItem = (payload?.requirement || payload?.req) as ClientReqItem | undefined;
         if (key && reqItem && reqItem.code) {
-          state.client.reqs[key] = reqItem;
+          // Parse category / city / budget / timeline server-side with the real
+          // engine, so the web workspace no longer relies on client-sent defaults.
+          const derived = await deriveRequirementFields(reqItem, payload?.rawMessage);
+          const normalizedReq: ClientReqItem = {
+            ...reqItem,
+            title: derived.title,
+            loc: derived.loc,
+            budget: derived.budget,
+            timeline: derived.timeline,
+            cat: derived.cat,
+            sector: derived.sector,
+          };
+          state.client.reqs[key] = normalizedReq;
           if (!state.client.order.includes(key)) {
             state.client.order.unshift(key);
           }
@@ -739,16 +496,16 @@ export async function POST(request: NextRequest) {
           // Add to Superadmin customReqs list
           const adminReqEntry = {
             id: reqItem.code,
-            title: reqItem.title,
+            title: derived.title,
             clientName: 'Pavan',
             clientCompany: 'Test Traders',
-            cat: reqItem.cat || 'Web & Mobile Development',
-            city: reqItem.loc || 'Hyderabad',
-            budget: reqItem.budget || 'Quotes invited',
-            timeline: reqItem.timeline || 'Within 2-4 Weeks',
+            cat: derived.cat,
+            city: derived.loc,
+            budget: derived.budget,
+            timeline: derived.timeline,
             status: (isHeld ? 'held' : 'wave1') as 'held' | 'wave1',
             posted: 'just now',
-            desc: reqItem.spec || reqItem.title,
+            desc: reqItem.spec || derived.title,
           };
           const existingAdminIdx = state.admin.customReqs.findIndex((r) => r.id === reqItem.code);
           if (existingAdminIdx >= 0) {
@@ -767,25 +524,25 @@ export async function POST(request: NextRequest) {
               state.partner.opportunities.unshift({
                 id: oppId,
                 ref: reqItem.code,
-                title: reqItem.title,
-                cat: reqItem.cat || 'Web & Mobile Development',
-                loc: reqItem.loc || 'Hyderabad',
-                when: reqItem.timeline || 'Within 2-4 Weeks',
-                budget: reqItem.budget || 'Quotes invited',
+                title: derived.title,
+                cat: derived.cat,
+                loc: derived.loc,
+                when: derived.timeline,
+                budget: derived.budget,
                 posted: 'Just now',
-                clientLabel: `Verified business · ${reqItem.loc || 'Hyderabad'}`,
+                clientLabel: `Verified business · ${derived.loc}`,
                 clientName: 'Pavan',
                 clientCompany: 'Test Traders',
                 clientPhone: '+91 98490 00112',
                 clientEmail: 'pavan@testtraders.in',
                 waveBadge: 'WAVE 1 · NEW',
                 matched: true,
-                brief: reqItem.spec || reqItem.title,
+                brief: reqItem.spec || derived.title,
                 myReplyStatus: 'none',
               });
               state.partner.notifs.unshift({
                 id: 'n-' + Date.now(),
-                text: `New Wave 1 match: "${reqItem.title}" in ${reqItem.loc || 'Hyderabad'} (${reqItem.code})`,
+                text: `New Wave 1 match: "${derived.title}" in ${derived.loc} (${reqItem.code})`,
                 time: 'Just now',
                 unread: true,
                 targetScreen: 'opp',
@@ -794,7 +551,7 @@ export async function POST(request: NextRequest) {
             }
           }
 
-          // Persist to Firestore requirements collection
+          // Persist to Firestore requirements collection (parsed server-side)
           await db.collection('requirements').doc(reqItem.code).set(
             {
               id: reqItem.code,
@@ -803,17 +560,17 @@ export async function POST(request: NextRequest) {
               clientUid: 'local-superadmin',
               clientName: 'Pavan',
               clientBusinessName: 'Test Traders',
-              title: reqItem.title,
-              specifications: reqItem.spec || reqItem.title,
-              description: reqItem.spec || reqItem.title,
-              sectorName: reqItem.sector || 'Technology & Software',
-              categoryName: reqItem.cat || 'Web & Mobile Development',
-              workLocation: reqItem.loc || 'Hyderabad',
-              city: reqItem.loc || 'Hyderabad',
+              title: derived.title,
+              specifications: reqItem.spec || derived.title,
+              description: reqItem.spec || derived.title,
+              sectorName: derived.sector,
+              categoryName: derived.cat,
+              workLocation: derived.loc,
+              city: derived.loc,
               country: 'India',
-              timeline: reqItem.timeline || 'Within 2-4 Weeks',
-              estimatedBudget: reqItem.budget || 'Quotes invited',
-              budgetLabel: reqItem.budget || 'Quotes invited',
+              timeline: derived.timeline,
+              estimatedBudget: derived.budget,
+              budgetLabel: derived.budget,
               status: isHeld ? 'under_review' : 'active',
               moderationStatus: isHeld ? 'pending_review' : 'approved',
               distributionStatus: isHeld ? 'paused' : 'active_matching',

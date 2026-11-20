@@ -4078,16 +4078,16 @@ export function XpoSuperadminApp() {
 
   // Gateways & Meta API Credentials state (synced with Firestore)
   const [gatewaysState, setGatewaysState] = useState({
-    razorpayKeyId: 'rzp_live_9482019481',
-    razorpaySecretMasked: '••••••••••••••••',
-    razorpayWebhookMasked: '••••••••••••••••',
-    paypalClientId: 'AY7k8194_live_client',
-    paypalSecretMasked: '••••••••••••••••',
-    metaPhoneNumberId: '104928172948201',
-    metaWabaId: '918274019284710',
-    metaTokenMasked: 'EAAK...••••••••••••••••',
-    metaVerifyToken: 'xpo_india_webhook_secret_2026',
-    metaDisplayPhone: '+91 40 4917 2200',
+    razorpayKeyId: '',
+    razorpaySecretMasked: '',
+    razorpayWebhookMasked: '',
+    paypalClientId: '',
+    paypalSecretMasked: '',
+    metaPhoneNumberId: '',
+    metaWabaId: '',
+    metaTokenMasked: '',
+    metaVerifyToken: '',
+    metaDisplayPhone: '',
   });
 
   // WhatsApp Flow & Prompts Controller state (synced with Firestore)
@@ -6537,7 +6537,7 @@ export function XpoSuperadminApp() {
                               metaWabaId: `1029384756${randSuffix}`,
                               metaDisplayPhone: DEMO_WA_BOT_DISPLAY,
                               metaTokenMasked: `EAAGm0PX4ZCpsBO7xK9demoXPOIndia2026Token${randSuffix}`,
-                              metaVerifyToken: 'xpo_india_webhook_secret_2026',
+                              metaVerifyToken: '',
                             };
                             setGatewaysState(freshCreds);
                             void postMarketplaceAction('admin.update_gateways', {
@@ -7794,7 +7794,7 @@ export function XpoSuperadminApp() {
                           metaWabaId: `1029384756${randSuffix}`,
                           metaDisplayPhone: DEMO_WA_BOT_DISPLAY,
                           metaTokenMasked: `EAAGm0PX4ZCpsBO7xK9demoXPOIndia2026Token${randSuffix}`,
-                          metaVerifyToken: 'xpo_india_webhook_secret_2026',
+                          metaVerifyToken: '',
                         };
                         setGatewaysState(demoCreds);
                         void postMarketplaceAction('admin.update_gateways', {

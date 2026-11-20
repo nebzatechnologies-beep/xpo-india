@@ -196,6 +196,53 @@ const KNOWN_CITIES = [
   'Rajkot',
   'Nashik',
   'Visakhapatnam',
+  'Tirupur',
+  'Tiruppur',
+  'Panipat',
+  'Moradabad',
+  'Agra',
+  'Sivakasi',
+  'Morbi',
+  'Bhiwandi',
+  'Kanpur',
+  'Lucknow',
+  'Jalandhar',
+  'Amritsar',
+  'Bhopal',
+  'Patna',
+  'Vijayawada',
+  'Mysuru',
+  'Mysore',
+  'Mangaluru',
+  'Mangalore',
+  'Hubli',
+  'Guwahati',
+  'Bhubaneswar',
+  'Raipur',
+  'Dehradun',
+  'Faridabad',
+  'Ghaziabad',
+  'Thane',
+  'Navi Mumbai',
+  'Solapur',
+  'Sholapur',
+  'Aurangabad',
+  'Kolhapur',
+  'Salem',
+  'Erode',
+  'Madurai',
+  'Tiruchirappalli',
+  'Trichy',
+  'Tirunelveli',
+  'Kozhikode',
+  'Calicut',
+  'Thiruvananthapuram',
+  'Puducherry',
+  'Jamnagar',
+  'Bhavnagar',
+  'Jodhpur',
+  'Udaipur',
+  'Varanasi',
   'Remote',
   'Pan India',
   'Dubai',
@@ -203,6 +250,31 @@ const KNOWN_CITIES = [
   'London',
   'New York',
 ];
+
+// Canonical spellings for the variant city names matched above.
+const CITY_CANONICAL: Record<string, string> = {
+  bangalore: 'Bengaluru',
+  gurgaon: 'Gurugram',
+  tiruppur: 'Tirupur',
+  mysore: 'Mysuru',
+  mangalore: 'Mangaluru',
+  calicut: 'Kozhikode',
+  sholapur: 'Solapur',
+  trichy: 'Tiruchirappalli',
+};
+
+// Words that can follow "in/at/near" but are not places.
+const LOCATION_NOISE = new Set([
+  'india',
+  'bulk',
+  'total',
+  'stock',
+  'hand',
+  'person',
+  'store',
+  'advance',
+  'general',
+]);
 
 function tokenize(input: string): string[] {
   return input
@@ -310,20 +382,27 @@ export function extractRequirementEntitiesDeterministically(
 } {
   const clean = text.replace(/\s+/g, ' ').trim();
 
-  // Extract location
-  let workLocation = defaultCity?.trim() || '';
+  // Extract location — an explicit city named in the text always wins; the
+  // client's saved city is only a fallback used when the text names none.
+  let workLocation = '';
   for (const city of KNOWN_CITIES) {
     const regex = new RegExp(`\\b${city.replace(/\s+/g, '\\s+')}\\b`, 'i');
     if (regex.test(clean)) {
-      workLocation = city === 'Bangalore' ? 'Bengaluru' : city === 'Gurgaon' ? 'Gurugram' : city;
+      workLocation = CITY_CANONICAL[city.toLowerCase()] ?? city;
       break;
     }
   }
   if (!workLocation) {
-    const locMatch = clean.match(/\b(?:in|at|for|location[:\s]+)\s*([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)/);
-    if (locMatch?.[1]) {
-      workLocation = locMatch[1].trim();
+    const locMatch = clean.match(
+      /\b(?:in|at|near|based in|location[:\s]+)\s+([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)?)\b/
+    );
+    const candidate = locMatch?.[1]?.trim();
+    if (candidate && !LOCATION_NOISE.has(candidate.toLowerCase())) {
+      workLocation = candidate;
     }
+  }
+  if (!workLocation) {
+    workLocation = defaultCity?.trim() || '';
   }
 
   // Extract budget
