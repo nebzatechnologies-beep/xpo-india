@@ -183,7 +183,7 @@ export function XpoUnifiedWorkspace({
   const [role, setRole] = useState<'client' | 'partner'>(initialRole);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [toastMsg, setToastMsg] = useState<string>('');
-  const [menu, setMenu] = useState<'none' | 'alerts' | 'profile' | 'whatsappDemo'>('none');
+  const [menu, setMenu] = useState<'none' | 'alerts' | 'profile'>('none');
 
   // Client sub-screens: 'home' | 'reqs' | 'req' | 'conn' | 'plan'
   const [cs, setCs] = useState<string>(initialRole === 'client' && initialScreen ? initialScreen : 'home');
@@ -361,13 +361,7 @@ export function XpoUnifiedWorkspace({
 
     return (
       <>
-        <div className="card" data-anno="compose">
-          <div className="anno">
-            <span className="pin">Your real compose box, given room</span>
-            <span className="tip">
-              <b>Kept:</b> &quot;What do you need, Pavan?&quot;, the examples and the 5-minute-wave note. <b>Removed:</b> the Mobile-App promo bar and the broken counters.
-            </span>
-          </div>
+        <div className="card">
           <h2 style={{ fontSize: '20px' }}>What do you need, Pavan?</h2>
           <textarea
             className="inp"
@@ -416,13 +410,7 @@ export function XpoUnifiedWorkspace({
           </div>
         </div>
 
-        <div data-anno="attn">
-          <div className="anno">
-            <span className="pin">No duplicate banner</span>
-            <span className="tip">
-              <b>Fixed:</b> the live &quot;Action needed&quot; banner and the identical request card were both on screen. Now it is one item at the top of your list.
-            </span>
-          </div>
+        <div>
           <span className="lbl" style={{ margin: '4px 2px' }}>
             Needs you
           </span>
@@ -463,13 +451,7 @@ export function XpoUnifiedWorkspace({
           </div>
         </div>
 
-        <div className="card" data-anno="replies">
-          <div className="anno">
-            <span className="pin">Replies inline, no flipping</span>
-            <span className="tip">
-              <b>Kept:</b> partner quotes, time, pitch and the &quot;Connect · 1 view&quot; action. <b>Fixed:</b> replies sit directly below the request; unlocking doesn’t bounce you to another screen.
-            </span>
-          </div>
+        <div className="card">
           <span className="lbl">2 verified partners replied</span>
 
           {/* Partner 1: Klo Tech */}
@@ -703,37 +685,22 @@ export function XpoUnifiedWorkspace({
           Sent in 5-minute waves to verified partners in your categories. Zero commission on deals.
         </p>
 
-        <div data-anno="tabs">
-          <div className="anno left">
-            <span className="pin">Real filters, counts fixed</span>
-            <span className="tip">
-              <b>Kept:</b> the Matched / All requests / Overseas USD filters. <b>Fixed:</b> the live counts match the list, and duplicate buttons are consolidated.
-            </span>
-          </div>
-          <div className="tabs">
-            {tabs.map(([tabKey, label, cnt]) => (
-              <button
-                key={tabKey}
-                className="tb"
-                aria-selected={pfilter === tabKey}
-                onClick={() => setPfilter(tabKey)}
-              >
-                {label} ({cnt})
-              </button>
-            ))}
-          </div>
+        <div className="tabs">
+          {tabs.map(([tabKey, label, cnt]) => (
+            <button
+              key={tabKey}
+              className="tb"
+              aria-selected={pfilter === tabKey}
+              onClick={() => setPfilter(tabKey)}
+            >
+              {label} ({cnt})
+            </button>
+          ))}
         </div>
 
         {/* Attention banner if consent not given */}
         {!consentGiven && (
-          <div data-anno="attn">
-            <div className="anno">
-              <span className="pin">Live banner, kept — shown once</span>
-              <span className="tip">
-                <b>Word-for-word from the app:</b> &quot;Test Traders (Pavan) used 1 view to see your details.&quot; Sits cleanly at the top of the feed without duplicate stacked banners.
-              </span>
-            </div>
-            <div className="card attn">
+          <div className="card attn">
               <div className="head" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <span className="chip c-r">Action needed</span>
                 <span className="sp" />
@@ -765,7 +732,6 @@ export function XpoUnifiedWorkspace({
                 </button>
               </div>
             </div>
-          </div>
         )}
 
         {filteredList.map(renderLeadCard)}
@@ -1023,13 +989,7 @@ export function XpoUnifiedWorkspace({
             )}
           </div>
         ) : (
-          <div className="card" data-anno="reply">
-            <div className="anno">
-              <span className="pin">One action per lead</span>
-              <span className="tip">
-                <b>Structured reply:</b> Specify your quote amount, delivery timeline, and pitch note.
-              </span>
-            </div>
+          <div className="card">
             <span className="lbl">Send Your Structured Proposal</span>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '8px' }}>
               <div>
@@ -1305,25 +1265,9 @@ textarea.inp{resize:vertical;min-height:92px;line-height:1.5}
 .av{width:34px;height:34px;border-radius:50%;background:var(--ink);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;flex:0 0 34px}
 [data-theme=dark] .av{background:#EDEEF0;color:#15171C}
 
-/* ===== sim chrome ===== */
-.bar{position:sticky;top:0;z-index:50;background:#0F1115;color:#E6E7EA;display:flex;align-items:center;gap:12px;padding:9px 16px;border-bottom:1px solid #22252C;flex-wrap:wrap}
-.bar .brand{display:flex;align-items:center;gap:9px;font-weight:800}
-.bar .brand img{height:20px}
-.bar .brand span{font-size:11px;font-weight:700;background:#2A2E35;padding:2px 8px;border-radius:999px}
-.seg{display:flex;background:#1A1D23;border:1px solid #2E323A;border-radius:11px;padding:3px}
-.seg button{border:0;background:none;color:#B9BDC6;padding:7px 14px;border-radius:9px;font-weight:700;font-size:13px;min-height:36px;display:flex;flex-direction:column;align-items:flex-start;line-height:1.15;gap:1px}
-.seg button small{font-weight:600;font-size:10.5px;color:#7C818B}
-.seg button[aria-pressed=true]{background:#E6E7EA;color:#0F1115}
-.seg button[aria-pressed=true] small{color:var(--red)}
-.sbtn{border:1px solid #2E323A;background:#1A1D23;color:#E6E7EA;border-radius:10px;min-height:36px;padding:0 13px;font-weight:700;font-size:12.5px;display:flex;align-items:center;gap:8px}
-.sbtn:hover{background:#252931}
-.sbtn.hot{background:#E6E7EA;color:#0F1115;border-color:#E6E7EA}
-.sbtn .dot{width:8px;height:8px;border-radius:50%;background:#FF6b7d}
-.sbtn.hot .dot{background:#39d98a}
-
 /* ===== app shell ===== */
-.app{display:grid;grid-template-columns:248px 1fr;min-height:calc(100vh - 56px)}
-.side{background:var(--sf);border-right:1px solid var(--ln);display:flex;flex-direction:column;padding:16px 14px;gap:4px;position:sticky;top:56px;height:calc(100vh - 56px)}
+.app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
+.side{background:var(--sf);border-right:1px solid var(--ln);display:flex;flex-direction:column;padding:16px 14px;gap:4px;position:sticky;top:0;height:100vh}
 .side .lg{height:44px;display:flex;align-items:center;padding:0 8px;margin-bottom:10px}
 .side .lg img{height:24px}
 .side .lg .rolechip{margin-left:10px;font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--red);background:var(--rbg);padding:3px 8px;border-radius:7px}
@@ -1339,7 +1283,7 @@ textarea.inp{resize:vertical;min-height:92px;line-height:1.5}
 .side .foot b{display:block;font-size:13.5px}.side .foot span{font-size:11.5px;color:var(--tx3)}
 
 .main{min-width:0;display:flex;flex-direction:column;position:relative}
-.top{height:66px;border-bottom:1px solid var(--ln);background:var(--sf);display:flex;align-items:center;gap:12px;padding:0 24px;position:sticky;top:56px;z-index:40}
+.top{height:66px;border-bottom:1px solid var(--ln);background:var(--sf);display:flex;align-items:center;gap:12px;padding:0 24px;position:sticky;top:0;z-index:40}
 .top h1{font-size:19px;font-weight:800}
 .page{padding:26px 28px 90px;max-width:880px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px}
 .mtab{display:none}
@@ -1387,31 +1331,10 @@ textarea.inp{resize:vertical;min-height:92px;line-height:1.5}
 .toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 16px;border-radius:12px;font-weight:600;z-index:80;box-shadow:var(--shadow2);font-size:13.5px}
 [data-theme=dark] .toast{background:#EDEEF0;color:#15171C}
 
-/* review mode */
-.revbtn{position:fixed;right:18px;bottom:18px;z-index:70;background:var(--ink);color:#fff;border:0;border-radius:999px;min-height:48px;padding:0 18px;font-weight:700;font-size:13.5px;box-shadow:var(--shadow2);display:flex;align-items:center;gap:8px}
-[data-theme=dark] .revbtn{background:#fff;color:#15171C}
-.revbtn .dot{width:9px;height:9px;border-radius:50%;background:#FF6b7d}
-body.rev .revbtn .dot{background:#39d98a}
-.anno{display:none}
-body.rev .anno{display:flex;position:absolute;top:8px;right:8px;z-index:20;flex-direction:column;max-width:262px;pointer-events:none}
-body.rev .anno.left{right:auto;left:8px;align-items:flex-start}
-body.rev .anno.left .pin{align-self:flex-start}
-body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(--red) 55%,transparent);outline-offset:5px;border-radius:14px}
-.anno .pin{align-self:flex-end;background:var(--red);color:#fff;font-size:11.5px;font-weight:800;border-radius:8px;padding:4px 9px}
-.anno .tip{margin-top:6px;background:var(--ink);color:#fff;border-radius:11px;padding:10px 12px;font-size:12.3px;line-height:1.45;box-shadow:var(--shadow2)}
-[data-theme=dark] .anno .tip{background:#2A2E35}
-.anno .tip b{color:#FF9AA8}
-
 @media (max-width:820px){
   .app{grid-template-columns:1fr}
-  .bar{padding:7px 10px;gap:7px;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none;position:sticky;top:0;z-index:50}
-  .bar::-webkit-scrollbar{display:none}
-  .bar .brand span{display:none}
-  .seg button{padding:4px 8px;min-height:30px;font-size:11.5px}
-  .seg button small{display:none}
-  .sbtn{min-height:30px;padding:0 9px;font-size:11px;white-space:nowrap;flex-shrink:0}
   .side{display:none !important}
-  .top{top:46px;height:52px;padding:0 14px}
+  .top{top:0;height:52px;padding:0 14px}
   .top h1{font-size:16.5px}
   .page{padding:14px 14px calc(80px + env(safe-area-inset-bottom, 16px));gap:12px}
   .card{padding:14px;border-radius:14px;gap:10px}
@@ -1427,26 +1350,8 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
   .kpi{padding:10px 12px}
   .kpi b{font-size:18px}
   .kpi span{font-size:11px}
-  .revbtn{bottom:70px;right:12px;min-height:40px;padding:0 14px;font-size:12px}
-  body.rev .anno{position:static;max-width:none;margin:-4px 0 10px}
 }` }} />
 
-      {/* Top Chrome Bar */}
-      <header className="bar">
-        <div className="brand" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <img src="/xpo-logo.png" alt="XPO India" style={{ height: '22px', width: 'auto', objectFit: 'contain' }} />
-        </div>
-
-        <span className="sp" />
-
-        <button
-          className="sbtn"
-          aria-label="Toggle dark mode"
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        >
-          {theme === 'dark' ? '☀' : '☾'}
-        </button>
-      </header>
 
       {/* Main App Layout */}
       <div className="app">
@@ -1479,13 +1384,7 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
             );
           })}
 
-          <div className="foot" data-anno="side">
-            <div className="anno">
-              <span className="pin">One clean nav</span>
-              <span className="tip">
-                <b>Removed from the live app:</b> the duplicate top + bottom nav bars, the stray &quot;PA&quot; or &quot;2 KT&quot; tags, and clutter. One unified sidebar.
-              </span>
-            </div>
+          <div className="foot">
             <span className="av">{who.ini}</span>
             <span style={{ minWidth: 0 }}>
               <b>{who.name}</b>
@@ -1500,39 +1399,31 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
             <h1>{getPageTitle()}</h1>
             <span className="sp" />
 
-            <div data-anno="hdr">
-              <div className="anno left">
-                <span className="pin">Alerts on header, Plan in profile</span>
-                <span className="tip">
-                  <b>Relocated:</b> the alerts bell and your plan details sit right in the header and profile menu.
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {role === 'client' && (
+                <button className="btn red sm" onClick={() => setCs('home')}>
+                  + New requirement
+                </button>
+              )}
+
+              <button
+                className="hbtn"
+                aria-label="Alerts"
+                onClick={() => setMenu(menu === 'alerts' ? 'none' : 'alerts')}
+              >
+                {icons.bell}
+                <span className="hn">2</span>
+              </button>
+
+              <button
+                className="avbtn"
+                aria-label="Profile and plan"
+                onClick={() => setMenu(menu === 'profile' ? 'none' : 'profile')}
+              >
+                <span className="av" title={who.name}>
+                  {who.ini}
                 </span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                {role === 'client' && (
-                  <button className="btn red sm" onClick={() => setCs('home')}>
-                    + New requirement
-                  </button>
-                )}
-
-                <button
-                  className="hbtn"
-                  aria-label="Alerts"
-                  onClick={() => setMenu(menu === 'alerts' ? 'none' : 'alerts')}
-                >
-                  {icons.bell}
-                  <span className="hn">2</span>
-                </button>
-
-                <button
-                  className="avbtn"
-                  aria-label="Profile and plan"
-                  onClick={() => setMenu(menu === 'profile' ? 'none' : 'profile')}
-                >
-                  <span className="av" title={who.name}>
-                    {who.ini}
-                  </span>
-                </button>
-              </div>
+              </button>
             </div>
           </div>
 

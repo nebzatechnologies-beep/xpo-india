@@ -1325,26 +1325,26 @@ export function XpoWhatsAppAutomationLab({
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             {forcedRole === 'partner' ? (
               <>
-                <Link href="/simulator/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                <Link href="/whatsapp/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
                   🤖 Switch to Client Bot Sim →
                 </Link>
-                <Link href="/simulator?view=dual" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                <Link href="/whatsapp/dual" className="btn b2 sm" style={{ textDecoration: 'none' }}>
                   📱 Dual Studio
                 </Link>
-                <Link href="/dashboard/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
-                  ← Partner Workspace
+                <Link href="/" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  ← XPO Home
                 </Link>
               </>
             ) : forcedRole === 'client' ? (
               <>
-                <Link href="/simulator/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                <Link href="/whatsapp/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
                   🤖 Switch to Partner Bot Sim →
                 </Link>
-                <Link href="/simulator?view=dual" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                <Link href="/whatsapp/dual" className="btn b2 sm" style={{ textDecoration: 'none' }}>
                   📱 Dual Studio
                 </Link>
-                <Link href="/dashboard/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
-                  ← Client Workspace
+                <Link href="/" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                  ← XPO Home
                 </Link>
               </>
             ) : (
@@ -1404,10 +1404,10 @@ export function XpoWhatsAppAutomationLab({
                   </>
                 ) : (
                   <>
-                    <Link href="/simulator/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                    <Link href="/whatsapp/partner" className="btn b2 sm" style={{ textDecoration: 'none' }}>
                       🤖 Partner Sim
                     </Link>
-                    <Link href="/simulator/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
+                    <Link href="/whatsapp/client" className="btn b2 sm" style={{ textDecoration: 'none' }}>
                       🤖 Client Sim
                     </Link>
                   </>
