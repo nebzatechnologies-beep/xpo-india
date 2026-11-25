@@ -57,9 +57,6 @@ export default function HomePage() {
           <div className="max-w-[1140px] mx-auto px-6 grid grid-cols-1 lg:grid-cols-[1.03fr_0.97fr] gap-10 lg:gap-12 items-center">
             {/* LEFT COLUMN: HERO CONTENT & COMPOSE */}
             <div>
-              <span className="text-[12.5px] font-extrabold tracking-[0.11em] uppercase text-[#C8102E] block mb-4">
-                B2B sourcing, without the middleman
-              </span>
               <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight leading-[1.08] text-balance">
                 Describe what you need.
                 <br />
@@ -139,98 +136,16 @@ export default function HomePage() {
                 </div>
               )}
 
-              <p className="mt-3.5 text-[13.5px] text-[#8A8F98]">
-                Free to post · No commission · Your number stays private until you both agree
-              </p>
             </div>
 
-            {/* RIGHT COLUMN: INTERACTIVE CORE MODEL ILLUSTRATION */}
-            <div className="flex flex-col items-center">
-              <svg
-                className="illo"
-                viewBox="0 0 460 522"
-                role="img"
-                aria-label="How XPO works: you post a requirement, XPO matches it to GST-verified suppliers who reply with quotes, and you connect directly with no commission"
-              >
-                {/* 1 · your requirement */}
-                <rect x="34" y="14" width="392" height="98" rx="16" className="il-sf" />
-                <rect x="34" y="14" width="392" height="98" rx="16" className="il-stroke" strokeWidth="2" />
-                <circle cx="66" cy="48" r="17" className="il-ink" />
-                <text x="66" y="53" textAnchor="middle" className="il-white" style={{ font: "800 13px var(--font-jakarta), sans-serif" }}>P</text>
-                <text x="94" y="43" className="il-ink" style={{ font: "700 13.5px var(--font-jakarta), sans-serif" }}>You · Test Traders</text>
-                <text x="94" y="61" className="il-mut" style={{ font: "600 12px var(--font-jakarta), sans-serif" }}>&ldquo;Need 10,000 corrugated boxes, Pune&rdquo;</text>
-                <rect x="94" y="74" width="42" height="18" rx="9" className="il-sf2" />
-                <text x="115" y="87" textAnchor="middle" className="il-mut" style={{ font: "700 10px var(--font-jakarta), sans-serif" }}>Web</text>
-                <rect x="142" y="74" width="42" height="18" rx="9" className="il-sf2" />
-                <text x="163" y="87" textAnchor="middle" className="il-mut" style={{ font: "700 10px var(--font-jakarta), sans-serif" }}>App</text>
-                <rect x="190" y="74" width="74" height="18" rx="9" className="il-sf2" />
-                <text x="227" y="87" textAnchor="middle" className="il-mut" style={{ font: "700 10px var(--font-jakarta), sans-serif" }}>WhatsApp</text>
-                <text x="414" y="33" textAnchor="end" className="il-mut" style={{ font: "700 10px var(--font-jakarta), sans-serif" }}>post from anywhere</text>
-
-                {/* flow into engine */}
-                <path className="flow" d="M230 112 V150" />
-
-                {/* 2 · XPO matches */}
-                <circle cx="230" cy="188" r="47" fill="#C8102E" opacity="0.10" />
-                <rect x="200" y="158" width="60" height="60" rx="17" className="il-red" />
-                <g fill="#fff">
-                  <circle cx="230" cy="188" r="3.6" />
-                  <circle cx="216" cy="176" r="2.8" />
-                  <circle cx="244" cy="176" r="2.8" />
-                  <circle cx="230" cy="205" r="2.8" />
-                </g>
-                <path d="M230 188 L216 176 M230 188 L244 176 M230 188 L230 205" stroke="#fff" strokeWidth="2" fill="none" />
-                <text x="230" y="244" textAnchor="middle" className="il-ink" style={{ font: "800 14px var(--font-jakarta), sans-serif" }}>XPO matches it — in minutes</text>
-                <text x="230" y="262" textAnchor="middle" className="il-mut" style={{ font: "600 12px var(--font-jakarta), sans-serif" }}>to verified suppliers in your sector</text>
-
-                {/* fan to suppliers */}
-                <path className="flow" d="M230 274 V290" />
-                <path d="M86 290 H374" className="il-stroke" strokeWidth="2" />
-                <path className="flow" d="M86 290 V314" />
-                <path className="flow" d="M230 290 V314" />
-                <path className="flow" d="M374 290 V314" />
-
-                {/* 3 · supplier replies */}
-                {/* card 1 */}
-                <rect x="22" y="314" width="128" height="150" rx="14" className="il-sf" />
-                <rect x="22" y="314" width="128" height="150" rx="14" className="il-stroke" strokeWidth="2" />
-                <circle cx="44" cy="340" r="10" className="il-g" />
-                <path d="M40 340l3 3 6-7" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                <text x="60" y="344" className="il-glab">Verified</text>
-                <text x="38" y="374" className="il-ink" style={{ font: "700 13px var(--font-jakarta), sans-serif" }}>BoxCraft</text>
-                <text x="38" y="391" className="il-mut" style={{ font: "600 11px var(--font-jakarta), sans-serif" }}>Ahmedabad</text>
-                <rect x="38" y="408" width="96" height="30" rx="9" className="il-sf2" />
-                <text x="86" y="427" textAnchor="middle" className="il-mut" style={{ font: "700 11.5px var(--font-jakarta), sans-serif" }}>Quoted ₹1.2L</text>
-
-                {/* card 2 (interested) */}
-                <rect x="166" y="310" width="128" height="156" rx="14" className="il-sf" />
-                <rect x="166" y="310" width="128" height="156" rx="14" className="il-redl" strokeWidth="2.5" />
-                <circle cx="188" cy="338" r="10" className="il-g" />
-                <path d="M184 338l3 3 6-7" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                <text x="204" y="342" className="il-glab">Verified</text>
-                <text x="182" y="372" className="il-ink" style={{ font: "700 13px var(--font-jakarta), sans-serif" }}>Ankur Pkg</text>
-                <text x="182" y="389" className="il-mut" style={{ font: "600 11px var(--font-jakarta), sans-serif" }}>Rajkot</text>
-                <rect x="182" y="406" width="96" height="30" rx="9" className="il-red" />
-                <text x="230" y="425" textAnchor="middle" className="il-white" style={{ font: "800 11.5px var(--font-jakarta), sans-serif" }}>Interested</text>
-                <text x="230" y="453" textAnchor="middle" className="il-mut" style={{ font: "700 10px var(--font-jakarta), sans-serif" }}>best fit · 96%</text>
-
-                {/* card 3 */}
-                <rect x="310" y="314" width="128" height="150" rx="14" className="il-sf" />
-                <rect x="310" y="314" width="128" height="150" rx="14" className="il-stroke" strokeWidth="2" />
-                <circle cx="332" cy="340" r="10" className="il-g" />
-                <path d="M328 340l3 3 6-7" stroke="#fff" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                <text x="348" y="344" className="il-glab">Verified</text>
-                <text x="326" y="374" className="il-ink" style={{ font: "700 13px var(--font-jakarta), sans-serif" }}>PrintPro</text>
-                <text x="326" y="391" className="il-mut" style={{ font: "600 11px var(--font-jakarta), sans-serif" }}>Pune</text>
-                <rect x="326" y="408" width="96" height="30" rx="9" className="il-sf2" />
-                <text x="374" y="427" textAnchor="middle" className="il-mut" style={{ font: "700 11.5px var(--font-jakarta), sans-serif" }}>Quoted ₹1.3L</text>
-
-                {/* caption */}
-                <text x="230" y="502" textAnchor="middle" className="il-mut" style={{ font: "700 12px var(--font-jakarta), sans-serif" }}>You pick · connect directly · 0% commission</text>
-              </svg>
-              <p className="il-cap">
-                Post a need → XPO matches it to GST-verified suppliers → they reply → you connect, commission-free.
-              </p>
+            {/* RIGHT COLUMN: HUMAN ILLUSTRATION */}
+            <div className="flex flex-col items-center justify-center">
+              <img
+                src="/illustrations/connect.svg"
+                alt="A buyer and a verified supplier connecting directly on XPO"
+                className="w-full max-w-[440px] h-auto select-none"
+                draggable={false}
+              />
             </div>
           </div>
         </section>
@@ -292,6 +207,14 @@ export default function HomePage() {
             <div className="split-panels">
               {/* CLIENT PANEL */}
               <div className="panel-card">
+                <div className="rounded-2xl bg-white border border-[#EAE9E5] mb-5 px-4 py-3 flex items-center justify-center">
+                  <img
+                    src="/illustrations/post-requirement.svg"
+                    alt="A buyer describing what they need"
+                    className="h-[128px] w-auto select-none"
+                    draggable={false}
+                  />
+                </div>
                 <span className="text-[12px] font-extrabold uppercase tracking-wider text-[#C8102E]">
                   Need a supplier?
                 </span>
@@ -319,6 +242,14 @@ export default function HomePage() {
 
               {/* PARTNER PANEL */}
               <div className="panel-card dark">
+                <div className="rounded-2xl bg-white mb-5 px-4 py-3 flex items-center justify-center">
+                  <img
+                    src="/illustrations/matched-lead.svg"
+                    alt="A verified supplier receiving a matched lead"
+                    className="h-[128px] w-auto select-none"
+                    draggable={false}
+                  />
+                </div>
                 <span className="text-[12px] font-extrabold uppercase tracking-wider text-[#FF9AA8]">
                   Offer a service?
                 </span>
