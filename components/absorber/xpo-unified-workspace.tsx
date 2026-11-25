@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Real content & test identities matching the reference prototype
 interface ClientReq {
@@ -220,6 +220,26 @@ export function XpoUnifiedWorkspace({
     document.documentElement.dataset.theme = theme;
   }, [theme]);
 
+  // Shared marketplace state (synced with Superadmin + WhatsApp simulator).
+  // Hydrated on mount and re-fetched after every mutating action so the web
+  // portal reflects the same live state as the other portals. The render is
+  // being migrated onto this; for now it backs id resolution and future wiring.
+  const liveStateRef = useRef<Record<string, any> | null>(null);
+  const rehydrateMarketplace = useCallback(async () => {
+    try {
+      const res = await fetch('/api/marketplace/state', { cache: 'no-store' });
+      const json = await res.json();
+      if (json?.success && json?.data) {
+        liveStateRef.current = json.data as Record<string, any>;
+      }
+    } catch {
+      // Non-fatal: the portal keeps working from local state if sync is down.
+    }
+  }, []);
+  useEffect(() => {
+    void rehydrateMarketplace();
+  }, [rehydrateMarketplace]);
+
   const showToast = (msg: string) => {
     setToastMsg(msg);
     setTimeout(() => {
@@ -390,13 +410,16 @@ export function XpoUnifiedWorkspace({
                   showToast('Please type a requirement description');
                   return;
                 }
+                const rawMessage = composeText;
+                const code = 'XPO-REQ-' + Math.floor(40000 + Math.random() * 5000);
+                const reqKey = 'r' + Date.now();
                 const newReq: ClientReq = {
-                  id: 'XPO-REQ-' + Math.floor(40000 + Math.random() * 5000),
-                  key: 'r' + Date.now(),
+                  id: code,
+                  key: reqKey,
                   cat: 'General Trade',
                   status: 'finding',
-                  title: composeText.split('\n')[0].slice(0, 60),
-                  summary: composeText,
+                  title: rawMessage.split('\n')[0].slice(0, 60),
+                  summary: rawMessage,
                   city: 'Hyderabad',
                   when: 'Within 2-4 Weeks',
                   budget: 'Quotes invited',
@@ -405,7 +428,29 @@ export function XpoUnifiedWorkspace({
                 setCreqs([newReq, ...creqs]);
                 setComposeText('');
                 showToast('Requirement posted — matching verified partners in 5-minute waves.');
-                await postMarketplaceAction('post_requirement', { requirement: newReq });
+                // Persist to the shared marketplace state so the requirement is
+                // visible to Superadmin and surfaces in the Partner Wave-1 feed.
+                // The server parses category/city/budget/timeline from rawMessage.
+                await postMarketplaceAction('client.post_requirement', {
+                  key: reqKey,
+                  rawMessage,
+                  requirement: {
+                    code,
+                    title: newReq.title,
+                    sector: '',
+                    cat: newReq.cat,
+                    sub: '',
+                    loc: newReq.city,
+                    timeline: newReq.when,
+                    budget: newReq.budget,
+                    spec: rawMessage,
+                    posted: 'just now',
+                    status: 'finding',
+                    wave: 1,
+                    partners: [],
+                  },
+                });
+                await rehydrateMarketplace();
               }}
             >
               Continue
@@ -492,7 +537,12 @@ export function XpoUnifiedWorkspace({
                     setR1Requested(true);
                     setClientViews((v) => Math.max(0, v - 1));
                     showToast('Request sent. The direct phone & WhatsApp is shared once they accept.');
-                    await postMarketplaceAction('client_connect_request', { partner: 'Klo Tech' });
+                    await postMarketplaceAction('client.update_partner_status', {
+                      key: cReqKey,
+                      partnerId: 'klo',
+                      status: 'requested',
+                    });
+                    await rehydrateMarketplace();
                   }}
                 >
                   Connect · 1 view
@@ -749,7 +799,12 @@ export function XpoUnifiedWorkspace({
                   onClick={async () => {
                     setConsentGiven(true);
                     showToast('Contact shared. You are connected with Test Traders (Pavan).');
-                    await postMarketplaceAction('partner_consent_share', { client: 'Test Traders (Pavan)' });
+                    await postMarketplaceAction('partner.respond_connection', {
+                      oppId: pLeadKey,
+                      ref: pLeadKey,
+                      decision: 'accepted',
+                    });
+                    await rehydrateMarketplace();
                   }}
                 >
                   Accept &amp; share contact
@@ -1091,12 +1146,14 @@ export function XpoUnifiedWorkspace({
                     )
                   );
                   showToast('Reply sent to client! You can review or edit it anytime.');
-                  await postMarketplaceAction('partner_send_reply', {
-                    leadId: l.id,
-                    quote: partnerNewQuote,
+                  await postMarketplaceAction('partner.submit_reply', {
+                    oppId: l.id,
+                    ref: l.id,
+                    pitch: replyText || 'Interested in delivering this requirement with full QA.',
                     timeline: partnerNewTimeline,
-                    text: replyText,
+                    quote: partnerNewQuote,
                   });
+                  await rehydrateMarketplace();
                 }}
               >
                 Send reply · 1 free
