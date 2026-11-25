@@ -156,6 +156,14 @@ export default function HomePage() {
             <div className="head">
               <h2>Three steps. No forms, no phone tag.</h2>
             </div>
+            <div className="flex justify-center mb-8 sm:mb-10">
+              <img
+                src="/illustrations/deal-handshake.svg"
+                alt="A buyer and a verified supplier closing a deal"
+                className="w-full max-w-[380px] h-auto select-none"
+                draggable={false}
+              />
+            </div>
             <div className="steps-grid">
               <div className="step-card">
                 <div className="k">1</div>
