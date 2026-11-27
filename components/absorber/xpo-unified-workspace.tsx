@@ -3,6 +3,17 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // Real content & test identities matching the reference prototype
+interface PartnerReplyLite {
+  id?: string;
+  name?: string;
+  sub?: string;
+  pitch?: string;
+  tags?: string[];
+  st?: string;
+  phone?: string;
+  verified?: boolean;
+}
+
 interface ClientReq {
   id: string;
   key: string;
@@ -15,6 +26,7 @@ interface ClientReq {
   budget: string;
   time: string;
   n?: number;
+  partners?: PartnerReplyLite[];
 }
 
 export interface MyReply {
@@ -40,120 +52,93 @@ export interface LeadItem {
   time: string;
   tags: string[];
   myReply?: MyReply;
+  clientName?: string;
+  clientCompany?: string;
+  clientPhone?: string;
+  clientEmail?: string;
+  needsConsent?: boolean;
 }
 
-const INITIAL_CREQS: ClientReq[] = [
-  {
-    id: 'XPO-REQ-40971',
-    key: 'r1',
-    cat: 'Web & Mobile Development',
-    status: 'interested',
-    title: 'E-commerce website for a 5-store retail chain',
-    summary: 'Product catalogue for 5 stores, UPI checkout, store pickup, and stock sync with billing.',
-    city: 'Hyderabad',
-    when: 'Within 2-4 Weeks',
-    budget: '₹2,00,000',
-    time: 'Today, 10:42',
-    n: 2,
-  },
-  {
-    id: 'XPO-REQ-41208',
-    key: 'r2',
-    cat: 'Industrial Packaging & Raw Materials',
-    status: 'finding',
-    title: '10,000 printed 3-ply corrugated boxes',
-    summary: '3-ply, 12×10×8 in, two-colour logo print, delivered to a Pune warehouse.',
-    city: 'Pune',
-    when: 'Within 2-4 Weeks',
-    budget: 'Quotes invited',
-    time: 'Today, 11:05',
-  },
-  {
-    id: 'XPO-REQ-41190',
-    key: 'r3',
-    cat: 'Performance Marketing & SEO',
-    status: 'checking',
-    title: 'Marketing for a fantasy sports and betting app',
-    summary: 'Campaign launch across Meta and Google for an app.',
-    city: 'Bengaluru',
-    when: 'Immediate (Within 7 Days)',
-    budget: '₹5,00,000',
-    time: 'Today, 09:12',
-  },
-];
+// Map a live ClientReqItem (from /api/marketplace/state) to the local card model.
+function mapLiveReq(key: string, r: any): ClientReq | null {
+  if (!r) return null;
+  const status: ClientReq['status'] =
+    r.status === 'interested' ? 'interested' : r.status === 'finding' ? 'finding' : 'checking';
+  const partners: PartnerReplyLite[] = Array.isArray(r.partners)
+    ? r.partners.map((p: any) => ({
+        id: p.id,
+        name: p.real || p.name || p.partnerName || 'Verified partner',
+        sub: p.masked || [p.cat, p.city].filter(Boolean).join(' · '),
+        pitch: p.pitch,
+        tags: Array.isArray(p.tags) ? p.tags : [],
+        st: p.st || p.status,
+        phone: p.phone,
+        verified: !!p.verified,
+      }))
+    : [];
+  return {
+    id: r.code || key,
+    key,
+    cat: r.cat || r.sector || 'General',
+    status,
+    title: r.title || (r.spec ? String(r.spec).slice(0, 60) : 'Untitled requirement'),
+    summary: r.spec || '',
+    city: r.loc || '—',
+    when: r.timeline || '—',
+    budget: r.budget || 'Quotes invited',
+    time: r.posted || '',
+    n: partners.length,
+    partners,
+  };
+}
 
-const INITIAL_LEADS: LeadItem[] = [
-  {
-    id: 'XPO-REQ-41208',
-    key: 'l1',
-    cat: 'Packaging & Printing',
-    badge: 'WAVE 1 · NEW',
-    state: 'new',
-    title: '10,000 printed 3-ply corrugated boxes',
-    desc: '3-ply corrugated mailer boxes (12×9×4 in), single-colour black logo on the top flap. Delivery to a Kukatpally warehouse, Hyderabad within 2 weeks.',
-    city: 'Hyderabad',
-    when: 'Within 2 weeks',
-    budget: 'Open to quotes',
-    time: '2 min ago',
-    tags: ['matched'],
-  },
-  {
-    id: 'XPO-REQ-41302',
-    key: 'l2',
-    cat: 'Web & Mobile Development',
-    badge: 'MATCHED TO YOU',
-    state: 'new',
-    title: 'Custom ERP & inventory sync for 12 pharmaceutical depots',
-    desc: 'Web & mobile inventory portal connecting 12 state depots with batch-expiry tracking, a GST e-invoicing API, and Tally Prime sync.',
-    city: 'Mumbai',
-    when: 'Within a month',
-    budget: '₹5L – ₹12L',
-    time: '18 min ago',
-    tags: ['matched'],
-  },
-  {
-    id: 'XPO-REQ-41299',
-    key: 'l3',
-    cat: 'Web & Mobile Development',
-    badge: 'Overseas · USD',
-    state: 'sent',
-    statusText: 'Reply sent · waiting on client',
-    title: 'Shopify Plus migration & headless storefront for a D2C apparel brand',
-    desc: 'Magento to Shopify Plus with a bilingual EN/AR RTL storefront, multi-currency checkout (AED/SAR/USD), and ERP webhook integration.',
-    city: 'Dubai, UAE',
-    when: 'Right away (urgent)',
-    budget: '$8,000 – $15,000',
-    time: '1 hr ago',
-    tags: ['matched', 'overseas'],
-    myReply: {
-      quote: '$9,500 fixed',
-      timeline: '3 weeks',
-      pitch: 'Certified Shopify Plus agency with 8+ years experience in headless commerce and bilingual EN/AR RTL storefronts. We guarantee sub-1s page load times, multi-currency checkout, and seamless webhook integration with your existing ERP.',
-      repliedAt: '1 hr ago',
-    },
-  },
-  {
-    id: 'XPO-REQ-39114',
-    key: 'l4',
-    cat: 'Web & Mobile Development',
-    badge: 'Connected',
-    state: 'connected',
-    statusText: 'Connected with Pavan',
-    title: 'Company website developer',
-    desc: 'Corporate B2B catalogue website with fast mobile load times, WhatsApp lead capture, and product inquiry forms.',
-    city: 'Hyderabad',
-    when: 'Completed',
-    budget: '₹1.2L',
-    time: '12 days ago',
-    tags: ['all'],
-    myReply: {
-      quote: '₹1,20,000',
-      timeline: '2 weeks',
-      pitch: 'Delivered 40+ corporate B2B websites with instant WhatsApp lead generation, mobile-optimized responsive design, and CMS catalog.',
-      repliedAt: '12 days ago',
-    },
-  },
-];
+// Map a live PartnerOpportunity to the local lead model.
+function mapLiveOpp(o: any): LeadItem {
+  const state: LeadItem['state'] =
+    o.myReplyStatus === 'connected'
+      ? 'connected'
+      : o.myReplyStatus === 'sent_waiting' || o.myReplyStatus === 'client_requested'
+        ? 'sent'
+        : 'new';
+  const tags: string[] = ['matched'];
+  if (o.isOverseas) tags.push('overseas');
+  const statusText =
+    o.myReplyStatus === 'connected'
+      ? 'Connected with ' + (o.clientName || 'client')
+      : o.myReplyStatus === 'client_requested'
+        ? 'Client requested your contact'
+        : o.myReplyStatus === 'sent_waiting'
+          ? 'Reply sent · waiting on client'
+          : undefined;
+  return {
+    id: o.ref || o.id,
+    key: o.id,
+    cat: o.cat || 'General',
+    badge: o.waveBadge || (o.matched ? 'MATCHED TO YOU' : 'NEW'),
+    state,
+    statusText,
+    title: o.title || 'Opportunity',
+    desc: o.brief || '',
+    city: o.loc || '—',
+    when: o.when || '—',
+    budget: o.budget || '—',
+    time: o.posted || '',
+    tags,
+    myReply: o.myPitch
+      ? {
+          quote: o.myQuote || '',
+          timeline: o.myTimeline || '',
+          pitch: o.myPitch,
+          repliedAt: o.repliedAt || '',
+        }
+      : undefined,
+    clientName: o.clientName,
+    clientCompany: o.clientCompany,
+    clientPhone: o.clientPhone,
+    clientEmail: o.clientEmail,
+    needsConsent: o.myReplyStatus === 'client_requested',
+  };
+}
 
 const SUPPORT_PHONE = '+91 40 4917 2200';
 const WHATSAPP_BOT_URL = 'https://wa.me/914049172200?text=' + encodeURIComponent('Hi XPO India, I am testing the XPO WhatsApp Chatbot automation for client requirements and partner lead matching.');
@@ -195,16 +180,14 @@ export function XpoUnifiedWorkspace({
   const [pLeadKey, setPLeadKey] = useState<string>(initialOppId || 'l1');
   const [cReqKey, setCReqKey] = useState<string>('r1');
 
-  // Demo identities
-  const [clientViews, setClientViews] = useState<number>(4);
-  const [partnerReplies, setPartnerReplies] = useState<number>(3);
+  // Live balances (hydrated from shared marketplace state)
+  const [clientViews, setClientViews] = useState<number>(0);
+  const [partnerReplies, setPartnerReplies] = useState<number>(0);
 
-  // Dynamic state
-  const [creqs, setCreqs] = useState<ClientReq[]>(INITIAL_CREQS);
-  const [leads, setLeads] = useState<LeadItem[]>(INITIAL_LEADS);
-  const [consentGiven, setConsentGiven] = useState<boolean>(false);
-  const [r1Requested, setR1Requested] = useState<boolean>(false);
-  const [r1ReplySent, setR1ReplySent] = useState<boolean>(false);
+  // Live data (hydrated from /api/marketplace/state)
+  const [creqs, setCreqs] = useState<ClientReq[]>([]);
+  const [leads, setLeads] = useState<LeadItem[]>([]);
+  const [hydrated, setHydrated] = useState<boolean>(false);
 
   // New compose text
   const [composeText, setComposeText] = useState<string>('');
@@ -230,10 +213,42 @@ export function XpoUnifiedWorkspace({
       const res = await fetch('/api/marketplace/state', { cache: 'no-store' });
       const json = await res.json();
       if (json?.success && json?.data) {
-        liveStateRef.current = json.data as Record<string, any>;
+        const data = json.data as Record<string, any>;
+        liveStateRef.current = data;
+
+        // Client requirements (ordered) -> cards
+        const cl = data.client || {};
+        const order: string[] = Array.isArray(cl.order) ? cl.order : [];
+        const reqsRec: Record<string, any> = cl.reqs || {};
+        const keys = order.length ? order : Object.keys(reqsRec);
+        const mappedReqs = keys
+          .map((k) => mapLiveReq(k, reqsRec[k]))
+          .filter((r): r is ClientReq => r !== null);
+        setCreqs(mappedReqs);
+        setCReqKey((prev) =>
+          mappedReqs.some((r) => r.key === prev) ? prev : mappedReqs[0]?.key || prev,
+        );
+
+        // Partner opportunities -> leads
+        const opps: any[] = (data.partner && data.partner.opportunities) || [];
+        const mappedLeads = opps.map(mapLiveOpp);
+        setLeads(mappedLeads);
+        setPLeadKey((prev) =>
+          mappedLeads.some((l) => l.key === prev) ? prev : mappedLeads[0]?.key || prev,
+        );
+
+        // Balances
+        if (typeof cl.free === 'number') {
+          setClientViews(cl.free + (cl.planOn && typeof cl.plan === 'number' ? cl.plan : 0));
+        }
+        if (data.partner && typeof data.partner.credits === 'number') {
+          setPartnerReplies(data.partner.credits);
+        }
       }
     } catch {
-      // Non-fatal: the portal keeps working from local state if sync is down.
+      // Non-fatal: the portal shows its empty state if sync is unreachable.
+    } finally {
+      setHydrated(true);
     }
   }, []);
   useEffect(() => {
@@ -299,21 +314,55 @@ export function XpoUnifiedWorkspace({
     ),
   };
 
-  const ALERTS = {
-    client: [
-      { t: 'Klo Tech replied', d: 'Sent a quote on: E-commerce website for a 5-store retail chain', action: () => { setCs('req'); setMenu('none'); } },
-      { t: 'Wave 2 matched', d: '1 more verified partner is looking at your Pune box requirement', action: () => { setCs('reqs'); setMenu('none'); } },
-    ],
-    partner: [
-      { t: 'Action needed · Contact unlocked', d: 'Test Traders (Pavan) used 1 view to see your details.', action: () => { setPs('reqs'); setMenu('none'); } },
-      { t: 'New lead matched', d: '10,000 printed 3-ply corrugated boxes (Hyderabad)', action: () => { setPLeadKey('l1'); setPs('lead'); setMenu('none'); } },
-    ],
+  // Alerts are derived from the live marketplace state.
+  type AlertItem = { t: string; d: string; action: () => void };
+  const clientAlerts: AlertItem[] = creqs
+    .filter((r) => (r.n || 0) > 0)
+    .slice(0, 6)
+    .map((r) => ({
+      t: r.n + ' verified partner' + (r.n === 1 ? '' : 's') + ' replied',
+      d: r.title,
+      action: () => {
+        setCReqKey(r.key);
+        setCs('req');
+        setMenu('none');
+      },
+    }));
+  const partnerAlerts: AlertItem[] = [
+    ...leads
+      .filter((l) => l.needsConsent)
+      .map((l) => ({
+        t: 'Action needed · Contact requested',
+        d: (l.clientName || 'A client') + ' wants to connect on: ' + l.title,
+        action: () => {
+          setPLeadKey(l.key);
+          setPs('lead');
+          setMenu('none');
+        },
+      })),
+    ...leads
+      .filter((l) => l.state === 'new' && !l.needsConsent)
+      .slice(0, 6)
+      .map((l) => ({
+        t: 'New lead matched',
+        d: l.title + ' (' + l.city + ')',
+        action: () => {
+          setPLeadKey(l.key);
+          setPs('lead');
+          setMenu('none');
+        },
+      })),
+  ];
+  const ALERTS: Record<'client' | 'partner', AlertItem[]> = {
+    client: clientAlerts,
+    partner: partnerAlerts,
   };
 
   // Helper chips and badges
-  const renderStatusPill = (status: ClientReq['status']) => {
-    if (status === 'interested') return <span className="chip c-g">2 interested</span>;
-    if (status === 'finding') return <span className="chip c-b">Finding · ~15 min</span>;
+  const renderStatusPill = (status: ClientReq['status'], n = 0) => {
+    if (status === 'interested')
+      return <span className="chip c-g">{n > 0 ? n + ' interested' : 'Interested'}</span>;
+    if (status === 'finding') return <span className="chip c-b">Finding partners…</span>;
     if (status === 'checking') return <span className="chip c-a">Being checked</span>;
     return null;
   };
@@ -336,24 +385,22 @@ export function XpoUnifiedWorkspace({
   // CLIENT VIEW COMPONENTS
   // ----------------------------------------------------
   const renderClientReqCard = (r: ClientReq, attn: boolean) => {
-    const act = r.status === 'interested' ? 'Review 2 replies' : 'Open details';
+    const act =
+      r.n && r.n > 0 ? 'Review ' + r.n + ' repl' + (r.n === 1 ? 'y' : 'ies') : 'Open details';
     return (
       <button
         key={r.key}
         className={"card req" + (attn ? ' attn' : '')}
         onClick={() => {
-          if (r.key === 'r1') setCs('req');
-          else {
-            setCs('reqs');
-            showToast('Opened ' + r.id);
-          }
+          setCReqKey(r.key);
+          setCs('req');
         }}
       >
         <div className="head">
           <span className="mono mute3">{r.id}</span>
           <span className="chip">{r.cat}</span>
           <span className="sp" />
-          {renderStatusPill(r.status)}
+          {renderStatusPill(r.status, r.n)}
         </div>
         <h3>{r.title}</h3>
         <span className="mute" style={{ fontSize: '13px' }}>
@@ -381,14 +428,8 @@ export function XpoUnifiedWorkspace({
 
     return (
       <>
-        <div className="card" data-anno="compose">
-          <div className="anno">
-            <span className="pin">Your real compose box, given room</span>
-            <span className="tip">
-              <b>Kept:</b> &quot;What do you need, Pavan?&quot;, the examples and the 5-minute-wave note. <b>Removed:</b> the Mobile-App promo bar and the broken counters.
-            </span>
-          </div>
-          <h2 style={{ fontSize: '20px' }}>What do you need, Pavan?</h2>
+        <div className="card">
+          <h2 style={{ fontSize: '20px' }}>What do you need?</h2>
           <textarea
             className="inp"
             value={composeText}
@@ -461,29 +502,61 @@ export function XpoUnifiedWorkspace({
           </div>
         </div>
 
-        <div data-anno="attn">
-          <div className="anno">
-            <span className="pin">No duplicate banner</span>
-            <span className="tip">
-              <b>Fixed:</b> the live &quot;Action needed&quot; banner and the identical request card were both on screen. Now it is one item at the top of your list.
+        {!hydrated && creqs.length === 0 && (
+          <div className="card" style={{ textAlign: 'center', color: 'var(--mute, #8A8F98)' }}>
+            Loading your requirements…
+          </div>
+        )}
+
+        {hydrated && creqs.length === 0 && (
+          <div className="card" style={{ textAlign: 'center' }}>
+            <h3 style={{ fontSize: '16px', marginBottom: '6px' }}>No requirements yet</h3>
+            <span className="mute" style={{ fontSize: '13px' }}>
+              Describe what you need above and XPO will match it to verified partners in 5-minute waves.
             </span>
           </div>
-          <span className="lbl" style={{ margin: '4px 2px' }}>
-            Needs you
-          </span>
-          {renderClientReqCard(attnReq, true)}
-        </div>
+        )}
 
-        <span className="lbl" style={{ margin: '8px 2px 0' }}>
-          Recent requests
-        </span>
-        {creqs.slice(1).map((r) => renderClientReqCard(r, false))}
+        {creqs.length > 0 && attnReq && (
+          <div>
+            <span className="lbl" style={{ margin: '4px 2px' }}>
+              Needs you
+            </span>
+            {renderClientReqCard(attnReq, true)}
+          </div>
+        )}
+
+        {creqs.length > 1 && (
+          <>
+            <span className="lbl" style={{ margin: '8px 2px 0' }}>
+              Recent requests
+            </span>
+            {creqs.slice(1).map((r) => renderClientReqCard(r, false))}
+          </>
+        )}
       </>
     );
   };
 
   const renderClientReqDetail = () => {
-    const r = creqs[0];
+    const r = creqs.find((x) => x.key === cReqKey) || creqs[0];
+    if (!r) {
+      return (
+        <>
+          <button
+            className="btn ghost sm"
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => setCs('reqs')}
+          >
+            ← My requests
+          </button>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <span className="mute">This requirement is no longer available.</span>
+          </div>
+        </>
+      );
+    }
+    const partners = r.partners || [];
     return (
       <>
         <button className="btn ghost sm" style={{ alignSelf: 'flex-start' }} onClick={() => setCs('reqs')}>
@@ -494,7 +567,7 @@ export function XpoUnifiedWorkspace({
             <span className="mono mute3">{r.id}</span>
             <span className="chip">{r.cat}</span>
             <span className="sp" />
-            {renderStatusPill(r.status)}
+            {renderStatusPill(r.status, r.n)}
           </div>
           <h2 style={{ fontSize: '20px' }}>{r.title}</h2>
           <span className="mute" style={{ fontSize: '13.5px' }}>
@@ -508,127 +581,162 @@ export function XpoUnifiedWorkspace({
           </div>
         </div>
 
-        <div className="card" data-anno="replies">
-          <div className="anno">
-            <span className="pin">Replies inline, no flipping</span>
-            <span className="tip">
-              <b>Kept:</b> partner quotes, time, pitch and the &quot;Connect · 1 view&quot; action. <b>Fixed:</b> replies sit directly below the request; unlocking doesn’t bounce you to another screen.
-            </span>
-          </div>
-          <span className="lbl">2 verified partners replied</span>
+        <div className="card">
+          <span className="lbl">
+            {partners.length > 0
+              ? partners.length + ' verified partner' + (partners.length === 1 ? '' : 's') + ' replied'
+              : 'Replies'}
+          </span>
 
-          {/* Partner 1: Klo Tech */}
-          <div className="rep">
-            <div className="row">
-              <span className="av">KT</span>
-              <span style={{ minWidth: 0, flex: 1 }}>
-                <b style={{ fontSize: '15px' }}>Klo Tech</b>
-                <br />
-                <span className="mute" style={{ fontSize: '12.5px' }}>
-                  Web & Mobile Development · Hyderabad
-                </span>
+          {partners.length === 0 && (
+            <div
+              className="row"
+              style={{ background: 'var(--sf2)', padding: '12px 14px', borderRadius: '10px' }}
+            >
+              <span className="mute" style={{ fontSize: '13px' }}>
+                No replies yet — XPO is matching verified partners in 5-minute waves. You&apos;ll be
+                alerted here as quotes arrive.
               </span>
-              {r1Requested ? (
-                <span className="chip c-a">Request sent</span>
-              ) : (
-                <button
-                  className="btn red sm"
-                  onClick={async () => {
-                    setR1Requested(true);
-                    setClientViews((v) => Math.max(0, v - 1));
-                    showToast('Request sent. The direct phone & WhatsApp is shared once they accept.');
-                    await postMarketplaceAction('client.update_partner_status', {
-                      key: cReqKey,
-                      partnerId: 'klo',
-                      status: 'requested',
-                    });
-                    await rehydrateMarketplace();
-                  }}
-                >
-                  Connect · 1 view
-                </button>
-              )}
             </div>
-            <span style={{ fontSize: '13.5px' }}>
-              &quot;We built e-commerce platforms for 3 retail chains with multi-store inventory sync. Can demo our POS bridge tomorrow.&quot;
-            </span>
-            <div className="row">
-              <span className="chip">Quote: ₹1,80,000</span>
-              <span className="chip">⏱ 3 weeks</span>
-            </div>
-            {r1Requested && (
-              <div className="row" style={{ background: 'var(--sf2)', padding: '10px 12px', borderRadius: '10px' }}>
-                <span style={{ fontSize: '13px' }}>
-                  Waiting for Klo Tech to accept and share direct phone &amp; WhatsApp.
-                </span>
+          )}
+
+          {partners.map((p, i) => {
+            const pid = p.id || 'p' + (i + 1);
+            const ini = (p.name || 'P')
+              .split(' ')
+              .map((w) => w[0])
+              .join('')
+              .slice(0, 2)
+              .toUpperCase();
+            const requested = p.st === 'waiting' || p.st === 'unlocked' || p.st === 'connected';
+            return (
+              <div className="rep" key={pid}>
+                <div className="row">
+                  <span className="av">{ini}</span>
+                  <span style={{ minWidth: 0, flex: 1 }}>
+                    <b style={{ fontSize: '15px' }}>{p.name}</b>
+                    {p.verified && (
+                      <span className="chip c-g" style={{ marginLeft: 6 }}>
+                        Verified
+                      </span>
+                    )}
+                    <br />
+                    <span className="mute" style={{ fontSize: '12.5px' }}>
+                      {p.sub}
+                    </span>
+                  </span>
+                  {requested ? (
+                    <span className="chip c-a">{p.st === 'connected' ? 'Connected' : 'Request sent'}</span>
+                  ) : (
+                    <button
+                      className="btn red sm"
+                      onClick={async () => {
+                        setClientViews((v) => Math.max(0, v - 1));
+                        showToast(
+                          'Request sent. The direct phone & WhatsApp is shared once they accept.',
+                        );
+                        await postMarketplaceAction('client.update_partner_status', {
+                          key: r.key,
+                          partnerId: pid,
+                          status: 'requested',
+                        });
+                        await rehydrateMarketplace();
+                      }}
+                    >
+                      Connect · 1 view
+                    </button>
+                  )}
+                </div>
+                {p.pitch && <span style={{ fontSize: '13.5px' }}>{p.pitch}</span>}
+                {p.tags && p.tags.length > 0 && (
+                  <div className="row">
+                    {p.tags.map((t, ti) => (
+                      <span className="chip" key={ti}>
+                        {t}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {requested && p.st !== 'connected' && (
+                  <div
+                    className="row"
+                    style={{ background: 'var(--sf2)', padding: '10px 12px', borderRadius: '10px' }}
+                  >
+                    <span style={{ fontSize: '13px' }}>
+                      Waiting for {p.name} to accept and share direct phone &amp; WhatsApp.
+                    </span>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-
-          {/* Partner 2: DevSprint Studio */}
-          <div className="rep">
-            <div className="row">
-              <span className="av">DS</span>
-              <span style={{ minWidth: 0, flex: 1 }}>
-                <b style={{ fontSize: '15px' }}>DevSprint Studio</b>
-                <br />
-                <span className="mute" style={{ fontSize: '12.5px' }}>
-                  Web & Mobile Development · Bengaluru
-                </span>
-              </span>
-              <button
-                className="btn sm"
-                onClick={() => showToast('Another partner reply. Connect uses 1 view.')}
-              >
-                Connect · 1 view
-              </button>
-            </div>
-            <span style={{ fontSize: '13.5px' }}>
-              &quot;Custom Shopify/WooCommerce build with automated stock sync across 5 locations. Delivered in 4 weeks.&quot;
-            </span>
-            <div className="row">
-              <span className="chip">Quote: ₹2,20,000</span>
-              <span className="chip">⏱ 4 weeks</span>
-            </div>
-          </div>
+            );
+          })}
         </div>
       </>
     );
   };
 
-  const renderClientConn = () => (
-    <>
-      <span className="lbl" style={{ margin: '2px' }}>
-        Connected partners (1)
-      </span>
-      <div className="card">
-        <div className="row">
-          <span className="sq">✓</span>
-          <span style={{ minWidth: 0, flex: 1 }}>
-            <b style={{ fontSize: '15px' }}>Company website developer</b>
-            <br />
-            <span className="mute" style={{ fontSize: '12.5px' }}>
-              Verified partner · Completed · ₹1.2L
+  const clientConnections = () => {
+    const out: { r: ClientReq; p: PartnerReplyLite }[] = [];
+    creqs.forEach((r) =>
+      (r.partners || []).forEach((p) => {
+        if (p.st === 'connected' || p.st === 'unlocked') out.push({ r, p });
+      }),
+    );
+    return out;
+  };
+
+  const renderClientConn = () => {
+    const connections = clientConnections();
+    return (
+      <>
+        <span className="lbl" style={{ margin: '2px' }}>
+          Connected partners ({connections.length})
+        </span>
+        {connections.length === 0 && (
+          <div className="card" style={{ textAlign: 'center' }}>
+            <span className="mute" style={{ fontSize: '13px' }}>
+              No connections yet. When you unlock a partner and they accept, they appear here with
+              direct contact.
             </span>
-          </span>
-        </div>
-        <div className="row">
-          <a
-            href={WHATSAPP_BOT_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="btn ink sm"
-            style={{ textDecoration: 'none' }}
-          >
-            Message on WhatsApp
-          </a>
-          <a href={"tel:" + SUPPORT_PHONE} className="btn sm" style={{ textDecoration: 'none' }}>
-            Call
-          </a>
-        </div>
-      </div>
-    </>
-  );
+          </div>
+        )}
+        {connections.map(({ r, p }, i) => {
+          const waHref = p.phone
+            ? 'https://wa.me/' + p.phone.replace(/\D/g, '')
+            : WHATSAPP_BOT_URL;
+          const telHref = 'tel:' + (p.phone || SUPPORT_PHONE);
+          return (
+            <div key={(p.id || 'p') + i} className="card">
+              <div className="row">
+                <span className="sq">✓</span>
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <b style={{ fontSize: '15px' }}>{p.name}</b>
+                  <br />
+                  <span className="mute" style={{ fontSize: '12.5px' }}>
+                    Verified partner · {r.title}
+                  </span>
+                </span>
+              </div>
+              <div className="row">
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn ink sm"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Message on WhatsApp
+                </a>
+                <a href={telHref} className="btn sm" style={{ textDecoration: 'none' }}>
+                  Call
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </>
+    );
+  };
 
   const renderClientPlan = () => (
     <>
@@ -642,7 +750,7 @@ export function XpoUnifiedWorkspace({
           <span>Active requests</span>
         </div>
         <div className="kpi">
-          <b>1</b>
+          <b>{clientConnections().length}</b>
           <span>Connections</span>
         </div>
       </div>
@@ -774,52 +882,67 @@ export function XpoUnifiedWorkspace({
           </div>
         </div>
 
-        {/* Attention banner if consent not given */}
-        {!consentGiven && (
-          <div data-anno="attn">
-            <div className="anno">
-              <span className="pin">Live banner, kept — shown once</span>
-              <span className="tip">
-                <b>Word-for-word from the app:</b> &quot;Test Traders (Pavan) used 1 view to see your details.&quot; Sits cleanly at the top of the feed without duplicate stacked banners.
-              </span>
-            </div>
-            <div className="card attn">
-              <div className="head" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                <span className="chip c-r">Action needed</span>
-                <span className="sp" />
-                <span className="mono mute3">XPO-REQ-40971</span>
+        {/* Attention banner when a client has requested this partner's contact */}
+        {(() => {
+          const pending = leads.find((l) => l.needsConsent);
+          if (!pending) return null;
+            const who = pending.clientName
+              ? pending.clientCompany
+                ? pending.clientName + ' (' + pending.clientCompany + ')'
+                : pending.clientName
+              : 'A client';
+            return (
+              <div className="card attn">
+                <div className="head" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <span className="chip c-r">Action needed</span>
+                  <span className="sp" />
+                  <span className="mono mute3">{pending.id}</span>
+                </div>
+                <b style={{ fontSize: '15px' }}>{who} used 1 view to see your details</b>
+                <span className="mute" style={{ fontSize: '13.5px' }}>
+                  Confirm to share your phone &amp; WhatsApp and unlock their direct number.
+                </span>
+                <div className="row">
+                  <button
+                    className="btn red sm"
+                    onClick={async () => {
+                      showToast('Contact shared. You are now connected with ' + who + '.');
+                      await postMarketplaceAction('partner.respond_connection', {
+                        oppId: pending.key,
+                        ref: pending.id,
+                        decision: 'accepted',
+                      });
+                      await rehydrateMarketplace();
+                    }}
+                  >
+                    Accept &amp; share contact
+                  </button>
+                  <button
+                    className="btn sm"
+                    onClick={() => {
+                      setPLeadKey(pending.key);
+                      setPs('lead');
+                    }}
+                  >
+                    Review request
+                  </button>
+                </div>
               </div>
-              <b style={{ fontSize: '15px' }}>Test Traders (Pavan) used 1 view to see your details</b>
-              <span className="mute" style={{ fontSize: '13.5px' }}>
-                Confirm to share your phone &amp; WhatsApp and unlock their direct number.
-              </span>
-              <div className="row">
-                <button
-                  className="btn red sm"
-                  onClick={async () => {
-                    setConsentGiven(true);
-                    showToast('Contact shared. You are connected with Test Traders (Pavan).');
-                    await postMarketplaceAction('partner.respond_connection', {
-                      oppId: pLeadKey,
-                      ref: pLeadKey,
-                      decision: 'accepted',
-                    });
-                    await rehydrateMarketplace();
-                  }}
-                >
-                  Accept &amp; share contact
-                </button>
-                <button
-                  className="btn sm"
-                  onClick={() => {
-                    setRole('client');
-                    setCs('req');
-                  }}
-                >
-                  Review request
-                </button>
-              </div>
-            </div>
+            );
+          })()}
+
+        {filteredList.length === 0 && (
+          <div className="card" style={{ textAlign: 'center' }}>
+            {!hydrated ? (
+              <span className="mute">Loading matched leads…</span>
+            ) : (
+              <>
+                <h3 style={{ fontSize: '16px', marginBottom: '6px' }}>No matched leads yet</h3>
+                <span className="mute" style={{ fontSize: '13px' }}>
+                  New requirements in your categories will appear here in 5-minute waves.
+                </span>
+              </>
+            )}
           </div>
         )}
 
@@ -830,7 +953,23 @@ export function XpoUnifiedWorkspace({
 
   const renderPartnerLeadDetail = () => {
     const l = leads.find((x) => x.key === pLeadKey) || leads[0];
-    const isSentOrConnected = r1ReplySent || l.state === 'sent' || l.state === 'connected' || !!l.myReply;
+    if (!l) {
+      return (
+        <>
+          <button
+            className="btn ghost sm"
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => setPs('reqs')}
+          >
+            ← All requests
+          </button>
+          <div className="card" style={{ textAlign: 'center' }}>
+            <span className="mute">This lead is no longer available.</span>
+          </div>
+        </>
+      );
+    }
+    const isSentOrConnected = l.state === 'sent' || l.state === 'connected' || !!l.myReply;
 
     return (
       <>
@@ -1125,7 +1264,6 @@ export function XpoUnifiedWorkspace({
               <button
                 className="btn red"
                 onClick={async () => {
-                  setR1ReplySent(true);
                   setPartnerReplies((r) => Math.max(0, r - 1));
                   const newReplyData: MyReply = {
                     quote: partnerNewQuote || '₹1,80,000',
@@ -1147,7 +1285,7 @@ export function XpoUnifiedWorkspace({
                   );
                   showToast('Reply sent to client! You can review or edit it anytime.');
                   await postMarketplaceAction('partner.submit_reply', {
-                    oppId: l.id,
+                    oppId: l.key,
                     ref: l.id,
                     pitch: replyText || 'Interested in delivering this requirement with full QA.',
                     timeline: partnerNewTimeline,
@@ -1195,35 +1333,54 @@ export function XpoUnifiedWorkspace({
         <span className="lbl" style={{ margin: '2px' }}>
           Connected clients ({list.length})
         </span>
-        {list.map((l) => (
-          <div key={l.key} className="card">
-            <div className="row">
-              <span className="sq">✓</span>
-              <span style={{ minWidth: 0, flex: 1 }}>
-                <b style={{ fontSize: '15px' }}>Pavan · Test Traders</b>
-                <br />
-                <span className="mute" style={{ fontSize: '12.5px' }}>
-                  {l.title} · {l.budget}
-                </span>
-              </span>
-              <span className="chip c-g">{l.when}</span>
-            </div>
-            <div className="row">
-              <a
-                href={WHATSAPP_BOT_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn ink sm"
-                style={{ textDecoration: 'none' }}
-              >
-                Message on WhatsApp
-              </a>
-              <a href={"tel:" + SUPPORT_PHONE} className="btn sm" style={{ textDecoration: 'none' }}>
-                Call
-              </a>
-            </div>
+        {list.length === 0 && (
+          <div className="card" style={{ textAlign: 'center' }}>
+            <span className="mute" style={{ fontSize: '13px' }}>
+              No connections yet. When a client accepts a reply and shares their contact, they appear
+              here.
+            </span>
           </div>
-        ))}
+        )}
+        {list.map((l) => {
+          const name = l.clientName
+            ? l.clientCompany
+              ? l.clientName + ' · ' + l.clientCompany
+              : l.clientName
+            : 'Connected client';
+          const waHref = l.clientPhone
+            ? 'https://wa.me/' + l.clientPhone.replace(/\D/g, '')
+            : WHATSAPP_BOT_URL;
+          const telHref = 'tel:' + (l.clientPhone || SUPPORT_PHONE);
+          return (
+            <div key={l.key} className="card">
+              <div className="row">
+                <span className="sq">✓</span>
+                <span style={{ minWidth: 0, flex: 1 }}>
+                  <b style={{ fontSize: '15px' }}>{name}</b>
+                  <br />
+                  <span className="mute" style={{ fontSize: '12.5px' }}>
+                    {l.title} · {l.budget}
+                  </span>
+                </span>
+                <span className="chip c-g">{l.when}</span>
+              </div>
+              <div className="row">
+                <a
+                  href={waHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn ink sm"
+                  style={{ textDecoration: 'none' }}
+                >
+                  Message on WhatsApp
+                </a>
+                <a href={telHref} className="btn sm" style={{ textDecoration: 'none' }}>
+                  Call
+                </a>
+              </div>
+            </div>
+          );
+        })}
       </>
     );
   };
@@ -1293,7 +1450,7 @@ export function XpoUnifiedWorkspace({
   const clientNav = [
     { k: 'home', l: 'Home', i: 'home' as const },
     { k: 'reqs', l: 'My requests', i: 'list' as const, n: creqs.length },
-    { k: 'conn', l: 'Connected', i: 'link' as const, n: 1 },
+    { k: 'conn', l: 'Connected', i: 'link' as const, n: clientConnections().length },
   ];
 
   const partnerNav = [
@@ -1303,7 +1460,10 @@ export function XpoUnifiedWorkspace({
     { k: 'cats', l: 'Categories', i: 'tag' as const },
   ];
 
-  const who = role === 'client' ? { name: 'Pavan', biz: 'Test Traders', ini: 'PA' } : { name: 'Klo Tech', biz: 'Web & Mobile Development', ini: 'KT' };
+  const who =
+    role === 'client'
+      ? { name: 'Your account', biz: 'XPO buyer', ini: 'B' }
+      : { name: 'Your business', biz: 'XPO partner', ini: 'P' };
   const navItems = role === 'client' ? clientNav : partnerNav;
   const currentScreen = role === 'client' ? cs : ps;
 
@@ -1315,7 +1475,7 @@ export function XpoUnifiedWorkspace({
       if (cs === 'conn') return 'Connected';
       return 'Plan & billing';
     } else {
-      if (ps === 'reqs') return 'Requests matched to Klo Tech';
+      if (ps === 'reqs') return 'Requests matched to you';
       if (ps === 'lead') return 'Request';
       if (ps === 'replies') return 'My replies';
       if (ps === 'conn') return 'Connected';
@@ -1605,12 +1765,19 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
                 <span className="sp" />
                 <span className="chip">{ALERTS[role].length}</span>
               </div>
-              {ALERTS[role].map((a, i) => (
-                <button key={i} className="al" onClick={a.action}>
-                  <span className="t">{a.t}</span>
-                  <span>{a.d}</span>
-                </button>
-              ))}
+              {ALERTS[role].length === 0 ? (
+                <div className="al" style={{ cursor: 'default' }}>
+                  <span className="t">No alerts yet</span>
+                  <span>You&apos;re all caught up.</span>
+                </div>
+              ) : (
+                ALERTS[role].map((a, i) => (
+                  <button key={i} className="al" onClick={a.action}>
+                    <span className="t">{a.t}</span>
+                    <span>{a.d}</span>
+                  </button>
+                ))
+              )}
             </div>
           )}
 
@@ -1654,6 +1821,22 @@ body.rev [data-anno]{position:relative;outline:2px dashed color-mix(in srgb,var(
               >
                 Dark mode
                 <span className="sw sp" role="switch" aria-checked={theme === 'dark'} />
+              </button>
+              <button
+                className="mrow"
+                onClick={() => {
+                  const next = role === 'client' ? 'partner' : 'client';
+                  setRole(next);
+                  if (next === 'client') setCs('home');
+                  else setPs('reqs');
+                  setMenu('none');
+                  showToast('Switched to the ' + next + ' view.');
+                }}
+              >
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  {icons.switchRole}
+                  Switch to {role === 'client' ? 'partner' : 'client'} view
+                </span>
               </button>
               <button className="mrow" onClick={() => showToast('Test session reset.')}>
                 Sign out
